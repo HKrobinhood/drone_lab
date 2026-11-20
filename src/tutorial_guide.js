@@ -1,15 +1,35 @@
 /**
- * Config-driven interactive Tutorial Guide Engine (pure JS, no DOM dependency).
+ * Config-driven interactive Tutorial Guide Engine & PIP Intro Script
+ * (pure JS, no DOM dependency).
  *
- * Implements progressive guidance across Tutorial Village:
+ * Implements concise, visual-first guidance across Tutorial Village:
+ * - PIP Intro: 3 short greeting slides shown on first entry (re-playable anytime)
  * - Tutorial 1: Full 10-step interface + PID + WASD + Results walkthrough
- * - Tutorial 2: Medium guidance (observe low Kp lag -> tune Kp -> reach target)
- * - Tutorial 3: Light guidance (inspect crosswind -> tune Ki -> reach target)
- * - Tutorial 4: Minimal autonomous guidance
- *
- * Supports Highlight -> Explain -> Player Action -> Validate -> Next Step,
- * plus stepping backward safely and replaying tutorials anytime.
+ * - Tutorial 2: Medium guidance (Kp response curve + live tuning)
+ * - Tutorial 3: Light guidance (Ki steady-state drift correction)
+ * - Tutorial 4: Minimal autonomous guidance (Kd damping & smooth stopping)
  */
+
+export const PIP_INTRO_SCRIPT = Object.freeze([
+  {
+    id: 'intro-1',
+    mood: 'greeting',
+    badge: 'Greeting',
+    text: "Hi, pilot! I'm PIP, your flight coach!"
+  },
+  {
+    id: 'intro-2',
+    mood: 'explaining',
+    badge: 'Explaining',
+    text: "I'll help you tune your PID controller and master your drone."
+  },
+  {
+    id: 'intro-3',
+    mood: 'celebrating',
+    badge: 'Ready!',
+    text: "Let's learn, test, and fly!"
+  }
+]);
 
 export const TUTORIAL_GUIDE_FLOWS = {
   'tutorial-1': [
@@ -17,110 +37,140 @@ export const TUTORIAL_GUIDE_FLOWS = {
       stepId: 't1-briefing',
       view: 'preflight',
       targetSelector: '#mission-briefing-panel',
+      pipMood: 'explaining',
+      visualId: null,
       title: 'Step 1 — Mission Briefing',
-      headline: 'Read Your Mission Briefing',
-      instruction:
-        'This panel tells you what you need to achieve in this mission. Review the Mission Objective and Success Requirements.',
-      actionHint: 'Review Mission Objective & Success Requirements, then click Next Step.',
+      headline: 'Read Your Mission Goal',
+      instruction: 'Check Mission Objective and Success Requirements before takeoff.',
+      actionHint: 'Review the highlighted card, then click Next Step.',
+      learnMore:
+        'Mission Briefing summarizes target coordinates, hold duration, speed limits, and what changed from previous lessons.',
       requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-specs',
       view: 'preflight',
       targetSelector: '#drone-specs-panel',
+      pipMood: 'explaining',
+      visualId: 'gravity-thrust',
       title: 'Step 2 — Drone Specifications',
-      headline: 'Check Drone Mass, Thrust & Wind',
-      instruction:
-        'These values describe your drone\'s physical capabilities. Mass, thrust and wind affect how it flies.',
-      actionHint: 'Notice Drone Mass (1.20 kg), Max Thrust (28.0 N), and Wind (0.0 N). Click Next Step.',
+      headline: 'Check Mass, Thrust & Wind',
+      instruction: 'Inspect Mass, Max Thrust, and Wind—they set lift and drift.',
+      actionHint: 'Compare Thrust (28.0 N) vs. weight (11.8 N), then click Next Step.',
+      learnMore:
+        'Heavier mass slows acceleration under equal force. Rotor thrust must exceed weight (m × 9.81 N) to climb.',
       requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-pid-panel',
       view: 'preflight',
       targetSelector: '#preflight-pid-panel',
+      pipMood: 'explaining',
+      visualId: 'pid-loop-steps',
       title: 'Step 3 — PID Tuning Panel',
-      headline: 'Meet Your Flight Controller',
-      instruction:
-        'This is where you tune your flight controller. Kp, Ki and Kd change how your drone responds.',
-      actionHint: 'Inspect the Kp, Ki, Kd sliders and zone bars, then click Next Step.',
+      headline: 'Learn the Tuning Loop',
+      instruction: 'Tune PID gains here, fly with WASD, check results, and refine.',
+      actionHint: 'Look over the 5-step tuning loop, then click Next Step.',
+      learnMore:
+        'Your sliders set Kp, Ki, and Kd gains used by both horizontal (X) and vertical (Z) PID controllers.',
       requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-pid-sliders',
       view: 'preflight',
       targetSelector: '#preflight-sliders-wrap',
+      pipMood: 'thinking',
+      visualId: 'kp-response',
       title: 'Step 4 — Kp, Ki and Kd',
-      headline: 'Try Adjusting a PID Slider',
-      instruction:
-        'Kp responds to position error, Ki corrects accumulated error, and Kd damps motion to brake smoothly. Move at least one slider now!',
-      actionHint: 'Drag Kp, Ki, or Kd slightly (keep Kp >= 4.0 for easy takeoff).',
+      headline: 'Try Adjusting a Slider',
+      instruction: 'Drag Kp, Ki, or Kd slightly to test controller tuning.',
+      actionHint: 'Move any slider now (keep Kp >= 4.0 for easy climb).',
+      learnMore:
+        'Kp controls how strongly your drone reacts to position errors. Ki removes steady offset, and Kd adds braking damping.',
       requiredAction: 'adjust_pid'
     },
     {
       stepId: 't1-pip-assistant',
       view: 'preflight',
       targetSelector: '#pip-coach-card',
+      pipMood: 'explaining',
+      visualId: null,
       title: 'Step 5 — PIP Assistant',
-      headline: 'Meet PIP — Virtual Flight Coach',
-      instruction:
-        "I'll help you identify risky settings and suggest improvements. My advice is a guide, not the only correct answer.",
-      actionHint: 'Read PIP\'s live feedback on your gains, then click Next Step.',
+      headline: 'Read PIP Risk Feedback',
+      instruction: 'Watch PIP here for risky gain alerts and helpful tips.',
+      actionHint: 'PIP guides your choices without locking controls. Click Next Step.',
+      learnMore:
+        'PIP checks single-gain extremes and multi-gain coupling (such as high Kp with low Kd) relative to drone mass.',
       requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-start-flight',
       view: 'preflight',
       targetSelector: '#btn-pre-start-flight-2',
+      pipMood: 'celebrating',
+      visualId: null,
       title: 'Step 6 — Start Flight',
-      headline: 'Launch Your First Flight',
-      instruction:
-        "Once you've tuned your controller, press Start Flight to test your settings.",
-      actionHint: 'Click the highlighted Start Flight button to enter the arena.',
+      headline: 'Launch Your Drone',
+      instruction: 'Press Start Flight to enter the 2D arena with your gains.',
+      actionHint: 'Click Start Flight now.',
+      learnMore:
+        'Once airborne, your active Kp, Ki, and Kd gains drive real-time thrust and tilt at 120 Hz physics.',
       requiredAction: 'start_flight'
     },
     {
       stepId: 't1-wasd',
       view: 'flight',
       targetSelector: '#flight-wasd-bar',
+      pipMood: 'explaining',
+      visualId: 'wasd-controls',
       title: 'Step 7 — WASD Movement',
-      headline: 'Practice WASD Reference Control',
-      instruction:
-        'Use your keyboard to move the yellow REF target! Complete W (up), S (down), A (left), D (right), then release all keys to hold steady.',
-      actionHint: 'Press each key in order as prompted below.',
+      headline: 'Move Yellow REF With WASD',
+      instruction: 'Press W, S, A, D in order, then release keys to hover.',
+      actionHint: 'Follow each key prompt below.',
+      learnMore:
+        'WASD moves the yellow REF target, not the drone directly—the PID loop steers your drone to follow REF.',
       requiredAction: 'wasd_sequence'
     },
     {
       stepId: 't1-flight-info',
       view: 'flight',
       targetSelector: '#flight-status-strip',
+      pipMood: 'thinking',
+      visualId: null,
       title: 'Step 8 — Flight Information',
-      headline: 'Read Live Flight Telemetry',
-      instruction:
-        'Monitor Position, Speed, Thrust, and Flight Time here. When Speed nears zero and Position matches Ref Target, your drone is stable.',
-      actionHint: 'Check the telemetry strip values, then click Next Step.',
+      headline: 'Read Live Telemetry',
+      instruction: 'Watch Speed and Position—low speed at REF means steady hover.',
+      actionHint: 'Check Position, Speed, and Thrust, then click Next Step.',
+      learnMore:
+        'Look for (SAT) near Thrust if motors hit max output, and verify Speed drops near 0.00 m/s inside target zones.',
       requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-reach-target',
       view: 'flight',
       targetSelector: '#flight-canvas',
+      pipMood: 'explaining',
+      visualId: 'gravity-thrust',
       title: 'Step 9 — Reach the Target',
-      headline: 'Fly Into the Blue Target Zone',
-      instruction:
-        'Use WASD to guide REF into the blue target circle at (4.0 m, 7.5 m) and hold steady until stabilization finishes.',
-      actionHint: 'Climb with W into the upper blue circle and hold steady!',
+      headline: 'Hover in the Blue Target',
+      instruction: 'Climb with W into the blue zone and hold steady!',
+      actionHint: 'Guide REF to (4.0 m, 7.5 m) and wait 1.5 s.',
+      learnMore:
+        'During steady hover on a 1.20 kg drone, thrust settles around 11.8 N to balance downward gravity.',
       requiredAction: 'reach_target'
     },
     {
       stepId: 't1-results',
       view: 'result',
       targetSelector: '#result-overview-wrap',
+      pipMood: 'celebrating',
+      visualId: 'pid-loop-steps',
       title: 'Step 10 — Results and Retry',
-      headline: 'Great job! You\'ve completed your first flight.',
-      instruction:
-        'Review your Flight Statistics, Route Fit plot, and PIP Debrief. Use Retry to test new PID tuning or Next Level to continue.',
-      actionHint: 'Explore your results, then click Finish Guide or Next Level.',
+      headline: "Great job! You've completed your first flight.",
+      instruction: 'Review Route Fit and metrics, then Retry or pick Next Level.',
+      actionHint: 'Click Finish Guide when ready.',
+      learnMore:
+        'Use Pre-flight Tuning or Retry to test faster Kp or cleaner Kd damping and watch Route Fit improve.',
       requiredAction: 'acknowledge'
     }
   ],
@@ -130,33 +180,42 @@ export const TUTORIAL_GUIDE_FLOWS = {
       stepId: 't2-briefing',
       view: 'preflight',
       targetSelector: '#preflight-pid-panel',
-      title: 'Proportional Gain (Kp) Setup',
-      headline: 'Inspect Starting Low Kp = 1.2',
-      instruction:
-        'Kp starts intentionally low (1.2). Press Start Flight first to feel slow horizontal tracking, or raise Kp in flight.',
-      actionHint: 'Click Start Flight to test Kp = 1.2 in the air.',
+      pipMood: 'thinking',
+      visualId: 'kp-response',
+      title: 'Proportional Gain (Kp)',
+      headline: 'Test Low Kp = 1.2 First',
+      instruction: 'Kp controls how strongly your drone reacts to position errors.',
+      actionHint: 'Press Start Flight to feel slow lag with Kp = 1.2.',
+      learnMore:
+        'Low Kp produces gentle, slow tracking. Higher Kp speeds up response, though very high Kp relative to damping can cause overshoot.',
       requiredAction: 'start_flight'
     },
     {
       stepId: 't2-observe-lag',
       view: 'flight',
       targetSelector: '#flight-pid-panel',
+      pipMood: 'explaining',
+      visualId: 'kp-response',
       title: 'Observe Lag & Raise Kp',
-      headline: 'Feel Low Kp Lag, Then Tune Up',
-      instruction:
-        'Hold D to fly right and watch Position lag behind REF. Then raise the Kp slider (>= 4.5) to feel crisp acceleration!',
-      actionHint: 'Fly right with D and raise Kp to >= 4.5.',
+      headline: 'Fly Right, Then Raise Kp',
+      instruction: 'Hold D to spot lag, then drag Kp up (>= 4.5).',
+      actionHint: 'Tap D, then raise Kp into the Recommended zone.',
+      learnMore:
+        'Notice how larger Kp multiplies horizontal error into a sharper pitch angle and faster acceleration.',
       requiredAction: 'tune_kp_above_4_5'
     },
     {
       stepId: 't2-complete',
       view: 'flight',
       targetSelector: '#flight-canvas',
-      title: 'Stabilize in Target Zone',
-      headline: 'Complete Proportional Control',
-      instruction:
-        'Guide REF to (18.0 m, 5.5 m) with your tuned Kp and hold steady for 2.0 s.',
-      actionHint: 'Align with the blue target circle and hold steady.',
+      pipMood: 'celebrating',
+      visualId: null,
+      title: 'Hold Inside Target',
+      headline: 'Finish Proportional Control',
+      instruction: 'Guide REF into the right target zone and hold steady.',
+      actionHint: 'Hold inside (18.0 m, 5.5 m) for 2.0 s.',
+      learnMore:
+        'Balanced Kp reaches the zone quickly without overshooting past its boundary.',
       requiredAction: 'reach_target'
     }
   ],
@@ -166,22 +225,28 @@ export const TUTORIAL_GUIDE_FLOWS = {
       stepId: 't3-wind',
       view: 'preflight',
       targetSelector: '#drone-specs-panel',
-      title: 'Crosswind Briefing',
+      pipMood: 'thinking',
+      visualId: 'ki-integral',
+      title: 'Integral Gain (Ki)',
       headline: 'Spot the +4.8 N Crosswind',
-      instruction:
-        'Notice the +4.8 N steady crosswind in Drone Specifications while Ki starts at 0.00. Launch to see steady-state wind error.',
-      actionHint: 'Click Start Flight to test flight with Ki = 0.00.',
+      instruction: 'Steady wind causes persistent error when Ki is zero.',
+      actionHint: 'Press Start Flight to observe wind drift first.',
+      learnMore:
+        'P control alone needs a remaining error to keep leaning against steady wind. Ki sums error over time until offset drops to zero.',
       requiredAction: 'start_flight'
     },
     {
       stepId: 't3-tune-ki',
       view: 'flight',
       targetSelector: '#flight-pid-panel',
-      title: 'Eliminate Drift With Ki',
-      headline: 'Add Integral Action (Ki)',
-      instruction:
-        'Watch the wind push your drone away from REF, then raise Ki (>= 0.80) and center inside (16.0 m, 5.5 m).',
-      actionHint: 'Raise Ki to eliminate steady-state error and hold in the target.',
+      pipMood: 'explaining',
+      visualId: 'ki-integral',
+      title: 'Cancel Drift With Ki',
+      headline: 'Raise Ki to Center Drone',
+      instruction: 'Raise Ki (>= 0.80) so integral action fights the crosswind.',
+      actionHint: 'Tune Ki smoothly and hold inside (16.0 m, 5.5 m).',
+      learnMore:
+        'Avoid excessive Ki—too much integral windup builds up during travel and causes overshoot past the target.',
       requiredAction: 'reach_target'
     }
   ],
@@ -191,11 +256,14 @@ export const TUTORIAL_GUIDE_FLOWS = {
       stepId: 't4-autonomous',
       view: 'preflight',
       targetSelector: '#preflight-pid-panel',
-      title: 'Autonomous Damping Practice',
-      headline: 'Tune Kd Yourself Before or During Flight',
-      instruction:
-        'Guidance fades out here so you can prepare for Challenge Levels. Notice Kd starts low (0.4)—tune damping and press Start Flight.',
-      actionHint: 'Tune Kd as needed and press Start Flight whenever ready.',
+      pipMood: 'thinking',
+      visualId: 'kd-damping',
+      title: 'Derivative Gain (Kd)',
+      headline: 'Tune Damping Before Takeoff',
+      instruction: 'Try increasing Kd to reduce overshoot and improve braking.',
+      actionHint: 'Adjust Kd from 0.4 as needed, then press Start Flight.',
+      learnMore:
+        'Kd opposes velocity (D = -Kd × v) like an aerodynamic brake. Too little Kd bounces; too much Kd slows motion.',
       requiredAction: 'start_flight'
     }
   ]

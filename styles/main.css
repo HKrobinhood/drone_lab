@@ -2133,6 +2133,281 @@ body {
   cursor: not-allowed;
 }
 
+/* ==================== M4.2 PIP INTRO, MOODS & VISUAL DIAGRAMS ==================== */
+.levels-summary-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.pip-intro-panel {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  border: 2px solid #38bdf8;
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-md);
+  animation: pipSlideIn 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pipSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pip-intro-avatar {
+  flex: 0 0 88px;
+}
+
+.pip-intro-svg {
+  width: 88px;
+  height: 84px;
+  display: block;
+}
+
+.pip-intro-bubble {
+  flex: 1;
+  min-width: 0;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.pip-intro-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.pip-intro-step {
+  margin-left: auto;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.pip-intro-line {
+  margin: 0 0 12px;
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.pip-intro-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pip-intro-actions .btn-ghost {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+/* PIP 5 Expression Moods */
+.pip-smile,
+.pip-happy-eye {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.pip-brow {
+  stroke: #fb923c;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.pip-arm-stroke {
+  stroke: #94a3b8;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.pip-hand-dot {
+  fill: #38bdf8;
+}
+
+.pip-wave-arm {
+  transform-origin: 71px 45px;
+  animation: pipWave 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes pipWave {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: rotate(16deg);
+  }
+}
+
+.pip-mood-thinking .pip-float {
+  transform: rotate(-4deg);
+  transform-origin: 42px 42px;
+}
+
+.pip-mood-warning .pip-eye,
+.pip-mood-warning .pip-smile {
+  stroke: #fb923c;
+  fill: #fb923c;
+}
+
+.pip-mood-warning .pip-smile {
+  fill: none;
+}
+
+.pip-mood-celebrating .pip-happy-eye,
+.pip-mood-celebrating .pip-smile {
+  stroke: #4ade80;
+}
+
+.pip-mood-celebrating .pip-antenna-led {
+  fill: #4ade80;
+}
+
+.pip-mood-celebrating .pip-float {
+  animation: pipCelebrateBounce 0.9s ease-in-out infinite;
+}
+
+@keyframes pipCelebrateBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Visual STEM Diagrams & Learn More */
+.preflight-visual-aid {
+  margin-top: 12px;
+  background: #f8fafc;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.visual-aid-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.visual-aid-head .card-eyebrow {
+  margin-bottom: 0;
+}
+
+.stem-diagram-svg {
+  width: 100%;
+  max-height: 120px;
+  display: block;
+}
+
+.learn-more-inline summary,
+.tut-learn-more summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  user-select: none;
+}
+
+.learn-more-inline p {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.tut-guide-card {
+  width: min(400px, calc(100vw - 24px));
+}
+
+.tut-guide-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.tut-guide-avatar {
+  flex: 0 0 46px;
+}
+
+.pip-avatar-mini {
+  width: 46px;
+  height: 44px;
+  display: block;
+}
+
+.tut-guide-header-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.tut-visual-slot {
+  margin: 6px 0 8px;
+}
+
+.tut-visual-slot .stem-diagram-svg {
+  max-height: 112px;
+}
+
+.tut-learn-more {
+  margin: 4px 0 8px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 5px 9px;
+}
+
+.tut-learn-more summary {
+  color: #7dd3fc;
+}
+
+.tut-learn-more p {
+  margin: 5px 0 2px !important;
+  font-size: 0.79rem !important;
+  color: #cbd5e1 !important;
+}
+
+@media (max-width: 680px) {
+  .pip-intro-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pip-intro-panel,
+  .pip-float,
+  .pip-eyes,
+  .pip-wave-arm,
+  .drone-float,
+  .tut-mask,
+  .tut-spotlight-frame {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 @media (max-width: 720px) {
   .briefing-meta-row {
     grid-template-columns: 1fr;

@@ -255,11 +255,33 @@
             <h1 id="levels-heading">Level Selection</h1>
             <p id="levels-description" class="section-subtitle"></p>
           </div>
-          <div class="levels-summary">
-            <span class="stat-label">Mode Progress</span>
-            <strong id="levels-star-summary">0 / 12 ★</strong>
+          <div class="levels-summary-group">
+            <button id="btn-meet-pip" type="button" class="btn btn-outline btn-sm hidden">
+              Meet PIP / Help
+            </button>
+            <div class="levels-summary">
+              <span class="stat-label">Mode Progress</span>
+              <strong id="levels-star-summary">0 / 12 ★</strong>
+            </div>
           </div>
         </div>
+
+        <!-- PIP Introduction Slide-In Panel (shown on first Tutorial Village entry or via Meet PIP) -->
+        <aside id="pip-intro-panel" class="pip-intro-panel hidden" role="dialog" aria-labelledby="pip-intro-line" aria-label="Meet PIP Flight Coach">
+          <div id="pip-intro-avatar" class="pip-intro-avatar"></div>
+          <div class="pip-intro-bubble">
+            <div class="pip-intro-meta">
+              <span class="pip-name">PIP — Your PID Flight Coach</span>
+              <span id="pip-intro-mood-badge" class="pip-state-pill">Greeting</span>
+              <span id="pip-intro-step-count" class="pip-intro-step">1 / 3</span>
+            </div>
+            <p id="pip-intro-line" class="pip-intro-line">Hi, pilot! I'm PIP, your flight coach!</p>
+            <div class="pip-intro-actions">
+              <button id="btn-pip-intro-skip" type="button" class="btn btn-ghost btn-sm">Skip Intro</button>
+              <button id="btn-pip-intro-next" type="button" class="btn btn-primary btn-sm">Next &rarr;</button>
+            </div>
+          </div>
+        </aside>
 
         <div id="levels-grid" class="levels-grid" aria-live="polite">
           <!-- Rendered dynamically from src/levels.js -->
@@ -276,6 +298,9 @@
             <p id="preflight-description" class="section-subtitle"></p>
           </div>
           <div class="preflight-header-actions">
+            <button id="btn-preflight-meet-pip" type="button" class="btn btn-ghost btn-sm hidden">
+              Meet PIP / Help
+            </button>
             <button id="btn-preflight-reopen-guide" type="button" class="btn btn-outline btn-sm hidden">
               Interactive Guide
             </button>
@@ -338,11 +363,16 @@
                   <strong id="preflight-time-limit">65 s</strong>
                 </div>
               </div>
-              <ul id="preflight-specs-guide" class="specs-explain-list hidden">
-                <li><strong>Drone Mass &amp; Payload:</strong> Heavier drones accelerate more slowly under the same force and need more thrust to climb.</li>
-                <li><strong>Maximum Thrust:</strong> Rotor thrust must exceed weight (m &times; 9.81 N) to lift off; hitting the limit causes thrust saturation.</li>
-                <li><strong>Wind Conditions:</strong> Persistent crosswind creates steady-state position drift unless Integral gain (Ki) compensates.</li>
-              </ul>
+              <div id="preflight-visual-aid" class="preflight-visual-aid hidden">
+                <div class="visual-aid-head">
+                  <span id="preflight-visual-title" class="card-eyebrow">Visual Concept</span>
+                  <details class="learn-more-inline">
+                    <summary>Learn More</summary>
+                    <p id="preflight-learn-more-text"></p>
+                  </details>
+                </div>
+                <div id="preflight-visual-svg"></div>
+              </div>
             </article>
 
             <article id="preflight-prev-card" class="info-card prev-attempt-card hidden">
@@ -815,14 +845,24 @@
       <div id="tut-spotlight-frame" class="tut-spotlight-frame"></div>
 
       <aside id="tut-guide-card" class="tut-guide-card" role="region" aria-label="Interactive Tutorial Guide">
-        <div class="tut-guide-top">
-          <span class="pip-mini-badge">PIP GUIDE</span>
-          <span id="tut-step-pill" class="tut-step-pill">Step 1 / 10</span>
+        <div class="tut-guide-header-row">
+          <div id="tut-guide-avatar" class="tut-guide-avatar"></div>
+          <div class="tut-guide-header-copy">
+            <div class="tut-guide-top">
+              <span class="pip-mini-badge">PIP GUIDE</span>
+              <span id="tut-step-pill" class="tut-step-pill">Step 1 / 10</span>
+            </div>
+            <h3 id="tut-step-title">Step 1 — Mission Briefing</h3>
+          </div>
         </div>
-        <h3 id="tut-step-title">Step 1 — Mission Briefing</h3>
         <p id="tut-step-body"></p>
+        <div id="tut-visual-slot" class="tut-visual-slot hidden"></div>
         <div id="tut-wasd-chips" class="tut-wasd-chips hidden"></div>
         <p id="tut-step-hint" class="tut-step-hint"></p>
+        <details id="tut-learn-more" class="tut-learn-more hidden">
+          <summary>Learn More</summary>
+          <p id="tut-learn-more-text"></p>
+        </details>
         <div class="tut-guide-actions">
           <button id="btn-tut-back" type="button" class="btn btn-ghost btn-sm">Back</button>
           <button id="btn-tut-skip" type="button" class="btn btn-ghost btn-sm">Hide Guide</button>

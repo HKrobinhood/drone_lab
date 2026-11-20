@@ -16,7 +16,8 @@ export function createDefaultProgress() {
     },
     completed: {},
     bestPid: {},
-    bestMetrics: {}
+    bestMetrics: {},
+    pipIntroSeen: false
   };
 }
 
@@ -51,7 +52,8 @@ export function loadProgress(customStorage) {
       },
       completed: typeof parsed.completed === 'object' && parsed.completed ? { ...parsed.completed } : {},
       bestPid: typeof parsed.bestPid === 'object' && parsed.bestPid ? { ...parsed.bestPid } : {},
-      bestMetrics: typeof parsed.bestMetrics === 'object' && parsed.bestMetrics ? { ...parsed.bestMetrics } : {}
+      bestMetrics: typeof parsed.bestMetrics === 'object' && parsed.bestMetrics ? { ...parsed.bestMetrics } : {},
+      pipIntroSeen: Boolean(parsed.pipIntroSeen)
     };
   } catch {
     return defaults;
@@ -103,7 +105,8 @@ export function recordLevelResult(progress, levelId, result = {}, nextLevelId = 
     unlocked: { ...(progress?.unlocked || {}) },
     completed: { ...(progress?.completed || {}) },
     bestPid: { ...(progress?.bestPid || {}) },
-    bestMetrics: { ...(progress?.bestMetrics || {}) }
+    bestMetrics: { ...(progress?.bestMetrics || {}) },
+    pipIntroSeen: Boolean(progress?.pipIntroSeen)
   };
 
   updated.unlocked[levelId] = true;
@@ -130,6 +133,24 @@ export function recordLevelResult(progress, levelId, result = {}, nextLevelId = 
     }
   }
 
+  saveProgress(updated, customStorage);
+  return updated;
+}
+
+export function hasSeenPipIntro(progress) {
+  return Boolean(progress?.pipIntroSeen);
+}
+
+export function markPipIntroSeen(progress, customStorage) {
+  const updated = {
+    version: 1,
+    stars: { ...(progress?.stars || {}) },
+    unlocked: { ...(progress?.unlocked || {}) },
+    completed: { ...(progress?.completed || {}) },
+    bestPid: { ...(progress?.bestPid || {}) },
+    bestMetrics: { ...(progress?.bestMetrics || {}) },
+    pipIntroSeen: true
+  };
   saveProgress(updated, customStorage);
   return updated;
 }

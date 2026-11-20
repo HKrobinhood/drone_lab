@@ -9,6 +9,7 @@
  */
 
 import { evaluateTutorialCoaching } from './scenes.js';
+import { resolvePipMood } from './visual_aids.js';
 
 export function getSliderZone(value, min, max) {
   if (!Number.isFinite(value)) return 'low';
@@ -83,6 +84,7 @@ export function evaluatePidCoaching(gains, scene) {
   if (kp === 0 && ki === 0 && kd === 0) {
     return {
       state: 'welcome',
+      mood: 'greeting',
       headline: 'Hi! I am PIP, your PID Flight Coach.',
       messages: [
         'All three gains start at zero, so your drone cannot respond or take off yet. Begin by raising Kp, then add Kd damping!'
@@ -171,6 +173,7 @@ export function evaluatePidCoaching(gains, scene) {
     if (!joint.jointOk) {
       return {
         state: 'teaching',
+        mood: 'thinking',
         headline: 'Check Parameter Balance',
         messages: [joint.message],
         zones,
@@ -180,6 +183,7 @@ export function evaluatePidCoaching(gains, scene) {
 
     return {
       state: 'ready',
+      mood: 'celebrating',
       headline: 'Ready for Takeoff!',
       messages: ['Your PID settings look suitable for this mission. Ready to fly!'],
       zones,
@@ -190,6 +194,7 @@ export function evaluatePidCoaching(gains, scene) {
   if (messages.length === 0) {
     return {
       state: 'teaching',
+      mood: 'thinking',
       headline: 'Keep Tuning',
       messages: ['Adjust Kp, Ki, and Kd to balance speed, damping, and steady-state accuracy.'],
       zones,
@@ -199,6 +204,7 @@ export function evaluatePidCoaching(gains, scene) {
 
   return {
     state: severity,
+    mood: resolvePipMood(severity),
     headline: severity === 'warning' ? 'Flight Risk Detected' : 'Coach Suggestion',
     messages: messages.slice(0, 2),
     zones,
@@ -352,8 +358,10 @@ export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
     if (tutHint && !msgs.includes(tutHint)) {
       msgs.push(tutHint);
     }
+    const liveState = pidCheck.state === 'warning' ? 'warning' : sim.targetZone?.stabilized ? 'success' : 'teaching';
     return {
-      state: pidCheck.state === 'warning' ? 'warning' : sim.targetZone?.stabilized ? 'success' : 'teaching',
+      state: liveState,
+      mood: guideStep?.pipMood && liveState !== 'warning' ? guideStep.pipMood : resolvePipMood(liveState),
       headline: guideStep?.title || scene.stemTopic || 'Tutorial Coach',
       messages: msgs.slice(0, 2)
     };

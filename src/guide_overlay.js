@@ -1,3 +1,5 @@
+import { renderPipRobotSvg, getStemVisualAid } from './visual_aids.js';
+
 /**
  * Non-blocking Spotlight & Floating Step Card Overlay for Tutorial Village.
  *
@@ -5,6 +7,7 @@
  * - Never relies on hardcoded screen coordinates; dynamically tracks DOM rects via getBoundingClientRect()
  * - Auto-updates on window resize, scroll, and ResizeObserver changes
  * - Backdrop/spotlight ring use pointer-events: none so target sliders, buttons, and Canvas are NEVER blocked
+ * - Displays PIP expression avatar, short dialogue, contextual SVG visual aid, and collapsible Learn More
  * - Cleans up cleanly when switching views or modes
  */
 
@@ -21,9 +24,13 @@ export class TutorialSpotlightOverlay {
     this.maskRight = document.getElementById('tut-mask-right');
     this.frame = document.getElementById('tut-spotlight-frame');
     this.card = document.getElementById('tut-guide-card');
+    this.avatarEl = document.getElementById('tut-guide-avatar');
     this.stepPill = document.getElementById('tut-step-pill');
     this.titleEl = document.getElementById('tut-step-title');
     this.bodyEl = document.getElementById('tut-step-body');
+    this.visualSlot = document.getElementById('tut-visual-slot');
+    this.learnMoreDetails = document.getElementById('tut-learn-more');
+    this.learnMoreText = document.getElementById('tut-learn-more-text');
     this.hintEl = document.getElementById('tut-step-hint');
     this.wasdChips = document.getElementById('tut-wasd-chips');
     this.btnBack = document.getElementById('btn-tut-back');
@@ -41,6 +48,7 @@ export class TutorialSpotlightOverlay {
     this.btnBack?.addEventListener('click', () => this.onBack());
     this.btnNext?.addEventListener('click', () => this.onNext());
     this.btnSkip?.addEventListener('click', () => this.onDismiss());
+    this.learnMoreDetails?.addEventListener('toggle', () => this.reposition());
 
     window.addEventListener('resize', () => this.reposition());
     window.addEventListener('scroll', () => this.reposition(), true);
@@ -89,6 +97,32 @@ export class TutorialSpotlightOverlay {
     this.stepPill.textContent = `Step ${progressInfo.current} / ${progressInfo.total}`;
     this.titleEl.textContent = step.title;
     this.bodyEl.textContent = step.instruction;
+
+    if (this.avatarEl) {
+      const mood = safetyWarning ? 'warning' : (step.pipMood || 'explaining');
+      this.avatarEl.innerHTML = renderPipRobotSvg(mood, 'pip-avatar-mini');
+    }
+
+    if (this.visualSlot) {
+      const aid = step.visualId ? getStemVisualAid(step.visualId) : null;
+      if (aid) {
+        this.visualSlot.classList.remove('hidden');
+        this.visualSlot.innerHTML = aid.renderSvg();
+      } else {
+        this.visualSlot.classList.add('hidden');
+        this.visualSlot.innerHTML = '';
+      }
+    }
+
+    if (this.learnMoreDetails && this.learnMoreText) {
+      if (step.learnMore) {
+        this.learnMoreDetails.classList.remove('hidden');
+        this.learnMoreText.textContent = step.learnMore;
+        if (stepChanged) this.learnMoreDetails.open = false;
+      } else {
+        this.learnMoreDetails.classList.add('hidden');
+      }
+    }
 
     if (step.requiredAction === 'wasd_sequence' && step.wasdSubsteps) {
       this.wasdChips.classList.remove('hidden');

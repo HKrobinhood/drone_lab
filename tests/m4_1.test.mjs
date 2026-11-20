@@ -245,7 +245,7 @@ describe('M4.1 — Unified DOM & English-Only Verification', () => {
     for (const id of [
       'mission-briefing-panel',
       'drone-specs-panel',
-      'preflight-specs-guide',
+      'preflight-visual-aid',
       'preflight-pid-panel',
       'flight-pip-card',
       'flight-pid-panel',

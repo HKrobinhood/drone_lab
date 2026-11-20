@@ -33,6 +33,7 @@
 | **M3.2** | Progressive PID Tuning & Virtual Flight Instructor | 关卡教学递进重构、每关零初始调参、虚拟教练 PIP 实时诊断与组合建议、离线参数扫描标定、手感度强化 | **已完成** |
 | **M4** | Scoring and Progress | 1~3 星评分算法（含 REF 与实际路线拟合度指标）、Result Screen、localStorage 进度与最高星级存档 | **已完成** |
 | **M4.1** | Tutorial & Challenge UI Alignment | 统一新手村与正式关核心界面/状态流、统一 PIP 教练与配置驱动交互式 Spotlight 引导、Tutorial 1 十步 UI+WASD 教学 | **已完成** |
+| **M4.2** | PIP Introduction & Visual Tutorial Redesign | PIP 首次自我介绍、5 种表情动画、6 张内联 SVG 教学图解、精简短句文案与 Learn More 展开 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
@@ -125,6 +126,20 @@
   - `node --test tests/*.test.mjs`：60/60 通过；Chrome E2E 交互脚本通过（无水平溢出、无遮罩残留）。
   - 已知问题：暂无已知阻塞缺陷；更精细的时序曲线对比图将在 M5 实现。
 
+### M4.2 — PIP Introduction & Visual Tutorial Redesign
+- **修改目标**：为统一虚拟教练 **PIP** 增加初次进入新手村的趣味自我介绍，升级 5 种轻量 SVG/CSS 表情状态，大幅精简教学文本并配齐 6 套贴近操作控件的内联矢量教学图解与可展开 `Learn More`。
+- **PIP 介绍流程**：
+  - 首次进入 Tutorial Village 检查 `localStorage` 中的 `pipIntroSeen`（`src/storage.js`）；未看过时侧滑出场展示 3 句短台词（Greeting → Explaining → Celebrating），提供 `Next` 与 `Skip Intro`；跳过介绍不跳过 Tutorial 1 交互操作步骤，且可通过 `Meet PIP / Help` 随时重播。
+- **新增视觉教学资源（`src/visual_aids.js`）**：
+  - 统一 PIP 机器人 SVG 构建器与 `Greeting`（挥手）、`Explaining`（指示）、`Thinking`（轻倾思考）、`Warning`（警示眉眼）、`Celebrating`（笑眼欢跃）5 种表情状态，支持 `prefers-reduced-motion`。
+  - 6 张内联矢量图：`gravity-thrust`（推力↑ vs 重力↓）、`wasd-controls`（WASD 按键与方向箭头）、`kp-response`（Low Kp 慢响应 vs High Kp 快响应/可能超调）、`ki-integral`（Persistent Error → Accumulation → Correction）、`kd-damping`（Overshoot vs Damping & Smooth Stopping）、`pid-loop-steps`（5 步调参闭环）。
+- **精简教学文案与 UI 调整**：
+  - 所有新手步骤主提示压缩为 8~15 词的动词引导短句，详细原理解释收纳进 `<details>Learn More</details>`。
+  - 在 Spotlight 指引气泡与 Pre-flight 卡片旁就近嵌入对应图解，明确区分 Intro、Tutorial Guide、PID Risk Advice 与 Flight Feedback 展示通道。
+- **测试结果与已知问题**：
+  - `node --test tests/*.test.mjs`：24 suites，65 tests 全部通过；无头 Chrome 端到端验证通过（1440×900 / 1280×800 无横向溢出、无控制台报错）。
+  - 已知问题：暂无阻塞问题。
+
 ### M5 — PID Diagnostics
 - [ ] 记录完整飞行遥测时间序列（参考位置、实际位置、速度、误差、P/I/D 分量、输出）
 - [ ] 实现过冲、振荡、响应速度、稳态误差、积分饱和分析
@@ -141,8 +156,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M4.1 — Tutorial & Challenge UI Alignment`（已完成，待确认后进入 M5）
-- **已完成**：统一 Tutorial Village 与 Challenge Levels 核心界面（Briefing / Drone Specs / PID Tuning / PIP Coach / Flight HUD / Result Screen），统一 PID 状态与重置逻辑，新增可复用配置驱动 Spotlight 交互引导系统与 Tutorial 1 十步 UI+WASD+Result 新手引导。
+- **当前里程碑**：`M4.2 — PIP Introduction & Visual Tutorial Redesign`（已完成，待确认后进入 M5）
+- **已完成**：PIP 首次进入 Tutorial Village 3 步自我介绍与 `localStorage` 持久化（含 `Meet PIP / Help` 重播）、5 种轻量 SVG/CSS 表情状态、6 套内联矢量 STEM 图解、精简短句文案与 `Learn More` 展开卡片。
 - **尚未完成的功能**：M5（时间序列 PID 诊断分析与上次/本次试飞双轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
 
 ---
@@ -189,6 +204,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m3.2): add progressive PID tuning and virtual coach` — 完成 M3.2 关卡教学递进、零初始 PID、虚拟教练 PIP、参数扫描标定与失败遥测解释。
 - `feat(m4): implement stars and game progress` — 完成 M4 三星评分系统（含 REF 路线与实际路线拟合度）、独立 Result Screen 与 localStorage 最高星级存档。
 - `feat(m4.1): align tutorial and challenge flight experience` — 统一 Tutorial 与 Challenge 核心界面、共享 PID/PIP/物理控制流，并实现基于真实输入验证的 10 步交互式新手村引导系统。
+- `feat(m4.2): add PIP introduction and visual tutorials` — 新增 PIP 首次自我介绍、5 种表情动画、6 套内联矢量 STEM 教学图解与精简短句引导。
 
 ---
 

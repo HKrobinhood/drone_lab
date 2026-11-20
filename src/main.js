@@ -7,7 +7,9 @@ import {
   isFirstPlaythrough,
   getModeSummary,
   recordLevelResult,
-  getBestPidReference
+  getBestPidReference,
+  hasSeenPipIntro,
+  markPipIntroSeen
 } from './storage.js';
 import { InputController } from './input.js';
 import {
@@ -29,8 +31,9 @@ import {
   evaluatePostFlightFeedback
 } from './coach.js';
 import { scoreFlightRun } from './scoring.js';
-import { TutorialGuideEngine } from './tutorial_guide.js';
+import { TutorialGuideEngine, PIP_INTRO_SCRIPT } from './tutorial_guide.js';
 import { TutorialSpotlightOverlay } from './guide_overlay.js';
+import { renderPipRobotSvg, resolvePipMood, getStemVisualAid } from './visual_aids.js';
 
 const state = {
   currentView: 'start',
@@ -40,7 +43,9 @@ const state = {
   progress: loadProgress(),
   tunedGainsByLevel: {},
   baselineGainsByLevel: {},
-  lastAttempts: {}
+  lastAttempts: {},
+  pipIntroIndex: 0,
+  pipIntroOpen: false
 };
 
 const els = {
@@ -75,9 +80,18 @@ const els = {
   levelsDescription: document.getElementById('levels-description'),
   levelsStarSummary: document.getElementById('levels-star-summary'),
   levelsGrid: document.getElementById('levels-grid'),
+  btnMeetPip: document.getElementById('btn-meet-pip'),
+  pipIntroPanel: document.getElementById('pip-intro-panel'),
+  pipIntroAvatar: document.getElementById('pip-intro-avatar'),
+  pipIntroMoodBadge: document.getElementById('pip-intro-mood-badge'),
+  pipIntroStepCount: document.getElementById('pip-intro-step-count'),
+  pipIntroLine: document.getElementById('pip-intro-line'),
+  btnPipIntroSkip: document.getElementById('btn-pip-intro-skip'),
+  btnPipIntroNext: document.getElementById('btn-pip-intro-next'),
 
   // Pre-flight Briefing & Tuning elements
   btnPreflightBack: document.getElementById('btn-preflight-back'),
+  btnPreflightMeetPip: document.getElementById('btn-preflight-meet-pip'),
   btnPreflightReopenGuide: document.getElementById('btn-preflight-reopen-guide'),
   btnPreStartFlight: document.getElementById('btn-pre-start-flight'),
   btnPreStartFlight2: document.getElementById('btn-pre-start-flight-2'),
@@ -98,7 +112,10 @@ const els = {
   preflightMaxThrust: document.getElementById('preflight-max-thrust'),
   preflightMaxTilt: document.getElementById('preflight-max-tilt'),
   preflightTimeLimit: document.getElementById('preflight-time-limit'),
-  preflightSpecsGuide: document.getElementById('preflight-specs-guide'),
+  preflightVisualAid: document.getElementById('preflight-visual-aid'),
+  preflightVisualTitle: document.getElementById('preflight-visual-title'),
+  preflightVisualSvg: document.getElementById('preflight-visual-svg'),
+  preflightLearnMoreText: document.getElementById('preflight-learn-more-text'),
   preflightPrevCard: document.getElementById('preflight-prev-card'),
   preflightPrevStatus: document.getElementById('preflight-prev-status'),
   preflightPrevReason: document.getElementById('preflight-prev-reason'),
@@ -125,12 +142,14 @@ const els = {
   // PIP Coach Cards (Pre-flight + Flight unified)
   prePipCard: {
     card: document.getElementById('pip-coach-card'),
+    avatar: document.querySelector('#pip-coach-card .pip-avatar-wrap'),
     badge: document.getElementById('pip-state-badge'),
     headline: document.getElementById('pip-headline'),
     messages: document.getElementById('pip-messages')
   },
   flightPipCard: {
     card: document.getElementById('flight-pip-card'),
+    avatar: document.querySelector('#flight-pip-card .pip-avatar-wrap'),
     badge: document.getElementById('flight-pip-state-badge'),
     headline: document.getElementById('flight-pip-headline'),
     messages: document.getElementById('flight-pip-messages')
@@ -333,8 +352,12 @@ function renderPipCard(cardEls, coachData) {
     ready: 'Ready',
     success: 'Complete'
   };
+  const mood = coachData.mood || resolvePipMood(coachData.state);
   const baseClass = cardEls === els.flightPipCard ? 'pip-card pip-card-compact' : 'pip-card';
-  cardEls.card.className = `${baseClass} pip-${coachData.state || 'teaching'}`;
+  cardEls.card.className = `${baseClass} pip-${coachData.state || 'teaching'} pip-expr-${mood}`;
+  if (cardEls.avatar) {
+    cardEls.avatar.innerHTML = renderPipRobotSvg(mood);
+  }
   cardEls.badge.textContent = stateLabels[coachData.state] || 'Coach';
   cardEls.headline.textContent = coachData.headline;
   cardEls.messages.innerHTML = '';
@@ -342,6 +365,36 @@ function renderPipCard(cardEls, coachData) {
     const li = document.createElement('li');
     li.textContent = msg;
     cardEls.messages.appendChild(li);
+  }
+}
+
+// ==================== PIP INTRODUCTION FLOW ====================
+function renderPipIntroSlide() {
+  const slide = PIP_INTRO_SCRIPT[state.pipIntroIndex] || PIP_INTRO_SCRIPT[0];
+  els.pipIntroAvatar.innerHTML = renderPipRobotSvg(slide.mood, 'pip-intro-svg');
+  els.pipIntroMoodBadge.textContent = slide.badge;
+  els.pipIntroStepCount.textContent = `${state.pipIntroIndex + 1} / ${PIP_INTRO_SCRIPT.length}`;
+  els.pipIntroLine.textContent = slide.text;
+  els.btnPipIntroNext.textContent =
+    state.pipIntroIndex >= PIP_INTRO_SCRIPT.length - 1 ? "Let's Start!" : 'Next →';
+}
+
+function openPipIntro(forceReplay = false) {
+  if (!forceReplay && hasSeenPipIntro(state.progress)) {
+    closePipIntro(false);
+    return;
+  }
+  state.pipIntroIndex = 0;
+  state.pipIntroOpen = true;
+  renderPipIntroSlide();
+  els.pipIntroPanel.classList.remove('hidden');
+}
+
+function closePipIntro(persistSeen = true) {
+  state.pipIntroOpen = false;
+  els.pipIntroPanel.classList.add('hidden');
+  if (persistSeen && !hasSeenPipIntro(state.progress)) {
+    state.progress = markPipIntroSeen(state.progress);
   }
 }
 
@@ -548,9 +601,16 @@ function renderLevelSelection(mode) {
   els.levelsModeBadge.textContent = isTutorial ? 'Tutorial Village' : 'Challenge Levels';
   els.levelsHeading.textContent = isTutorial ? 'Tutorial Village — PID Basics' : 'Challenge Levels — Progressive Missions';
   els.levelsDescription.textContent = isTutorial
-    ? 'Step-by-step guided flight academy covering the cockpit UI, Kp, Ki, Kd, and WASD control.'
+    ? 'Visual-first PID academy with PIP coaching, live demonstrations, and hands-on WASD flight.'
     : 'Each mission starts at zero PID—analyze conditions, tune with PIP, and fly manually with WASD.';
   els.levelsStarSummary.textContent = `${summary.earnedStars} / ${summary.maxStars} ★`;
+  els.btnMeetPip.classList.toggle('hidden', !isTutorial);
+
+  if (isTutorial && !hasSeenPipIntro(state.progress)) {
+    openPipIntro(false);
+  } else if (!isTutorial) {
+    closePipIntro(false);
+  }
 
   els.levelsGrid.innerHTML = '';
 
@@ -599,6 +659,7 @@ function renderLevelSelection(mode) {
 
       const scene = getSceneById(level.id);
       if (scene) {
+        if (state.pipIntroOpen) closePipIntro(true);
         openPreflightTuning(scene, { resetToInitial: true, restartGuide: true });
         return;
       }
@@ -639,7 +700,19 @@ function openPreflightTuning(scene, options = {}) {
   els.preflightMaxThrust.textContent = `${maxThrust.toFixed(1)} N (TWR ${twr.toFixed(2)})`;
   els.preflightMaxTilt.textContent = `${scene.maxTilt ?? 32} deg`;
   els.preflightTimeLimit.textContent = Number.isFinite(scene.timeLimit) ? `${scene.timeLimit} s` : 'No Limit';
-  els.preflightSpecsGuide.classList.toggle('hidden', !isTutorial);
+  els.btnPreflightMeetPip.classList.toggle('hidden', !isTutorial);
+
+  const aid = isTutorial && scene.visualId ? getStemVisualAid(scene.visualId) : null;
+  if (aid) {
+    els.preflightVisualAid.classList.remove('hidden');
+    els.preflightVisualTitle.textContent = aid.title;
+    els.preflightVisualSvg.innerHTML = aid.renderSvg();
+    els.preflightLearnMoreText.textContent =
+      scene.tutorialGuide?.shortExplanation || scene.learningObjective || '';
+  } else {
+    els.preflightVisualAid.classList.add('hidden');
+    els.preflightVisualSvg.innerHTML = '';
+  }
 
   const initialGains = getSceneInitialGains(scene);
   let gainsToUse;
@@ -974,6 +1047,10 @@ export function navigateTo(viewName, options = {}) {
   els.topbar.classList.toggle('hidden', viewName === 'start' || viewName === 'flight');
   updateProgressSummaries();
 
+  if (viewName !== 'levels' && state.pipIntroOpen) {
+    closePipIntro(false);
+  }
+
   if (viewName === 'start' || viewName === 'modes' || viewName === 'levels') {
     tutorialGuide.resetState();
     tutorialOverlay?.hide();
@@ -1028,6 +1105,21 @@ function bindEvents() {
   els.btnEnterChallenges.addEventListener('click', () => navigateTo('levels', { mode: 'challenge' }));
   els.btnBackModes.addEventListener('click', () => navigateTo('modes'));
   els.btnLaunchPlayground.addEventListener('click', () => launchScene(PLAYGROUND_SCENE));
+
+  els.btnMeetPip.addEventListener('click', () => openPipIntro(true));
+  els.btnPreflightMeetPip.addEventListener('click', () => {
+    navigateTo('levels', { mode: 'tutorial' });
+    openPipIntro(true);
+  });
+  els.btnPipIntroSkip.addEventListener('click', () => closePipIntro(true));
+  els.btnPipIntroNext.addEventListener('click', () => {
+    if (state.pipIntroIndex >= PIP_INTRO_SCRIPT.length - 1) {
+      closePipIntro(true);
+    } else {
+      state.pipIntroIndex += 1;
+      renderPipIntroSlide();
+    }
+  });
 
   els.btnPreflightBack.addEventListener('click', () => {
     const mode = state.activeScene?.mode === 'challenge' ? 'challenge' : 'tutorial';

@@ -64,12 +64,9 @@ export const TUTORIAL_SCENES = {
     mode: 'tutorial',
     nextLevelId: 'tutorial-2',
     name: 'Tutorial 1 — Flight Control Basics',
-    stemTopic: 'WASD Control, Thrust & Metrics',
-    visualId: 'wasd-controls',
-    measuredMetrics: ['WASD -> REF Control', 'Completion Time', 'Route Fit (REF vs Actual)'],
-    pipMetricBrief:
-      "Hi pilot! Press W/S/A/D to move the yellow REF target—I'll measure your Completion Time and Route Fit (how closely you follow REF).",
-    description: 'Learn WASD control, cockpit panels, thrust vs. gravity, and what flight metrics PIP measures.',
+    stemTopic: 'Flight UI, Gravity & Thrust',
+    visualId: 'gravity-thrust',
+    description: 'Guided tour of Mission Briefing, Drone Specs, PID Tuning, WASD flight, and Results.',
     objective: 'Explore the cockpit controls, test WASD movement, and hover in the blue zone.',
     whatYouLearnedBefore: 'First flight! Follow PIP step by step.',
     newChallenge: 'Learn every panel and lift a 1.20 kg drone with vertical thrust.',
@@ -131,12 +128,9 @@ export const TUTORIAL_SCENES = {
     mode: 'tutorial',
     nextLevelId: 'tutorial-3',
     name: 'Tutorial 2 — Proportional Control',
-    stemTopic: 'Proportional Gain (Kp) & Tracking Lag',
+    stemTopic: 'Proportional Gain (Kp)',
     visualId: 'kp-response',
-    measuredMetrics: ['Response Speed / Tracking Lag', 'Route Fit (REF vs Actual)', 'Completion Time'],
-    pipMetricBrief:
-      "Pilot, today I'm measuring Response Speed and Route Fit! Watch how low Kp (1.2) causes heavy Tracking Lag behind REF.",
-    description: 'Kp starts at 1.2 so you can feel Tracking Lag, then raise Kp for responsive Route Fit.',
+    description: 'Kp starts at 1.2 so you can feel slow lag, then raise Kp for responsive tracking.',
     objective: 'Raise Kp to remove horizontal lag and hold inside the right target zone.',
     whatYouLearnedBefore: 'WASD moves the yellow REF target and PID commands thrust and tilt.',
     newChallenge: 'Kp controls how strongly your drone reacts to position errors.',
@@ -198,12 +192,9 @@ export const TUTORIAL_SCENES = {
     mode: 'tutorial',
     nextLevelId: 'tutorial-4',
     name: 'Tutorial 3 — Integral Control',
-    stemTopic: 'Integral Gain (Ki) & Steady-State Error',
+    stemTopic: 'Integral Gain (Ki)',
     visualId: 'ki-integral',
-    measuredMetrics: ['Steady-State Offset (m)', 'Thrust Saturation & Windup'],
-    pipMetricBrief:
-      "Pilot, today I'm measuring Steady-State Offset and Integral Windup! Under +4.8 N wind, raise Ki so I can cancel persistent drift.",
-    description: '+4.8 N crosswind drifts the drone off REF when Ki = 0. Tune Ki to cancel Steady-State Offset.',
+    description: '+4.8 N crosswind drifts the drone off REF when Ki = 0. Tune Ki to center it.',
     objective: 'Raise Ki to cancel steady crosswind error and hold in the target zone.',
     whatYouLearnedBefore: 'Kp drives speed toward REF, but leaves offset under constant wind.',
     newChallenge: 'Accumulate persistent error with Ki to offset the +4.8 N wind.',
@@ -265,12 +256,9 @@ export const TUTORIAL_SCENES = {
     mode: 'tutorial',
     nextLevelId: null,
     name: 'Tutorial 4 — Derivative Control',
-    stemTopic: 'Derivative Gain (Kd) & Settling Stability',
+    stemTopic: 'Derivative Gain (Kd)',
     visualId: 'kd-damping',
-    measuredMetrics: ['Overshoot (m)', 'Oscillation Reversals', 'Settling Time & Flight Stability'],
-    pipMetricBrief:
-      "Pilot, today I grade Overshoot, Oscillation, Settling Time, and Stability! Raise Kd from 0.4 so your drone brakes cleanly.",
-    description: 'Kd starts at 0.4, causing Overshoot and Oscillation unless you add damping.',
+    description: 'Kd starts at 0.4, causing overshoot unless you add damping.',
     objective: 'Increase Kd to reduce overshoot and brake smoothly inside the target zone.',
     whatYouLearnedBefore: 'Tutorials 1–3 covered thrust, Kp responsiveness, and Ki wind trim.',
     newChallenge: 'Try increasing Kd to reduce overshoot and improve braking.',
@@ -685,42 +673,42 @@ export function evaluateTutorialCoaching(sim, scene) {
 
   if (scene.id === 'tutorial-1') {
     if (gains.kp < 2.0) {
-      return 'Pilot, Kp is very low—raise Kp toward 6.5 so thrust can lift off and follow REF!';
+      return 'Kp is very low—thrust responds weakly to vertical error. Try raising Kp toward 6.5.';
     }
     if (drone.onGround && reference.z <= 0.1) {
-      return 'Hold W to raise the yellow REF target! Remember: WASD moves REF, and I track your Route Fit.';
+      return 'Hold W to raise the yellow REF target upward and generate takeoff thrust (> 11.8 N).';
     }
-    return `Pilot, thrust is ${drone.thrust.toFixed(1)} N (hover ~11.8 N). Keep REF near Z = ${targetZone.z.toFixed(1)} m for top Route Fit!`;
+    return `Thrust: ${drone.thrust.toFixed(1)} N (hover ~11.8 N). Guide REF into the target circle at Z = ${targetZone.z.toFixed(1)} m.`;
   }
 
   if (scene.id === 'tutorial-2') {
     if (gains.kp < 2.2) {
-      return `I see a ${Math.abs(errX).toFixed(2)} m tracking lag! Increase Kp toward 5.5–7.5 to speed up response and boost Route Fit.`;
+      return `Notice the lag (X error ${errX.toFixed(2)} m)? Increase Kp toward 5.5–7.5 to speed up horizontal tracking.`;
     }
     if (gains.kp > 13.0) {
-      return 'Whoa, pilot—Kp is very aggressive! Watch your Overshoot metric; try 6.0–8.0 for crisp control.';
+      return 'Kp is very aggressive—watch for overshoot or twitchy tilt! Try 6.0–8.0 for crisp control.';
     }
-    return `Nice Kp (${gains.kp.toFixed(1)})! Use A/D to pull REF right (${distToTarget.toFixed(1)} m left) and keep Tracking Lag small.`;
+    return `Good Kp (${gains.kp.toFixed(1)}). Use A/D to align REF with the target (${distToTarget.toFixed(1)} m away).`;
   }
 
   if (scene.id === 'tutorial-3') {
     if (gains.ki < 0.25 && Math.abs(errX) > 0.25) {
-      return `I measure a ${Math.abs(errX).toFixed(2)} m steady-state offset from crosswind (I = ${lastPid.x.iTerm.toFixed(1)}). Raise Ki toward 1.2–1.8!`;
+      return `Steady crosswind is creating a ${Math.abs(errX).toFixed(2)} m offset (I = ${lastPid.x.iTerm.toFixed(1)}). Raise Ki toward 1.2–1.8!`;
     }
     if (gains.ki > 4.2) {
-      return 'Careful, pilot—Ki is very high, risking Integral Windup and Overshoot! Try 1.2–1.8.';
+      return 'Ki is very high—watch out for integral windup and overshoot! Try 1.2–1.8.';
     }
-    return `My integral term I_x = ${lastPid.x.iTerm.toFixed(2)} is canceling the +4.8 N wind. Keep Steady-State Offset near zero!`;
+    return `Integral term I_x = ${lastPid.x.iTerm.toFixed(2)} is actively fighting the +4.8 N wind. Center the drone in the zone.`;
   }
 
   if (scene.id === 'tutorial-4') {
     if (gains.kd < 1.5) {
-      return 'Low damping (Kd)! Expect extra Overshoot, Oscillation, and slow Settling Time—raise Kd to 3.6–4.5.';
+      return 'Low damping (Kd)! Expect overshoot when releasing WASD—try raising Kd to 3.6–4.5.';
     }
     if (gains.kd > 10.5) {
-      return 'Kd is very high, slowing Response Speed and increasing Completion Time. Try 3.5–5.0.';
+      return 'Kd is very high—heavy damping makes movement sluggish. Try 3.5–5.0.';
     }
-    return `Great damping (Kd = ${gains.kd.toFixed(1)})! Fly smoothly in and release WASD for high Stability and fast Settling Time.`;
+    return `Damping is well balanced (Kd = ${gains.kd.toFixed(1)}). Fly smoothly into the target zone and release WASD to brake.`;
   }
 
   return null;

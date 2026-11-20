@@ -93,7 +93,7 @@ export class FlightRenderer {
     }
 
     // 3. Wind Indicator Overlay
-    if (sim.windMode !== 'calm') {
+    if (sim.windMode !== 'calm' || Math.abs(sim.drone.windX) > 0.05 || Math.abs(sim.drone.windZ) > 0.05) {
       this.#drawWindOverlay(ctx, width, padTop + 14, sim.drone.windX, sim.drone.windZ, sim.windMode);
     }
 
@@ -160,7 +160,9 @@ export class FlightRenderer {
   }
 
   #drawWindOverlay(ctx, canvasW, y, windX, windZ, mode) {
-    const isGusting = (mode === 'challenge_gust' || mode === 'gust') && windX > 4.5;
+    const isGusting =
+      (mode === 'challenge_gust' || mode === 'gust' || mode === 'scene_wind') &&
+      (windX > 4.5 || Math.abs(windZ) > 0.3);
     const label = isGusting
       ? `GUST SURGE (+${windX.toFixed(1)} N)`
       : `CROSSWIND (+${windX.toFixed(1)} N)`;

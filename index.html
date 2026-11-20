@@ -266,6 +266,127 @@
         </div>
       </section>
 
+      <!-- ==================== VIEW 3.5: PRE-FLIGHT TUNING ==================== -->
+      <section id="view-preflight" class="view" aria-labelledby="preflight-title">
+        <div class="preflight-header">
+          <div>
+            <button id="btn-preflight-back" type="button" class="btn btn-ghost btn-sm">&larr; Back to Levels</button>
+            <span class="badge badge-stem">Pre-flight Tuning</span>
+            <h1 id="preflight-title">Level 1 — Stable Hover</h1>
+            <p id="preflight-description" class="section-subtitle"></p>
+          </div>
+          <button id="btn-pre-start-flight" type="button" class="btn btn-primary btn-lg">
+            Start Flight
+          </button>
+        </div>
+
+        <div class="preflight-grid">
+          <div class="preflight-left">
+            <article class="info-card">
+              <span class="card-eyebrow">Mission Objective</span>
+              <p id="preflight-objective" class="preflight-objective-text"></p>
+              <div class="specs-grid">
+                <div class="spec-box">
+                  <span>Drone Mass</span>
+                  <strong id="preflight-drone-mass">1.20 kg</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Payload</span>
+                  <strong id="preflight-payload">0.00 kg</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Wind Conditions</span>
+                  <strong id="preflight-wind">Calm Air (0.0 N)</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Maximum Thrust</span>
+                  <strong id="preflight-max-thrust">28.0 N</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Max Tilt Angle</span>
+                  <strong id="preflight-max-tilt">32 deg</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Time Limit</span>
+                  <strong id="preflight-time-limit">65 s</strong>
+                </div>
+              </div>
+            </article>
+
+            <article id="preflight-prev-card" class="info-card prev-attempt-card hidden">
+              <span class="card-eyebrow">Previous Attempt</span>
+              <h2 id="preflight-prev-status">Mission Failed</h2>
+              <p id="preflight-prev-reason" class="prev-reason"></p>
+              <div class="specs-grid">
+                <div class="spec-box">
+                  <span>Previous PID</span>
+                  <strong id="preflight-prev-pid">6.5 / 0.60 / 3.8</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Flight Time</span>
+                  <strong id="preflight-prev-time">0.0 s</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Max Overshoot</span>
+                  <strong id="preflight-prev-overshoot">0.00 m</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Avg Error</span>
+                  <strong id="preflight-prev-error">0.00 m</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Saturation</span>
+                  <strong id="preflight-prev-sat">0.00 s</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Final Speed</span>
+                  <strong id="preflight-prev-speed">0.00 m/s</strong>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <aside class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
+            <div class="pid-panel-header">
+              <h2>PID Tuning Panel</h2>
+              <span class="badge badge-stem">Pre-flight</span>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="pre-slider-kp">Kp — Proportional</label>
+                <output id="pre-val-kp" for="pre-slider-kp">6.5</output>
+              </div>
+              <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="6.5" />
+              <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="pre-slider-ki">Ki — Integral</label>
+                <output id="pre-val-ki" for="pre-slider-ki">0.60</output>
+              </div>
+              <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0.6" />
+              <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="pre-slider-kd">Kd — Derivative</label>
+                <output id="pre-val-kd" for="pre-slider-kd">3.8</output>
+              </div>
+              <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="3.8" />
+              <p class="slider-help">Kd — How strongly motion is damped.</p>
+            </div>
+
+            <div class="pid-actions">
+              <button id="btn-pre-reset-pid" type="button" class="btn btn-outline">Reset Level Default</button>
+              <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
       <!-- ==================== VIEW 4: FLIGHT SCREEN ==================== -->
       <section id="view-flight" class="view" aria-labelledby="flight-level-name">
         <!-- Top Flight HUD -->
@@ -344,6 +465,10 @@
               <button id="btn-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
             </div>
 
+            <button id="btn-open-preflight" type="button" class="btn btn-ghost btn-sm hidden">
+              &larr; Return to Pre-flight Tuning
+            </button>
+
             <div class="pid-telemetry-box">
               <span class="telemetry-title">Controller Output (X / Z)</span>
               <div class="telemetry-grid-sm">
@@ -382,8 +507,12 @@
               <strong id="flight-speed">0.0 m/s, 0.0 m/s</strong>
             </div>
             <div class="status-item">
-              <span>Thrust</span>
-              <strong id="flight-thrust">0.0 N</strong>
+              <span>Thrust / Max</span>
+              <strong id="flight-thrust">0.0 / 28.0 N</strong>
+            </div>
+            <div class="status-item">
+              <span>Total Mass</span>
+              <strong id="flight-mass">1.20 kg</strong>
             </div>
             <div class="status-item">
               <span>Ref Target</span>
@@ -444,8 +573,12 @@
         <h2 id="outcome-title">Mission Complete!</h2>
         <p id="outcome-message"></p>
         <div class="outcome-meta">
-          <div><span>Elapsed Time</span><strong id="outcome-time">0.0 s</strong></div>
-          <div><span>Current PID</span><strong id="outcome-pid">6.5 / 0.60 / 3.8</strong></div>
+          <div><span>Flight Time</span><strong id="outcome-time">0.0 s</strong></div>
+          <div><span>PID (Kp / Ki / Kd)</span><strong id="outcome-pid">6.5 / 0.60 / 3.8</strong></div>
+          <div><span>Max Overshoot</span><strong id="outcome-overshoot">0.00 m</strong></div>
+          <div><span>Avg Tracking Error</span><strong id="outcome-avg-error">0.00 m</strong></div>
+          <div><span>Saturation Time</span><strong id="outcome-saturation">0.00 s</strong></div>
+          <div><span>Final Speed</span><strong id="outcome-final-speed">0.00 m/s</strong></div>
         </div>
         <div id="outcome-suggestion-box" class="outcome-suggestion">
           <strong>Suggested PID Adjustment:</strong>
@@ -453,7 +586,8 @@
         </div>
         <div class="modal-actions outcome-actions">
           <button id="btn-outcome-levels" type="button" class="btn btn-ghost">Back to Levels</button>
-          <button id="btn-outcome-retry" type="button" class="btn btn-outline">Retry</button>
+          <button id="btn-outcome-preflight" type="button" class="btn btn-outline hidden">Pre-flight Tuning</button>
+          <button id="btn-outcome-retry" type="button" class="btn btn-outline">Retry Level</button>
           <button id="btn-outcome-next" type="button" class="btn btn-primary">Next Level</button>
         </div>
       </div>

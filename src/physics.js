@@ -17,6 +17,9 @@ import { clamp } from './pid.js';
 
 export const DEFAULT_PHYSICS_CONFIG = Object.freeze({
   mass: 1.2,
+  droneMass: 1.2,
+  payloadMass: 0.0,
+  nominalMass: 1.2,
   gravity: 9.81,
   minThrust: 0,
   maxThrust: 28.0,
@@ -29,6 +32,38 @@ export const DEFAULT_PHYSICS_CONFIG = Object.freeze({
   worldHeight: 14.0,
   hardLandingSpeed: 3.5
 });
+
+export function getTotalMass(config = DEFAULT_PHYSICS_CONFIG) {
+  const base = Number.isFinite(config.droneMass) ? config.droneMass : (config.mass ?? 1.2);
+  const payload = Number.isFinite(config.payloadMass) ? Math.max(0, config.payloadMass) : 0;
+  return Math.max(0.1, base + payload);
+}
+
+/**
+ * Pure rigid-body acceleration solver: F_net / totalMass.
+ */
+export function computeDroneAccelerations({
+  thrust,
+  theta,
+  windX = 0,
+  windZ = 0,
+  vx = 0,
+  vz = 0,
+  totalMass = 1.2,
+  gravity = 9.81,
+  linearDragX = 0.16,
+  linearDragZ = 0.16
+}) {
+  const safeMass = Math.max(0.1, totalMass);
+  const fx = thrust * Math.sin(theta) + windX - linearDragX * vx;
+  const fz = thrust * Math.cos(theta) - safeMass * gravity + windZ - linearDragZ * vz;
+  return {
+    fx,
+    fz,
+    ax: fx / safeMass,
+    az: fz / safeMass
+  };
+}
 
 export function createDroneState(startPos = {}) {
   const x = Number.isFinite(startPos.x) ? startPos.x : 4.0;
@@ -88,6 +123,14 @@ export function stepDronePhysics(
   const windX = Number.isFinite(windForce?.x) ? windForce.x : 0;
   const windZ = Number.isFinite(windForce?.z) ? windForce.z : 0;
 
+  const totalMass = getTotalMass(config);
+  // Controller feedforward uses nominal airframe calibration (unladen mass).
+  // Extra payload mass therefore introduces authentic weight droop and reduced TWR
+  // that must be compensated by integral control (Ki) and careful gain tuning.
+  const controllerMass = Number.isFinite(config.nominalMass)
+    ? config.nominalMass
+    : DEFAULT_PHYSICS_CONFIG.nominalMass;
+
   // Nominal hover lift compensation plus PID vertical acceleration command.
   // When resting on ground/pad with non-positive upward command, motors remain idle.
   const desiredLiftAccel = config.gravity + azCmd;
@@ -107,7 +150,7 @@ export function stepDronePhysics(
     targetTheta = clamp(rawTheta, -config.maxTiltRad, config.maxTiltRad);
 
     // Maintain requested vertical lift without injecting parasitic upward thrust when tilt saturates.
-    const rawThrust = (config.mass * Math.max(0, desiredLiftAccel)) / Math.cos(targetTheta);
+    const rawThrust = (controllerMass * Math.max(0, desiredLiftAccel)) / Math.cos(targetTheta);
     thrust = clamp(rawThrust, config.minThrust, config.maxThrust);
   }
 
@@ -115,11 +158,18 @@ export function stepDronePhysics(
   const tiltAlpha = clamp(dt / config.tiltTimeConstant, 0, 1);
   let theta = state.theta + (targetTheta - state.theta) * tiltAlpha;
 
-  const fx = thrust * Math.sin(theta) + windX - config.linearDragX * state.vx;
-  const fz = thrust * Math.cos(theta) - config.mass * config.gravity + windZ - config.linearDragZ * state.vz;
-
-  let ax = fx / config.mass;
-  let az = fz / config.mass;
+  const { ax, az } = computeDroneAccelerations({
+    thrust,
+    theta,
+    windX,
+    windZ,
+    vx: state.vx,
+    vz: state.vz,
+    totalMass,
+    gravity: config.gravity,
+    linearDragX: config.linearDragX,
+    linearDragZ: config.linearDragZ
+  });
 
   let vx = state.vx + ax * dt;
   let vz = state.vz + az * dt;

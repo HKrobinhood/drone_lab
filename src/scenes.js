@@ -164,22 +164,32 @@ export const CHALLENGE_SCENES = {
     mode: 'challenge',
     nextLevelId: 'level-2',
     name: 'Level 1 — Stable Hover',
-    objective: 'Take off, enter the aerial target zone, and maintain a steady hover for 3.0 seconds.',
+    description: 'Baseline airframe in calm air with a generous hover zone. Focus on understanding how Kp, Ki, and Kd govern takeoff and steady hover.',
+    objective: 'Take off, enter the aerial target zone, and maintain a steady hover for 2.5 seconds.',
     startPos: { x: 3.5, z: 0.0 },
-    initialGains: { ...DEFAULT_PID_GAINS },
+    droneMass: 1.2,
+    payloadMass: 0.0,
+    maxThrust: 28.0,
+    maxTilt: 32,
+    windForce: { x: 0, z: 0 },
+    windGust: null,
+    windLabel: 'Calm Air (0.0 N)',
+    initialPID: { kp: 6.5, ki: 0.6, kd: 3.8 },
+    targetTolerance: 1.65,
+    velocityTolerance: 0.45,
     windMode: 'calm',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
     targetZone: {
       x: 17.5,
-      z: 8.0,
-      radius: 1.25,
-      holdRequired: 3.0,
-      maxSpeed: 0.38
+      z: 7.5,
+      radius: 1.65,
+      holdRequired: 2.5,
+      maxSpeed: 0.45
     },
     timeLimit: 65,
-    briefing: 'Overshooting out of the zone resets the 3.0 s hover timer. Keep speed below 0.38 m/s inside the circle.',
-    suggestedAdjustment: 'Keep Kp balanced (~6.5) and Kd around 3.8–4.5 so the drone stops smoothly inside the target zone.'
+    briefing: 'Understand your baseline PID gains. Overshooting outside the target zone resets the 2.5 s stabilization timer.',
+    suggestedAdjustment: 'Keep Kp balanced (~6.5) and Kd around 3.8–4.5 so the drone brakes smoothly inside the zone.'
   },
 
   'level-2': {
@@ -187,9 +197,19 @@ export const CHALLENGE_SCENES = {
     mode: 'challenge',
     nextLevelId: 'level-3',
     name: 'Level 2 — Precision Landing',
-    objective: 'Clear the mid-field wall and land softly on the elevated helipad (<= 1.8 m/s vertical speed).',
+    description: 'Standard airframe with a mid-field wall and a narrow elevated helipad. Control overshoot and vertical descent speed.',
+    objective: 'Clear the barrier and land softly on the narrow helipad (<= 1.5 m/s touchdown speed).',
     startPos: { x: 3.5, z: 0.0 },
-    initialGains: { ...DEFAULT_PID_GAINS },
+    droneMass: 1.2,
+    payloadMass: 0.0,
+    maxThrust: 28.0,
+    maxTilt: 30,
+    windForce: { x: 0, z: 0 },
+    windGust: null,
+    windLabel: 'Calm Air (0.0 N)',
+    initialPID: { kp: 7.5, ki: 0.5, kd: 2.2 },
+    targetTolerance: 0.9,
+    velocityTolerance: 1.5,
     windMode: 'calm',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
@@ -200,42 +220,50 @@ export const CHALLENGE_SCENES = {
     landingPad: {
       x: 19.0,
       topZ: 1.6,
-      halfWidth: 1.1,
-      maxTouchdownSpeed: 1.8,
+      halfWidth: 0.9,
+      maxTouchdownSpeed: 1.5,
       holdRequired: 1.2
     },
     targetZone: null,
     timeLimit: 70,
-    briefing: 'Fly over the 4.6 m barrier and descend gently onto the compact helipad. Slamming down above 1.8 m/s triggers a hard landing.',
-    suggestedAdjustment: 'Raise Kd slightly (4.0–5.0) to soften vertical descent and prevent horizontal overshoot past the pad.'
+    briefing: 'Narrow 1.8 m helipad! Starting Kd (2.2) is underdamped—raise Kd to suppress horizontal overshoot and soften touchdown.',
+    suggestedAdjustment: 'Increase Kd to 4.0–5.0 and moderate Kp around 6.0–7.0 for crisp braking above the pad.'
   },
 
   'level-3': {
     id: 'level-3',
     mode: 'challenge',
     nextLevelId: 'level-4',
-    name: 'Level 3 — Ring Flight',
-    objective: 'Fly sequentially through Rings 1, 2, and 3 in order, then stabilize in the finish zone.',
-    startPos: { x: 2.8, z: 0.0 },
-    initialGains: { ...DEFAULT_PID_GAINS },
+    name: 'Level 3 — Heavy Cargo',
+    description: 'Carrying a 0.85 kg cargo pod (2.05 kg total mass) under fixed 26.0 N max thrust. Manage lower thrust-to-weight ratio and actuator saturation.',
+    objective: 'Lift the heavy cargo over the ridge and hold steady inside the delivery zone for 2.0 s.',
+    startPos: { x: 3.2, z: 0.0 },
+    droneMass: 1.2,
+    payloadMass: 0.85,
+    maxThrust: 26.0,
+    maxTilt: 26,
+    windForce: { x: 0, z: 0 },
+    windGust: null,
+    windLabel: 'Calm Air (0.0 N)',
+    initialPID: { kp: 5.5, ki: 0.2, kd: 3.4 },
+    targetTolerance: 1.3,
+    velocityTolerance: 0.4,
     windMode: 'calm',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
-    rings: [
-      { x: 7.5, z: 4.5, apertureHalfH: 1.45 },
-      { x: 12.5, z: 8.5, apertureHalfH: 1.4 },
-      { x: 17.2, z: 5.2, apertureHalfH: 1.35 }
+    obstacles: [
+      { x: 10.5, z: 0.0, width: 1.3, height: 4.5 }
     ],
     targetZone: {
-      x: 21.0,
-      z: 6.0,
-      radius: 1.25,
-      holdRequired: 1.0,
-      maxSpeed: 0.45
+      x: 18.5,
+      z: 6.8,
+      radius: 1.3,
+      holdRequired: 2.0,
+      maxSpeed: 0.4
     },
-    timeLimit: 75,
-    briefing: 'Pass cleanly through the center of each highlighted ring in order (#1 → #2 → #3) without clipping the top or bottom rims.',
-    suggestedAdjustment: 'Use moderate Kp (6.5–7.5) for responsive climbing between rings and Kd (3.8–4.4) to avoid clipping rims.'
+    timeLimit: 80,
+    briefing: 'Heavy payload lowers TWR to 1.29 and adds 8.3 N uncompensated weight. Tune Ki to eliminate vertical sag without saturating thrust.',
+    suggestedAdjustment: 'Raise Ki (1.2–2.0) to trim out cargo weight droop, and keep Kp moderate (5.5–7.5) with Kd ~3.8–4.4.'
   },
 
   'level-4': {
@@ -243,30 +271,40 @@ export const CHALLENGE_SCENES = {
     mode: 'challenge',
     nextLevelId: 'level-5',
     name: 'Level 4 — Narrow Corridor',
-    objective: 'Thread your drone through the tight zig-zag obstacle corridor without collisions.',
+    description: 'Light sensor payload (1.35 kg total) navigating tight 3.0 m vertical gates. Balance responsiveness against overshoot.',
+    objective: 'Thread all three corridor gates without touching the beams and stabilize at the exit.',
     startPos: { x: 2.8, z: 0.0 },
-    initialGains: { ...DEFAULT_PID_GAINS },
+    droneMass: 1.2,
+    payloadMass: 0.15,
+    maxThrust: 28.0,
+    maxTilt: 28,
+    windForce: { x: 0, z: 0 },
+    windGust: null,
+    windLabel: 'Calm Air (0.0 N)',
+    initialPID: { kp: 8.5, ki: 0.4, kd: 2.4 },
+    targetTolerance: 1.05,
+    velocityTolerance: 0.35,
     windMode: 'calm',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
     obstacles: [
-      { x: 7.2, z: 0.0, width: 1.1, height: 5.2 },
-      { x: 7.2, z: 8.6, width: 1.1, height: 5.4 },
-      { x: 12.2, z: 0.0, width: 1.1, height: 3.0 },
-      { x: 12.2, z: 6.4, width: 1.1, height: 7.6 },
-      { x: 16.8, z: 0.0, width: 1.1, height: 5.8 },
-      { x: 16.8, z: 9.2, width: 1.1, height: 4.8 }
+      { x: 7.2, z: 0.0, width: 1.1, height: 5.4 },
+      { x: 7.2, z: 8.4, width: 1.1, height: 5.6 },
+      { x: 12.2, z: 0.0, width: 1.1, height: 3.1 },
+      { x: 12.2, z: 6.1, width: 1.1, height: 7.9 },
+      { x: 16.8, z: 0.0, width: 1.1, height: 5.9 },
+      { x: 16.8, z: 8.9, width: 1.1, height: 5.1 }
     ],
     targetZone: {
       x: 20.8,
       z: 7.2,
-      radius: 1.15,
+      radius: 1.05,
       holdRequired: 1.5,
-      maxSpeed: 0.42
+      maxSpeed: 0.35
     },
     timeLimit: 80,
-    briefing: 'Narrow 3.4 m vertical gaps demand low overshoot. Avoid oscillation as you step up and down through the gates.',
-    suggestedAdjustment: 'Ensure Kd >= 4.0 and avoid excessive Kp (> 10) or Ki (> 1.5) to prevent vertical bounce into beams.'
+    briefing: 'Tight 3.0 m gates leave little margin for bounce. Default gains are too twitchy—tune Kp/Kd for zero-overshoot precision.',
+    suggestedAdjustment: 'Increase Kd (4.0–5.0) and moderate Kp (6.0–7.2) to eliminate vertical oscillation inside the corridor.'
   },
 
   'level-5': {
@@ -274,25 +312,35 @@ export const CHALLENGE_SCENES = {
     mode: 'challenge',
     nextLevelId: 'level-6',
     name: 'Level 5 — Wind Challenge',
-    objective: 'Overcome the barrier and hold steady in the target zone under sustained crosswind and gusts.',
+    description: 'Sustained +3.8 N crosswind plus repeatable gusts up to +6.8 N horizontal / -1.3 N downdraft. Requires integral disturbance rejection.',
+    objective: 'Clear the barrier and hold steady inside the target zone for 2.5 s under gusting wind.',
     startPos: { x: 3.2, z: 0.0 },
-    initialGains: { kp: 6.5, ki: 0.2, kd: 3.8 },
-    windMode: 'challenge_gust',
+    droneMass: 1.2,
+    payloadMass: 0.2,
+    maxThrust: 28.0,
+    maxTilt: 32,
+    windForce: { x: 3.8, z: 0 },
+    windGust: { xAmp: 3.0, zAmp: -1.3, period: 6.5, duration: 2.2, phaseOffset: 2.8 },
+    windLabel: '+3.8 N Crosswind + Repeatable Gusts (+6.8 N / -1.3 N)',
+    initialPID: { kp: 6.5, ki: 0.0, kd: 3.8 },
+    targetTolerance: 1.1,
+    velocityTolerance: 0.4,
+    windMode: 'scene_wind',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
     obstacles: [
-      { x: 11.2, z: 0.0, width: 1.2, height: 5.0 }
+      { x: 11.0, z: 0.0, width: 1.2, height: 4.8 }
     ],
     targetZone: {
       x: 19.0,
       z: 7.5,
       radius: 1.1,
       holdRequired: 2.5,
-      maxSpeed: 0.42
+      maxSpeed: 0.4
     },
     timeLimit: 85,
-    briefing: 'Strong +3.5 N crosswind plus periodic +6.6 N / -1.4 N gusts will push you right and down. Tune Ki to reject steady drift!',
-    suggestedAdjustment: 'Increase Ki into the 1.2–2.2 range and keep Kp around 6.5–7.5, Kd around 3.8–4.5 to resist wind gusts.'
+    briefing: 'Starting Ki is 0.00! Without integral action, steady crosswind will push you off target. Tune Ki to cancel drift without windup.',
+    suggestedAdjustment: 'Raise Ki into 1.20–2.20 and pair with Kp ~6.5–7.5, Kd ~4.0–4.5 to absorb gust pulses.'
   },
 
   'level-6': {
@@ -300,32 +348,42 @@ export const CHALLENGE_SCENES = {
     mode: 'challenge',
     nextLevelId: null,
     name: 'Level 6 — Final Rescue Mission',
-    objective: 'Clear obstacles and both rescue rings in gusty wind, then land softly on the rescue helipad.',
+    description: 'Combined heavy rescue pod (+0.55 kg), sustained wind & gusts, obstacles, aerial rings, and precision helipad touchdown.',
+    objective: 'Pass both rescue rings in order, avoid obstacles in gusty wind, and land softly on the rescue helipad (<= 1.7 m/s).',
     startPos: { x: 2.6, z: 0.0 },
-    initialGains: { kp: 6.8, ki: 1.1, kd: 4.2 },
-    windMode: 'challenge_gust',
+    droneMass: 1.2,
+    payloadMass: 0.55,
+    maxThrust: 27.5,
+    maxTilt: 30,
+    windForce: { x: 2.6, z: 0 },
+    windGust: { xAmp: 2.4, zAmp: -1.0, period: 7.0, duration: 2.2, phaseOffset: 3.0 },
+    windLabel: '+2.6 N Crosswind + Gusts (+5.0 N / -1.0 N)',
+    initialPID: { kp: 6.2, ki: 0.3, kd: 3.4 },
+    targetTolerance: 1.05,
+    velocityTolerance: 1.7,
+    windMode: 'scene_wind',
     allowWindSelect: false,
     outOfBoundsMargin: 0.7,
     forbidGroundOutsidePad: true,
     obstacles: [
-      { x: 6.8, z: 0.0, width: 1.0, height: 4.5 },
-      { x: 13.8, z: 8.6, width: 1.1, height: 5.4 }
+      { x: 6.8, z: 0.0, width: 1.0, height: 4.4 },
+      { x: 13.8, z: 8.4, width: 1.1, height: 5.6 }
     ],
     rings: [
-      { x: 10.2, z: 6.8, apertureHalfH: 1.35 },
-      { x: 15.4, z: 5.2, apertureHalfH: 1.3 }
+      { x: 10.4, z: 6.8, apertureHalfH: 1.35 },
+      { x: 15.6, z: 5.2, apertureHalfH: 1.3 }
     ],
     landingPad: {
       x: 19.5,
       topZ: 1.6,
-      halfWidth: 1.2,
-      maxTouchdownSpeed: 1.9,
+      halfWidth: 1.05,
+      maxTouchdownSpeed: 1.7,
       holdRequired: 1.5
     },
     targetZone: null,
     timeLimit: 95,
-    briefing: 'Final exam: Takeoff → Ring #1 → Ring #2 under gusts → Soft Rescue Helipad Touchdown (<= 1.9 m/s).',
-    suggestedAdjustment: 'Balanced rescue tuning: Kp ~6.5–7.5, Ki ~1.0–1.5 for wind, Kd ~4.0–4.6 for ring accuracy and soft touchdown.'
+    briefing: 'Final exam: Heavy rescue load + gusty wind + Ring #1 → Ring #2 + narrow soft helipad landing (<= 1.7 m/s).',
+    suggestedAdjustment: 'Tune Kp ~6.8–7.6 for crisp ring tracking, Ki ~1.1–1.6 for payload & wind trim, and Kd ~4.2–4.8 for soft touchdown.'
   }
 };
 

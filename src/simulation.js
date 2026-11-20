@@ -72,9 +72,30 @@ export function computeWindForce(windMode, elapsedTime) {
   return { x: 0, z: 0 };
 }
 
+export function computeSceneWindForce(scene, windMode, elapsedTime) {
+  if (scene && (scene.windForce || scene.windGust)) {
+    let wx = Number.isFinite(scene.windForce?.x) ? scene.windForce.x : 0;
+    let wz = Number.isFinite(scene.windForce?.z) ? scene.windForce.z : 0;
+
+    if (scene.windGust) {
+      const period = Math.max(0.5, scene.windGust.period ?? 6.5);
+      const duration = clamp(scene.windGust.duration ?? 2.2, 0.1, period);
+      const offset = scene.windGust.phaseOffset ?? 0;
+      const cycle = (elapsedTime + offset) % period;
+      const pulse = cycle <= duration ? Math.sin((cycle / duration) * Math.PI) : 0;
+      wx += (scene.windGust.xAmp ?? 0) * pulse;
+      wz += (scene.windGust.zAmp ?? 0) * pulse;
+    }
+
+    return { x: wx, z: wz };
+  }
+  return computeWindForce(windMode, elapsedTime);
+}
+
 export class FlightSimulation {
   constructor(options = {}) {
-    this.config = { ...DEFAULT_PHYSICS_CONFIG, ...(options.config || {}) };
+    this.baseConfig = { ...DEFAULT_PHYSICS_CONFIG, ...(options.config || {}) };
+    this.config = { ...this.baseConfig };
     this.startPos = {
       x: options.startPos?.x ?? 4.0,
       z: options.startPos?.z ?? 0.0
@@ -116,9 +137,25 @@ export class FlightSimulation {
     this.reset(options.autoStart === true);
   }
 
-  loadScene(scene, startRunning = false) {
+  loadScene(scene, startRunning = false, options = {}) {
     this.activeScene = scene || null;
     if (scene) {
+      const maxTiltRad = Number.isFinite(scene.maxTilt)
+        ? (scene.maxTilt * Math.PI) / 180
+        : this.baseConfig.maxTiltRad;
+      const droneMass = Number.isFinite(scene.droneMass)
+        ? scene.droneMass
+        : this.baseConfig.droneMass;
+
+      this.config = {
+        ...this.baseConfig,
+        mass: droneMass,
+        droneMass,
+        payloadMass: Number.isFinite(scene.payloadMass) ? scene.payloadMass : 0,
+        maxThrust: Number.isFinite(scene.maxThrust) ? scene.maxThrust : this.baseConfig.maxThrust,
+        maxTiltRad
+      };
+
       this.startPos = {
         x: scene.startPos?.x ?? 4.0,
         z: scene.startPos?.z ?? 0.0
@@ -127,17 +164,27 @@ export class FlightSimulation {
         ? {
             x: scene.targetZone.x,
             z: scene.targetZone.z,
-            radius: scene.targetZone.radius ?? 1.35,
+            radius: scene.targetTolerance ?? scene.targetZone.radius ?? 1.35,
             holdRequired: scene.targetZone.holdRequired ?? 2.0,
-            maxSpeed: scene.targetZone.maxSpeed ?? 0.45
+            maxSpeed: scene.velocityTolerance ?? scene.targetZone.maxSpeed ?? 0.45
           }
         : null;
-      this.windMode = scene.windMode || 'calm';
+      this.windMode = scene.windMode || (scene.windForce || scene.windGust ? 'scene_wind' : 'calm');
       this.obstacles = scene.obstacles || [];
-      this.landingPad = scene.landingPad || null;
+      this.landingPad = scene.landingPad
+        ? {
+            ...scene.landingPad,
+            maxTouchdownSpeed: scene.velocityTolerance ?? scene.landingPad.maxTouchdownSpeed
+          }
+        : null;
       this.ringDefs = scene.rings || [];
       this.outOfBoundsMargin = scene.outOfBoundsMargin ?? null;
-      this.setGains(scene.initialGains || DEFAULT_PID_GAINS);
+
+      if (!options.preserveGains) {
+        this.setGains(scene.initialPID || scene.initialGains || DEFAULT_PID_GAINS);
+      }
+    } else {
+      this.config = { ...this.baseConfig };
     }
     this.reset(startRunning);
   }
@@ -187,6 +234,14 @@ export class FlightSimulation {
     this.outOfBounds = false;
     this.landedOffPad = false;
     this.hasBeenAirborne = this.startPos.z > 0.25;
+
+    // Telemetry metrics accumulators (M3.1 -> M4 scoring interface)
+    this.metrics = {
+      maxOvershoot: 0,
+      trackingErrorSum: 0,
+      sampleCount: 0,
+      controlSaturationDuration: 0
+    };
 
     this.lastPid = {
       x: this.pidX.lastResult,
@@ -253,7 +308,7 @@ export class FlightSimulation {
 
     this.updateReference(axes, dt);
 
-    const wind = computeWindForce(this.windMode, this.elapsedTime);
+    const wind = computeSceneWindForce(this.activeScene, this.windMode, this.elapsedTime);
     const resX = this.pidX.update(this.reference.x, this.drone.x, dt, this.drone.vx);
     const resZ = this.pidZ.update(this.reference.z, this.drone.z, dt, this.drone.vz);
 
@@ -270,6 +325,24 @@ export class FlightSimulation {
     this.elapsedTime += dt;
     if (this.drone.z > 0.35) {
       this.hasBeenAirborne = true;
+    }
+
+    // Record M4 scoring telemetry metrics
+    const errX = this.reference.x - this.drone.x;
+    const errZ = this.reference.z - this.drone.z;
+    const trackingErr = Math.hypot(errX, errZ);
+    this.metrics.trackingErrorSum += trackingErr;
+    this.metrics.sampleCount += 1;
+
+    // Overshoot: excursion past reference while velocity carries drone away from reference
+    const movingPastRef = this.drone.vx * -errX + this.drone.vz * -errZ > 0.05;
+    if (movingPastRef && trackingErr > this.metrics.maxOvershoot) {
+      this.metrics.maxOvershoot = trackingErr;
+    }
+
+    const thrustSaturated = this.drone.thrust >= this.config.maxThrust - 0.05;
+    if (thrustSaturated || resX.saturated || resZ.saturated) {
+      this.metrics.controlSaturationDuration += dt;
     }
 
     // Sample trail at ~20 Hz
@@ -436,6 +509,26 @@ export class FlightSimulation {
     return substeps;
   }
 
+  getFlightMetrics() {
+    const goalX = this.landingPad?.x ?? this.targetZone?.x ?? this.reference.x;
+    const goalZ = this.landingPad?.topZ ?? this.targetZone?.z ?? this.reference.z;
+    const finalPositionError = Math.hypot(goalX - this.drone.x, goalZ - this.drone.z);
+    const finalVelocity = Math.hypot(this.drone.vx, this.drone.vz);
+    const averageTrackingError =
+      this.metrics.sampleCount > 0 ? this.metrics.trackingErrorSum / this.metrics.sampleCount : 0;
+
+    return {
+      completionTime: this.elapsedTime,
+      maxOvershoot: this.metrics.maxOvershoot,
+      averageTrackingError,
+      finalPositionError,
+      finalVelocity,
+      collisionCount: this.collisionCount,
+      controlSaturationDuration: this.metrics.controlSaturationDuration,
+      pidParameters: { ...this.gains }
+    };
+  }
+
   getSnapshot() {
     const speed = Math.hypot(this.drone.vx, this.drone.vz);
     return {
@@ -454,7 +547,8 @@ export class FlightSimulation {
       collisionCount: this.collisionCount,
       outOfBounds: this.outOfBounds,
       landedOffPad: this.landedOffPad,
-      windMode: this.windMode
+      windMode: this.windMode,
+      metrics: this.getFlightMetrics()
     };
   }
 }

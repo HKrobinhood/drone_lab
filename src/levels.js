@@ -71,11 +71,11 @@ export const CHALLENGE_LEVELS = [
     id: 'level-3',
     mode: 'challenge',
     order: 3,
-    name: 'Level 3 — Ring Flight',
+    name: 'Level 3 — Heavy Cargo',
     difficulty: 'Intermediate',
-    learningFocus: 'Sequential Trajectory Tracking',
-    summary: 'Fly cleanly through a sequence of aerial rings in order using WASD reference control.',
-    milestone: 'M3'
+    learningFocus: 'Thrust-to-Weight Ratio & Saturation',
+    summary: 'Carry a heavy payload under fixed maximum thrust and manage control saturation.',
+    milestone: 'M3.1'
   },
   {
     id: 'level-4',

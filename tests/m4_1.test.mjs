@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { TUTORIAL_SCENES, CHALLENGE_SCENES, PLAYGROUND_SCENE, getSceneById } from '../src/scenes.js';
+import { TUTORIAL_SCENES, CHALLENGE_SCENES, getSceneById } from '../src/scenes.js';
 import { FlightSimulation, FIXED_DT, getSceneInitialGains } from '../src/simulation.js';
 import { evaluatePidCoaching, evaluateLiveFlightCoaching, evaluatePostFlightFeedback } from '../src/coach.js';
 import { TUTORIAL_GUIDE_FLOWS, TutorialGuideEngine } from '../src/tutorial_guide.js';
@@ -52,7 +52,10 @@ describe('M4.1 — Unified Tutorial & Challenge Scene Contracts', () => {
     assert.equal(TUTORIAL_SCENES['tutorial-2'].guidanceLevel, 'medium');
     assert.equal(TUTORIAL_SCENES['tutorial-3'].guidanceLevel, 'light');
     assert.equal(TUTORIAL_SCENES['tutorial-4'].guidanceLevel, 'minimal');
-    assert.equal(PLAYGROUND_SCENE.allowLivePidTuning, true);
+    assert.equal(getSceneById('playground'), null);
+    const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    assert.equal(html.includes('btn-launch-playground'), false);
+    assert.equal(html.includes('Flight Test Playground'), false);
   });
 
   it('uses identical PID controller, simulation engine, and initial-gain reset across Tutorial and Challenge', () => {

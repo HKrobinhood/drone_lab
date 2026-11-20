@@ -1,62 +1,11 @@
 /**
  * Scene definitions and live coaching / outcome evaluators.
- * Covers the M1 Flight Test Playground and M2 Tutorial Village (4 lessons).
- * Challenge level scenes will be added in M3.
+ * Covers the M2 Tutorial Village (4 lessons) and M3 Challenge Levels (6 missions).
  *
  * Pure JS module (no DOM/Canvas dependency).
  */
 
 import { DEFAULT_PID_GAINS } from './simulation.js';
-
-export const PLAYGROUND_SCENE = {
-  id: 'playground',
-  mode: 'playground',
-  name: 'Flight Test Playground',
-  description: 'Open 2D sandbox for experimenting with PID tuning, WASD flight, and wind disturbances.',
-  objective: 'Take off, fly with WASD, and hover steadily inside the target zone.',
-  missionGoal: 'Explore PID behavior freely or hover at (18.0 m, 6.5 m) for 2.0 s.',
-  whatYouLearnedBefore: 'Closed-loop PID control translates WASD reference changes into thrust and pitch.',
-  newChallenge: 'Test custom Kp, Ki, and Kd gains under selectable calm, crosswind, or gusty conditions.',
-  learningObjective: 'Observe live controller P/I/D terms and flight dynamics without mission timers.',
-  flightConditions: '1.20 kg airframe, 28.0 N max thrust, selectable wind presets.',
-  startPos: { x: 4.0, z: 0.0 },
-  droneMass: 1.2,
-  payloadMass: 0.0,
-  maxThrust: 28.0,
-  maxTilt: 32,
-  windForce: null,
-  windGust: null,
-  windLabel: 'Selectable (Calm / Breeze / Gust)',
-  requiresIntegral: false,
-  initialPID: { ...DEFAULT_PID_GAINS },
-  initialGains: { ...DEFAULT_PID_GAINS },
-  recommendedPID: {
-    kpMin: 4.5,
-    kpMax: 9.0,
-    kiMin: 0.0,
-    kiMax: 1.8,
-    kdMin: 2.5,
-    kdMax: 6.0,
-    minDampingRatio: 0.5,
-    maxKpToKdRatio: 2.6
-  },
-  windMode: 'calm',
-  allowWindSelect: true,
-  allowLivePidTuning: true,
-  guidanceLevel: 'none',
-  targetZone: {
-    x: 18.0,
-    z: 6.5,
-    radius: 1.35,
-    holdRequired: 2.0,
-    maxSpeed: 0.45
-  },
-  targetTolerance: 1.35,
-  velocityTolerance: 0.45,
-  timeLimit: null,
-  briefing: 'Experiment freely with live Kp, Ki, and Kd sliders and switch wind modes anytime.',
-  tutorialGuide: null
-};
 
 export const TUTORIAL_SCENES = {
   'tutorial-1': {
@@ -652,7 +601,6 @@ export const CHALLENGE_SCENES = {
 };
 
 export function getSceneById(id) {
-  if (id === 'playground') return PLAYGROUND_SCENE;
   return TUTORIAL_SCENES[id] || CHALLENGE_SCENES[id] || null;
 }
 

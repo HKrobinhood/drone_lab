@@ -21,7 +21,6 @@ import {
 import { FlightRenderer, renderRouteFitPreview, renderTelemetryTimeSeriesPlot } from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
-  PLAYGROUND_SCENE,
   getSceneById,
   evaluateSceneOutcome
 } from './scenes.js';
@@ -38,7 +37,7 @@ import { renderPipRobotSvg, resolvePipMood, getStemVisualAid } from './visual_ai
 const state = {
   currentView: 'start',
   currentMode: 'tutorial',
-  activeScene: PLAYGROUND_SCENE,
+  activeScene: null,
   runFinished: false,
   progress: loadProgress(),
   tunedGainsByLevel: {},
@@ -56,7 +55,6 @@ const els = {
   btnEnterTutorials: document.getElementById('btn-enter-tutorials'),
   btnEnterChallenges: document.getElementById('btn-enter-challenges'),
   btnBackModes: document.getElementById('btn-back-modes'),
-  btnLaunchPlayground: document.getElementById('btn-launch-playground'),
 
   views: {
     start: document.getElementById('view-start'),
@@ -179,8 +177,6 @@ const els = {
   flightTrackKp: document.getElementById('flight-track-kp'),
   flightTrackKi: document.getElementById('flight-track-ki'),
   flightTrackKd: document.getElementById('flight-track-kd'),
-  flightWindGroup: document.getElementById('flight-wind-group'),
-  selectWind: document.getElementById('select-wind'),
   telP: document.getElementById('tel-p'),
   telI: document.getElementById('tel-i'),
   telD: document.getElementById('tel-d'),
@@ -628,7 +624,7 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   }
 
   // Both Tutorial and Challenge support returning to Pre-flight Briefing & Tuning
-  els.btnResultPreflight.classList.toggle('hidden', state.activeScene?.mode === 'playground');
+  els.btnResultPreflight.classList.remove('hidden');
   const nextId = isSuccess ? state.activeScene?.nextLevelId : null;
   els.btnResultNext.classList.toggle('hidden', !nextId);
   els.btnResultNext.dataset.nextId = nextId || '';
@@ -851,9 +847,8 @@ function syncFlightControlsUi() {
   els.sliderKi.disabled = !allowLiveTuning;
   els.sliderKd.disabled = !allowLiveTuning;
   els.btnResetPid.classList.toggle('hidden', !allowLiveTuning);
-  els.btnOpenPreflight.classList.toggle('hidden', scene?.mode === 'playground');
+  els.btnOpenPreflight.classList.remove('hidden');
   els.flightPidBadge.textContent = allowLiveTuning ? 'Live Gains' : 'Pre-flight Locked';
-  els.flightWindGroup.classList.toggle('hidden', scene?.allowWindSelect === false);
 
   if (!sim.started) {
     els.btnStartFlight.disabled = false;
@@ -1042,7 +1037,7 @@ function stopFlightLoop() {
   lastFrameTime = null;
 }
 
-function startPlaygroundFlight() {
+function startOrResumeFlight() {
   if (state.runFinished) return;
   if (!sim.started) {
     sim.startFlight();
@@ -1100,11 +1095,7 @@ function launchScene(scene, options = {}) {
   sim.setPreviousTrail(state.lastAttempts[scene.id]?.trail || []);
   els.flightLevelName.textContent = scene.name;
   els.flightObjective.textContent = scene.objective;
-  els.btnFlightBack.innerHTML =
-    scene.mode === 'playground' ? '&larr; Modes' : '&larr; Briefing';
-
-  els.selectWind.value = sim.windMode;
-  els.selectWind.disabled = scene.allowWindSelect === false;
+  els.btnFlightBack.innerHTML = '&larr; Briefing';
 
   syncAllPidPanels(sim.gains, scene);
   renderFlightBriefingSummary(scene);
@@ -1196,7 +1187,6 @@ function bindEvents() {
   els.btnEnterTutorials.addEventListener('click', () => navigateTo('levels', { mode: 'tutorial' }));
   els.btnEnterChallenges.addEventListener('click', () => navigateTo('levels', { mode: 'challenge' }));
   els.btnBackModes.addEventListener('click', () => navigateTo('modes'));
-  els.btnLaunchPlayground.addEventListener('click', () => launchScene(PLAYGROUND_SCENE));
 
   els.btnMeetPip.addEventListener('click', () => openPipIntro(true));
   els.btnPreflightMeetPip.addEventListener('click', () => {
@@ -1265,7 +1255,7 @@ function bindEvents() {
   els.sliderKd.addEventListener('input', handleFlightSliderInput);
 
   const returnToBriefing = () => {
-    if (state.activeScene?.mode === 'challenge' || state.activeScene?.mode === 'tutorial') {
+    if (state.activeScene) {
       state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
       openPreflightTuning(state.activeScene, { resetToInitial: false, restartGuide: false });
     } else {
@@ -1280,13 +1270,9 @@ function bindEvents() {
     tutorialOverlay?.reposition();
   });
 
-  els.btnStartFlight.addEventListener('click', startPlaygroundFlight);
+  els.btnStartFlight.addEventListener('click', startOrResumeFlight);
   els.btnFlightPause.addEventListener('click', togglePauseFlight);
   els.btnFlightRestart.addEventListener('click', restartFlight);
-
-  els.selectWind.addEventListener('change', () => {
-    sim.setWindMode(els.selectWind.value);
-  });
 
   // Result Screen actions (shared by Tutorial & Challenge)
   els.btnResultRetry.addEventListener('click', restartFlight);
@@ -1320,5 +1306,5 @@ function bindEvents() {
 }
 
 bindEvents();
-syncAllPidPanels(DEFAULT_PID_GAINS, PLAYGROUND_SCENE);
+syncAllPidPanels(DEFAULT_PID_GAINS, null);
 navigateTo('start');

@@ -229,21 +229,6 @@
             </button>
           </article>
         </div>
-
-        <!-- M1 Flight Test Playground -->
-        <aside class="playground-strip">
-          <div>
-            <span class="card-eyebrow">Milestone 1 Active Sandbox</span>
-            <h3>Flight Test Playground</h3>
-            <p>
-              Experiment freely with the 2D Canvas PID physics simulation, live Kp/Ki/Kd sliders,
-              wind disturbances, and WASD reference control.
-            </p>
-          </div>
-          <button id="btn-launch-playground" type="button" class="btn btn-primary">
-            Launch Flight Test Playground
-          </button>
-        </aside>
       </section>
 
       <!-- ==================== VIEW 3: LEVEL SELECTION ==================== -->
@@ -516,7 +501,7 @@
           <div class="flight-title-group">
             <button id="btn-flight-back" type="button" class="btn btn-ghost btn-sm">&larr; Briefing</button>
             <div>
-              <h1 id="flight-level-name">Flight Test Playground</h1>
+              <h1 id="flight-level-name">Mission Flight</h1>
               <p id="flight-objective" class="flight-objective">
                 Take off, fly with WASD, and hover steadily inside the target zone.
               </p>
@@ -640,17 +625,6 @@
                 <p class="slider-help">Kd — Damping and braking against velocity.</p>
               </div>
 
-              <div id="flight-wind-group" class="slider-group">
-                <div class="slider-label-row">
-                  <label for="select-wind">Wind Disturbance</label>
-                </div>
-                <select id="select-wind" class="wind-select">
-                  <option value="calm">Calm Air (0 N)</option>
-                  <option value="breeze">Steady Crosswind (+3.6 N)</option>
-                  <option value="gust">Gusty Crosswind</option>
-                </select>
-              </div>
-
               <div class="pid-actions">
                 <button id="btn-start-flight" type="button" class="btn btn-primary">Start Flight</button>
                 <button id="btn-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
@@ -713,7 +687,7 @@
           </div>
         </div>
 
-        <!-- Unified Mission Briefing & Drone Specs Summary (Shared across Tutorial, Challenge & Playground) -->
+        <!-- Unified Mission Briefing & Drone Specs Summary (Shared across Tutorial & Challenge) -->
         <aside id="flight-briefing-panel" class="challenge-briefing" aria-label="Mission Briefing and Drone Specifications">
           <div class="flight-briefing-copy">
             <div class="flight-briefing-head">

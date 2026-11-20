@@ -214,6 +214,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m4.2): add PIP introduction and visual tutorials` — 新增 PIP 首次自我介绍、5 种表情动画、6 套内联矢量 STEM 教学图解与精简短句引导。
 - `feat(m5): add PID diagnostics and PIP coach debrief` — 完成时间序列遥测、控制行为诊断、PIP 对话式结算分析报告（双模式共用）及历史/本次轨迹对比渲染。
 - `feat(m5.1): add flight WASD intro and PIP metric coaching in tutorials` — 新手村第一课飞行界面开局增加 WASD 介绍，并通过 PIP 对话式讲解贯穿新手村四关的全部飞行衡量指标。
+- `refactor: remove flight test playground feature` — 删除独立的 Flight Test Playground 自由沙盒入口、场景定义及多余风扰下拉控件，统一通过 Tutorial Village 与 Challenge Levels 进行飞行训练与挑战。
 
 ---
 

@@ -1,8 +1,8 @@
 /**
  * PIP — Your PID Flight Coach (Virtual STEM Flight Instructor).
  *
- * Unified coaching engine shared across Tutorial Village, Challenge Levels,
- * and Playground. Performs pre-flight PID checks, live in-flight coaching,
+ * Unified coaching engine shared across Tutorial Village and Challenge Levels.
+ * Performs pre-flight PID checks, live in-flight coaching,
  * and post-flight telemetry debriefing.
  *
  * Pure JS module (no DOM/Canvas dependency).
@@ -337,7 +337,7 @@ export function evaluatePostFlightFeedback(outcome, metrics, scene) {
 }
 
 /**
- * Unified live Flight Screen PIP coaching shared by Tutorial, Challenge, and Playground.
+ * Unified live Flight Screen PIP coaching shared by Tutorial and Challenge modes.
  */
 export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
   if (!sim || !scene) {
@@ -367,7 +367,7 @@ export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
     };
   }
 
-  // Challenge & Playground live telemetry coaching
+  // Challenge live telemetry coaching
   if (sim.paused) {
     return {
       state: 'teaching',
@@ -407,7 +407,7 @@ export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
   const livePid = evaluatePidCoaching(sim.gains, scene);
   return {
     state: livePid.state === 'warning' ? 'warning' : 'teaching',
-    headline: scene.mode === 'playground' ? 'Sandbox Telemetry Active' : 'In Flight',
+    headline: 'In Flight',
     messages: [
       scene.briefing || 'Guide the yellow REF marker smoothly with WASD toward your mission goal.'
     ]

@@ -1,0 +1,274 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { TUTORIAL_SCENES, CHALLENGE_SCENES, PLAYGROUND_SCENE, getSceneById } from '../src/scenes.js';
+import { FlightSimulation, FIXED_DT, getSceneInitialGains } from '../src/simulation.js';
+import { evaluatePidCoaching, evaluateLiveFlightCoaching, evaluatePostFlightFeedback } from '../src/coach.js';
+import { TUTORIAL_GUIDE_FLOWS, TutorialGuideEngine } from '../src/tutorial_guide.js';
+import { scoreFlightRun } from '../src/scoring.js';
+import { createDefaultProgress, recordLevelResult, isLevelUnlocked, isLevelCompleted, getBestStars } from '../src/storage.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, '..');
+
+describe('M4.1 — Unified Tutorial & Challenge Scene Contracts', () => {
+  it('equips all Tutorial and Challenge scenes with unified physics, briefing, and coaching metadata', () => {
+    const unifiedFields = [
+      'name',
+      'description',
+      'objective',
+      'missionGoal',
+      'flightConditions',
+      'whatYouLearnedBefore',
+      'newChallenge',
+      'learningObjective',
+      'droneMass',
+      'payloadMass',
+      'maxThrust',
+      'maxTilt',
+      'windLabel',
+      'initialPID',
+      'recommendedPID',
+      'timeLimit',
+      'briefing'
+    ];
+
+    for (const id of ['tutorial-1', 'tutorial-2', 'tutorial-3', 'tutorial-4', 'level-1', 'level-2', 'level-3', 'level-4', 'level-5', 'level-6']) {
+      const scene = getSceneById(id);
+      assert.ok(scene, `Expected ${id} to exist`);
+      for (const field of unifiedFields) {
+        assert.notEqual(scene[field], undefined, `${id} missing unified field ${field}`);
+      }
+      assert.ok(Number.isFinite(scene.droneMass) && scene.droneMass > 0);
+      assert.ok(Number.isFinite(scene.maxThrust) && scene.maxThrust > 0);
+    }
+
+    // Check explicit live-tuning & guidance-level differentiation via config
+    assert.equal(TUTORIAL_SCENES['tutorial-1'].allowLivePidTuning, true);
+    assert.equal(TUTORIAL_SCENES['tutorial-1'].guidanceLevel, 'full');
+    assert.equal(TUTORIAL_SCENES['tutorial-2'].guidanceLevel, 'medium');
+    assert.equal(TUTORIAL_SCENES['tutorial-3'].guidanceLevel, 'light');
+    assert.equal(TUTORIAL_SCENES['tutorial-4'].guidanceLevel, 'minimal');
+    assert.equal(PLAYGROUND_SCENE.allowLivePidTuning, true);
+  });
+
+  it('uses identical PID controller, simulation engine, and initial-gain reset across Tutorial and Challenge', () => {
+    const simTut = new FlightSimulation();
+    const simChal = new FlightSimulation();
+
+    // Load identical physical parameters and gains in both modes -> identical motion
+    const testGains = { kp: 6.5, ki: 0.4, kd: 3.8 };
+    simTut.loadScene(TUTORIAL_SCENES['tutorial-1'], true);
+    simTut.setGains(testGains);
+
+    simChal.loadScene(CHALLENGE_SCENES['level-1'], true);
+    simChal.setGains(testGains);
+
+    assert.equal(simTut.pidX.constructor, simChal.pidX.constructor);
+    for (let i = 0; i < 240; i++) {
+      simTut.stepFixed(FIXED_DT, { moveX: 1, moveZ: 1 });
+      simChal.stepFixed(FIXED_DT, { moveX: 1, moveZ: 1 });
+    }
+    assert.equal(simTut.drone.x - simTut.startPos.x, simChal.drone.x - simChal.startPos.x);
+    assert.equal(simTut.drone.z - simTut.startPos.z, simChal.drone.z - simChal.startPos.z);
+    assert.equal(simTut.drone.thrust, simChal.drone.thrust);
+
+    // Unified resetGains returns each scene's configured initialPID
+    assert.deepEqual(simTut.resetGains(), getSceneInitialGains(TUTORIAL_SCENES['tutorial-1']));
+    assert.deepEqual(simChal.resetGains(), { kp: 0, ki: 0, kd: 0 });
+  });
+});
+
+describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide', () => {
+  it('covers all 10 onboarding steps in Tutorial 1 including UI, PID, Start Flight, WASD, Info, Target, and Results', () => {
+    const flow = TUTORIAL_GUIDE_FLOWS['tutorial-1'];
+    assert.equal(flow.length, 10);
+
+    const stepIds = flow.map((s) => s.stepId);
+    assert.deepEqual(stepIds, [
+      't1-briefing',
+      't1-specs',
+      't1-pid-panel',
+      't1-pid-sliders',
+      't1-pip-assistant',
+      't1-start-flight',
+      't1-wasd',
+      't1-flight-info',
+      't1-reach-target',
+      't1-results'
+    ]);
+
+    // Step 1-3 -> acknowledge & back navigation works
+    const engine = new TutorialGuideEngine();
+    engine.start(TUTORIAL_SCENES['tutorial-1']);
+    assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
+    assert.equal(engine.canGoBack(), false);
+
+    assert.equal(engine.goNext(), true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-specs');
+    assert.equal(engine.canGoBack(), true);
+
+    assert.equal(engine.goBack(), true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
+
+    engine.goNext(); // specs
+    engine.goNext(); // pid-panel
+    engine.goNext(); // pid-sliders
+    assert.equal(engine.getCurrentStep().stepId, 't1-pid-sliders');
+
+    // Step 4 cannot skip without real slider adjustment
+    assert.equal(engine.canGoNext(), false);
+    assert.equal(engine.goNext(), false);
+
+    // Same gain values do not count as adjustment; real gain change advances
+    assert.equal(engine.recordPidAdjustment({ kp: 6.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
+    assert.equal(engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-pip-assistant');
+
+    engine.goNext(); // t1-start-flight
+    assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
+    assert.equal(engine.canGoNext(), false);
+
+    engine.recordFlightStarted();
+    assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
+  });
+
+  it('validates real WASD movement & release using simulation physics before advancing Tutorial 1', () => {
+    const engine = new TutorialGuideEngine();
+    const t1 = TUTORIAL_SCENES['tutorial-1'];
+    engine.start(t1);
+    engine.jumpToView('flight');
+    assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
+
+    const sim = new FlightSimulation();
+    sim.loadScene(t1, true);
+
+    // Fake call with zero movement does NOT pass 'W'
+    engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 0 }, { status: 'running' }, 'flight');
+    assert.equal(engine.wasdDone.w, false);
+
+    // Real W key steps advance reference.z and pass W
+    for (let i = 0; i < 15; i++) {
+      sim.stepFixed(FIXED_DT, { moveX: 0, moveZ: 1 });
+      engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 1 }, { status: 'running' }, 'flight');
+    }
+    assert.equal(engine.wasdDone.w, true);
+
+    // Real S, A, D sequence
+    sim.stepFixed(FIXED_DT, { moveX: 0, moveZ: -1 });
+    engine.evaluateTelemetry(sim, { moveX: 0, moveZ: -1 }, { status: 'running' }, 'flight');
+    assert.equal(engine.wasdDone.s, true);
+
+    sim.stepFixed(FIXED_DT, { moveX: -1, moveZ: 0 });
+    engine.evaluateTelemetry(sim, { moveX: -1, moveZ: 0 }, { status: 'running' }, 'flight');
+    assert.equal(engine.wasdDone.a, true);
+
+    sim.stepFixed(FIXED_DT, { moveX: 1, moveZ: 0 });
+    engine.evaluateTelemetry(sim, { moveX: 1, moveZ: 0 }, { status: 'running' }, 'flight');
+    assert.equal(engine.wasdDone.d, true);
+
+    // Release keys & settle -> advances to Step 8 (t1-flight-info)
+    for (let i = 0; i < 60; i++) {
+      sim.stepFixed(FIXED_DT, { moveX: 0, moveZ: 0 });
+      engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 0 }, { status: 'running' }, 'flight');
+    }
+    assert.equal(engine.wasdDone.release, true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-flight-info');
+
+    // Next -> Step 9 (t1-reach-target)
+    engine.goNext();
+    assert.equal(engine.getCurrentStep().stepId, 't1-reach-target');
+    assert.equal(engine.canGoNext(), false);
+
+    // Target stabilized -> completes Step 9 and advances to Step 10 (t1-results)
+    sim.targetZone.stabilized = true;
+    engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 0 }, { status: 'completed' }, 'flight');
+    assert.equal(engine.targetReached, true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-results');
+  });
+
+  it('uses unified PIP coach across Tutorial and Challenge pre-flight, flight, and debrief', () => {
+    const t3 = TUTORIAL_SCENES['tutorial-3'];
+    const preCoach = evaluatePidCoaching({ kp: 4.5, ki: 0.0, kd: 3.4 }, t3);
+    assert.ok(preCoach.messages.some((m) => m.includes('Ki may be too low')));
+
+    const sim = new FlightSimulation();
+    sim.loadScene(t3, true);
+    const liveTut = evaluateLiveFlightCoaching(sim, t3, TUTORIAL_GUIDE_FLOWS['tutorial-3'][1]);
+    assert.ok(liveTut.headline);
+    assert.ok(liveTut.messages.length >= 1);
+
+    const debriefTut = evaluatePostFlightFeedback(
+      { status: 'completed' },
+      {
+        completionTime: 18.2,
+        maxOvershoot: 0.4,
+        controlSaturationDuration: 0,
+        pidParameters: { kp: 5.5, ki: 1.6, kd: 3.6 }
+      },
+      t3
+    );
+    assert.equal(debriefTut.state, 'success');
+    assert.ok(debriefTut.title.includes('Objective Mastered'));
+
+    // M4 scoring & storage progression still work for both modes
+    const score = scoreFlightRun(
+      { status: 'completed' },
+      { completionTime: 18, maxOvershoot: 0.5, settlingTime: 2.0, pathFitScore: 88, flightSmoothness: 85, collisionCount: 0 },
+      'tutorial-1'
+    );
+    assert.equal(score.stars, 3);
+
+    const store = new Map();
+    const mockStorage = {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v))
+    };
+    let progress = createDefaultProgress();
+    progress = recordLevelResult(progress, 'tutorial-1', { completed: true, stars: score.stars }, 'tutorial-2', mockStorage);
+    assert.equal(isLevelCompleted(progress, 'tutorial-1'), true);
+    assert.equal(isLevelUnlocked(progress, 'tutorial-2'), true);
+    assert.equal(getBestStars(progress, 'tutorial-1'), 3);
+  });
+});
+
+describe('M4.1 — Unified DOM & English-Only Verification', () => {
+  it('contains shared Briefing, Drone Specs, PIP, PID, Guide Spotlight, and mode-configured Result UI in English only', () => {
+    const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    const guideJs = fs.readFileSync(path.join(rootDir, 'src/tutorial_guide.js'), 'utf8');
+    const overlayJs = fs.readFileSync(path.join(rootDir, 'src/guide_overlay.js'), 'utf8');
+    const mainJs = fs.readFileSync(path.join(rootDir, 'src/main.js'), 'utf8');
+
+    for (const id of [
+      'mission-briefing-panel',
+      'drone-specs-panel',
+      'preflight-specs-guide',
+      'preflight-pid-panel',
+      'flight-pip-card',
+      'flight-pid-panel',
+      'flight-zone-kp',
+      'flight-track-kp',
+      'flight-briefing-panel',
+      'result-tutorial-card',
+      'result-rating-card',
+      'btn-result-challenges',
+      'tutorial-spotlight-layer',
+      'tut-guide-card'
+    ]) {
+      assert.ok(indexHtml.includes(id), `Expected index.html to include ${id}`);
+    }
+
+    const cjkRegex = /[\u4e00-\u9fff]/;
+    for (const [name, content] of [
+      ['index.html', indexHtml],
+      ['src/tutorial_guide.js', guideJs],
+      ['src/guide_overlay.js', overlayJs],
+      ['src/main.js', mainJs]
+    ]) {
+      assert.equal(cjkRegex.test(content), false, `${name} must contain zero Chinese characters`);
+    }
+  });
+});

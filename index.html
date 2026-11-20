@@ -266,25 +266,37 @@
         </div>
       </section>
 
-      <!-- ==================== VIEW 3.5: PRE-FLIGHT TUNING ==================== -->
+      <!-- ==================== VIEW 3.5: PRE-FLIGHT BRIEFING & TUNING ==================== -->
       <section id="view-preflight" class="view" aria-labelledby="preflight-title">
         <div class="preflight-header">
           <div>
             <button id="btn-preflight-back" type="button" class="btn btn-ghost btn-sm">&larr; Back to Levels</button>
-            <span class="badge badge-stem">Pre-flight Tuning</span>
+            <span id="preflight-mode-badge" class="badge badge-stem">Pre-flight Briefing</span>
             <h1 id="preflight-title">Level 1 — Stable Hover</h1>
             <p id="preflight-description" class="section-subtitle"></p>
           </div>
-          <button id="btn-pre-start-flight" type="button" class="btn btn-primary btn-lg">
-            Start Flight
-          </button>
+          <div class="preflight-header-actions">
+            <button id="btn-preflight-reopen-guide" type="button" class="btn btn-outline btn-sm hidden">
+              Interactive Guide
+            </button>
+            <button id="btn-pre-start-flight" type="button" class="btn btn-primary btn-lg">
+              Start Flight
+            </button>
+          </div>
         </div>
 
         <div class="preflight-grid">
           <div class="preflight-left">
-            <article class="info-card">
-              <span class="card-eyebrow">Mission Briefing</span>
+            <article id="mission-briefing-panel" class="info-card">
+              <div class="briefing-top-row">
+                <span class="card-eyebrow">Mission Briefing</span>
+                <span id="preflight-learning-focus" class="badge badge-neutral">PID Control</span>
+              </div>
               <p id="preflight-objective" class="preflight-objective-text"></p>
+              <div class="briefing-meta-row">
+                <div><span>Success Requirements</span><strong id="preflight-success-req"></strong></div>
+                <div><span>Flight Conditions</span><strong id="preflight-conditions"></strong></div>
+              </div>
               <div class="progression-cards">
                 <div class="progression-box">
                   <span class="prog-label">Previous Knowledge</span>
@@ -296,7 +308,10 @@
                   <p id="preflight-learning-obj" class="prog-subobj"></p>
                 </div>
               </div>
-              <span class="card-eyebrow" style="margin-top:14px;">Drone Specifications</span>
+            </article>
+
+            <article id="drone-specs-panel" class="info-card">
+              <span class="card-eyebrow">Drone Specifications</span>
               <div class="specs-grid">
                 <div class="spec-box">
                   <span>Drone Mass</span>
@@ -323,6 +338,11 @@
                   <strong id="preflight-time-limit">65 s</strong>
                 </div>
               </div>
+              <ul id="preflight-specs-guide" class="specs-explain-list hidden">
+                <li><strong>Drone Mass &amp; Payload:</strong> Heavier drones accelerate more slowly under the same force and need more thrust to climb.</li>
+                <li><strong>Maximum Thrust:</strong> Rotor thrust must exceed weight (m &times; 9.81 N) to lift off; hitting the limit causes thrust saturation.</li>
+                <li><strong>Wind Conditions:</strong> Persistent crosswind creates steady-state position drift unless Integral gain (Ki) compensates.</li>
+              </ul>
             </article>
 
             <article id="preflight-prev-card" class="info-card prev-attempt-card hidden">
@@ -364,24 +384,17 @@
               <div class="pip-avatar-wrap" aria-hidden="true">
                 <svg class="pip-robot-svg" viewBox="0 0 84 84">
                   <g class="pip-float">
-                    <!-- Antenna -->
                     <line x1="42" y1="10" x2="42" y2="20" class="pip-antenna-stem" />
                     <circle cx="42" cy="8" r="5" class="pip-antenna-led" />
-                    <!-- Side Rotors / Ears -->
                     <rect x="6" y="34" width="8" height="18" rx="4" class="pip-ear" />
                     <rect x="70" y="34" width="8" height="18" rx="4" class="pip-ear" />
-                    <!-- Robot Head -->
                     <rect x="14" y="20" width="56" height="44" rx="14" class="pip-head" />
-                    <!-- Visor -->
                     <rect x="21" y="29" width="42" height="22" rx="8" class="pip-visor" />
-                    <!-- Eyes -->
                     <g class="pip-eyes">
                       <circle cx="33" cy="40" r="4" class="pip-eye" />
                       <circle cx="51" cy="40" r="4" class="pip-eye" />
                     </g>
-                    <!-- Mouth / Status Bar -->
                     <rect x="33" y="55" width="18" height="4" rx="2" class="pip-mouth" />
-                    <!-- Base Hover Ring -->
                     <ellipse cx="42" cy="72" rx="18" ry="4" class="pip-thruster" />
                   </g>
                 </svg>
@@ -398,61 +411,63 @@
               </div>
             </aside>
 
-            <aside class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
+            <aside id="preflight-pid-panel" class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
               <div class="pid-panel-header">
-                <h2>PID Tuning</h2>
-                <span class="badge badge-stem">Starts at Zero</span>
+                <h2>PID Tuning Panel</h2>
+                <span id="pre-pid-badge" class="badge badge-stem">Starts at Zero</span>
               </div>
 
-              <div class="slider-group">
-                <div class="slider-label-row">
-                  <label for="pre-slider-kp">Kp — Proportional</label>
-                  <div class="slider-readout-group">
-                    <span id="pre-zone-kp" class="zone-pill zone-low">Low</span>
-                    <output id="pre-val-kp" for="pre-slider-kp">0.0</output>
+              <div id="preflight-sliders-wrap">
+                <div class="slider-group">
+                  <div class="slider-label-row">
+                    <label for="pre-slider-kp">Kp — Proportional</label>
+                    <div class="slider-readout-group">
+                      <span id="pre-zone-kp" class="zone-pill zone-low">Low</span>
+                      <output id="pre-val-kp" for="pre-slider-kp">0.0</output>
+                    </div>
                   </div>
+                  <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="0" />
+                  <div id="pre-track-kp" class="zone-track" aria-hidden="true">
+                    <span data-zone="low">Low</span>
+                    <span data-zone="recommended">Recommended</span>
+                    <span data-zone="high">High</span>
+                  </div>
+                  <p class="slider-help">Kp — Response strength to current position error.</p>
                 </div>
-                <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="0" />
-                <div id="pre-track-kp" class="zone-track" aria-hidden="true">
-                  <span data-zone="low">Low</span>
-                  <span data-zone="recommended">Recommended</span>
-                  <span data-zone="high">High</span>
-                </div>
-                <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
-              </div>
 
-              <div class="slider-group">
-                <div class="slider-label-row">
-                  <label for="pre-slider-ki">Ki — Integral</label>
-                  <div class="slider-readout-group">
-                    <span id="pre-zone-ki" class="zone-pill zone-low">Low</span>
-                    <output id="pre-val-ki" for="pre-slider-ki">0.00</output>
+                <div class="slider-group">
+                  <div class="slider-label-row">
+                    <label for="pre-slider-ki">Ki — Integral</label>
+                    <div class="slider-readout-group">
+                      <span id="pre-zone-ki" class="zone-pill zone-low">Low</span>
+                      <output id="pre-val-ki" for="pre-slider-ki">0.00</output>
+                    </div>
                   </div>
+                  <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0" />
+                  <div id="pre-track-ki" class="zone-track" aria-hidden="true">
+                    <span data-zone="low">Low</span>
+                    <span data-zone="recommended">Recommended</span>
+                    <span data-zone="high">High</span>
+                  </div>
+                  <p class="slider-help">Ki — Correction for accumulated steady-state error.</p>
                 </div>
-                <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0" />
-                <div id="pre-track-ki" class="zone-track" aria-hidden="true">
-                  <span data-zone="low">Low</span>
-                  <span data-zone="recommended">Recommended</span>
-                  <span data-zone="high">High</span>
-                </div>
-                <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
-              </div>
 
-              <div class="slider-group">
-                <div class="slider-label-row">
-                  <label for="pre-slider-kd">Kd — Derivative</label>
-                  <div class="slider-readout-group">
-                    <span id="pre-zone-kd" class="zone-pill zone-low">Low</span>
-                    <output id="pre-val-kd" for="pre-slider-kd">0.0</output>
+                <div class="slider-group">
+                  <div class="slider-label-row">
+                    <label for="pre-slider-kd">Kd — Derivative</label>
+                    <div class="slider-readout-group">
+                      <span id="pre-zone-kd" class="zone-pill zone-low">Low</span>
+                      <output id="pre-val-kd" for="pre-slider-kd">0.0</output>
+                    </div>
                   </div>
+                  <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="0" />
+                  <div id="pre-track-kd" class="zone-track" aria-hidden="true">
+                    <span data-zone="low">Low</span>
+                    <span data-zone="recommended">Recommended</span>
+                    <span data-zone="high">High</span>
+                  </div>
+                  <p class="slider-help">Kd — Damping and braking against velocity.</p>
                 </div>
-                <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="0" />
-                <div id="pre-track-kd" class="zone-track" aria-hidden="true">
-                  <span data-zone="low">Low</span>
-                  <span data-zone="recommended">Recommended</span>
-                  <span data-zone="high">High</span>
-                </div>
-                <p class="slider-help">Kd — How strongly motion is damped.</p>
               </div>
 
               <div class="pid-actions">
@@ -469,7 +484,7 @@
         <!-- Top Flight HUD -->
         <div class="flight-topbar">
           <div class="flight-title-group">
-            <button id="btn-flight-back" type="button" class="btn btn-ghost btn-sm">&larr; Modes</button>
+            <button id="btn-flight-back" type="button" class="btn btn-ghost btn-sm">&larr; Briefing</button>
             <div>
               <h1 id="flight-level-name">Flight Test Playground</h1>
               <p id="flight-objective" class="flight-objective">
@@ -487,79 +502,137 @@
           </div>
         </div>
 
-        <!-- Center Canvas + Side PID Panel -->
+        <!-- Center Canvas + Side PIP & PID Panel -->
         <div class="flight-workspace">
           <div class="canvas-stage">
             <canvas id="flight-canvas" aria-label="2D Drone Flight Simulation Canvas"></canvas>
           </div>
 
-          <aside class="pid-panel" aria-label="PID Tuning Panel">
-            <div class="pid-panel-header">
-              <h2>PID Tuning Panel</h2>
-              <span class="badge badge-stem">Live Gains</span>
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="slider-kp">Kp — Proportional</label>
-                <output id="val-kp" for="slider-kp">6.5</output>
+          <div class="flight-sidebar">
+            <!-- Unified PIP Virtual Flight Coach (Flight Mode) -->
+            <aside id="flight-pip-card" class="pip-card pip-card-compact pip-teaching" aria-live="polite" aria-label="PIP Live Flight Coach">
+              <div class="pip-avatar-wrap" aria-hidden="true">
+                <svg class="pip-robot-svg" viewBox="0 0 84 84">
+                  <g class="pip-float">
+                    <line x1="42" y1="10" x2="42" y2="20" class="pip-antenna-stem" />
+                    <circle cx="42" cy="8" r="5" class="pip-antenna-led" />
+                    <rect x="6" y="34" width="8" height="18" rx="4" class="pip-ear" />
+                    <rect x="70" y="34" width="8" height="18" rx="4" class="pip-ear" />
+                    <rect x="14" y="20" width="56" height="44" rx="14" class="pip-head" />
+                    <rect x="21" y="29" width="42" height="22" rx="8" class="pip-visor" />
+                    <g class="pip-eyes">
+                      <circle cx="33" cy="40" r="4" class="pip-eye" />
+                      <circle cx="51" cy="40" r="4" class="pip-eye" />
+                    </g>
+                    <rect x="33" y="55" width="18" height="4" rx="2" class="pip-mouth" />
+                    <ellipse cx="42" cy="72" rx="18" ry="4" class="pip-thruster" />
+                  </g>
+                </svg>
               </div>
-              <input id="slider-kp" type="range" min="0" max="18" step="0.1" value="6.5" />
-              <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="slider-ki">Ki — Integral</label>
-                <output id="val-ki" for="slider-ki">0.60</output>
+              <div class="pip-content">
+                <div class="pip-title-row">
+                  <span class="pip-name">PIP — Flight Coach</span>
+                  <span id="flight-pip-state-badge" class="pip-state-pill">Teaching</span>
+                </div>
+                <strong id="flight-pip-headline" class="pip-headline">Ready for Takeoff</strong>
+                <ul id="flight-pip-messages" class="pip-messages">
+                  <li>Use WASD to guide the yellow REF target.</li>
+                </ul>
               </div>
-              <input id="slider-ki" type="range" min="0" max="8" step="0.05" value="0.6" />
-              <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
-            </div>
+            </aside>
 
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="slider-kd">Kd — Derivative</label>
-                <output id="val-kd" for="slider-kd">3.8</output>
+            <aside id="flight-pid-panel" class="pid-panel" aria-label="PID Tuning Panel">
+              <div class="pid-panel-header">
+                <h2>PID Tuning Panel</h2>
+                <span id="flight-pid-badge" class="badge badge-stem">Live Gains</span>
               </div>
-              <input id="slider-kd" type="range" min="0" max="16" step="0.1" value="3.8" />
-              <p class="slider-help">Kd — How strongly motion is damped.</p>
-            </div>
 
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="select-wind">Wind Disturbance</label>
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="slider-kp">Kp — Proportional</label>
+                  <div class="slider-readout-group">
+                    <span id="flight-zone-kp" class="zone-pill zone-low">Low</span>
+                    <output id="val-kp" for="slider-kp">6.5</output>
+                  </div>
+                </div>
+                <input id="slider-kp" type="range" min="0" max="18" step="0.1" value="6.5" />
+                <div id="flight-track-kp" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Kp — Response strength to current position error.</p>
               </div>
-              <select id="select-wind" class="wind-select">
-                <option value="calm">Calm Air (0 N)</option>
-                <option value="breeze">Steady Crosswind (+3.6 N)</option>
-                <option value="gust">Gusty Crosswind</option>
-              </select>
-            </div>
 
-            <div class="pid-actions">
-              <button id="btn-start-flight" type="button" class="btn btn-primary">Start Flight</button>
-              <button id="btn-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
-            </div>
-
-            <button id="btn-open-preflight" type="button" class="btn btn-ghost btn-sm hidden">
-              &larr; Return to Pre-flight Tuning
-            </button>
-
-            <div class="pid-telemetry-box">
-              <span class="telemetry-title">Controller Output (X / Z)</span>
-              <div class="telemetry-grid-sm">
-                <div><span>P</span><strong id="tel-p">0.0 / 0.0</strong></div>
-                <div><span>I</span><strong id="tel-i">0.0 / 0.0</strong></div>
-                <div><span>D</span><strong id="tel-d">0.0 / 0.0</strong></div>
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="slider-ki">Ki — Integral</label>
+                  <div class="slider-readout-group">
+                    <span id="flight-zone-ki" class="zone-pill zone-low">Low</span>
+                    <output id="val-ki" for="slider-ki">0.60</output>
+                  </div>
+                </div>
+                <input id="slider-ki" type="range" min="0" max="8" step="0.05" value="0.6" />
+                <div id="flight-track-ki" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Ki — Correction for accumulated steady-state error.</p>
               </div>
-            </div>
-          </aside>
+
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="slider-kd">Kd — Derivative</label>
+                  <div class="slider-readout-group">
+                    <span id="flight-zone-kd" class="zone-pill zone-low">Low</span>
+                    <output id="val-kd" for="slider-kd">3.8</output>
+                  </div>
+                </div>
+                <input id="slider-kd" type="range" min="0" max="16" step="0.1" value="3.8" />
+                <div id="flight-track-kd" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Kd — Damping and braking against velocity.</p>
+              </div>
+
+              <div id="flight-wind-group" class="slider-group">
+                <div class="slider-label-row">
+                  <label for="select-wind">Wind Disturbance</label>
+                </div>
+                <select id="select-wind" class="wind-select">
+                  <option value="calm">Calm Air (0 N)</option>
+                  <option value="breeze">Steady Crosswind (+3.6 N)</option>
+                  <option value="gust">Gusty Crosswind</option>
+                </select>
+              </div>
+
+              <div class="pid-actions">
+                <button id="btn-start-flight" type="button" class="btn btn-primary">Start Flight</button>
+                <button id="btn-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
+              </div>
+
+              <button id="btn-open-preflight" type="button" class="btn btn-ghost btn-sm hidden">
+                &larr; Return to Briefing &amp; Pre-flight Tuning
+              </button>
+
+              <div class="pid-telemetry-box">
+                <span class="telemetry-title">Controller Output (X / Z)</span>
+                <div class="telemetry-grid-sm">
+                  <div><span>P</span><strong id="tel-p">0.0 / 0.0</strong></div>
+                  <div><span>I</span><strong id="tel-i">0.0 / 0.0</strong></div>
+                  <div><span>D</span><strong id="tel-d">0.0 / 0.0</strong></div>
+                </div>
+              </div>
+            </aside>
+          </div>
         </div>
 
         <!-- Bottom Control Guide & Live Telemetry -->
         <div class="flight-bottom-bar">
-          <div class="control-guide">
+          <div id="flight-wasd-bar" class="control-guide">
             <span class="guide-label">WASD Control Guide:</span>
             <kbd>W</kbd> Up
             <kbd>S</kbd> Down
@@ -570,7 +643,7 @@
             <kbd>P</kbd> Pause
           </div>
 
-          <div class="flight-status-strip">
+          <div id="flight-status-strip" class="flight-status-strip">
             <div class="status-item">
               <span>Flight Status</span>
               <strong id="flight-status" class="status-pill">Ready</strong>
@@ -598,147 +671,165 @@
           </div>
         </div>
 
-        <!-- Challenge Mission Briefing Bar (shown in Challenge Levels) -->
-        <aside id="challenge-briefing-panel" class="challenge-briefing hidden" aria-label="Mission Briefing">
-          <div>
-            <span class="card-eyebrow">Mission Briefing</span>
-            <p id="challenge-briefing-text"></p>
+        <!-- Unified Mission Briefing & Drone Specs Summary (Shared across Tutorial, Challenge & Playground) -->
+        <aside id="flight-briefing-panel" class="challenge-briefing" aria-label="Mission Briefing and Drone Specifications">
+          <div class="flight-briefing-copy">
+            <div class="flight-briefing-head">
+              <span id="flight-briefing-eyebrow" class="card-eyebrow">Mission Briefing &amp; Specifications</span>
+              <span id="flight-spec-summary" class="spec-summary-pills"></span>
+            </div>
+            <p id="flight-briefing-text"></p>
           </div>
-          <div id="challenge-checkpoint-pill" class="coach-pill hidden">
-            Rings: 0 / 0
-          </div>
-        </aside>
-
-        <!-- Tutorial Village Guided Experiment Card (hidden in Playground & Challenges) -->
-        <aside id="tutorial-guide-panel" class="tutorial-guide-panel hidden" aria-label="Tutorial Lesson Guide">
-          <div class="tutorial-guide-header">
-            <div>
-              <span id="guide-stem-topic" class="card-eyebrow">STEM Topic</span>
-              <h2>Interactive PID Experiment</h2>
+          <div class="flight-briefing-actions">
+            <div id="challenge-checkpoint-pill" class="coach-pill hidden">
+              Rings: 0 / 0
             </div>
-            <div id="tutorial-coach-bar" class="coach-pill" aria-live="polite">
-              Press Start Flight or WASD to begin.
-            </div>
-          </div>
-          <div class="tutorial-guide-grid">
-            <div class="guide-box">
-              <h3>Learning Objective</h3>
-              <p id="guide-objective"></p>
-            </div>
-            <div class="guide-box">
-              <h3>Short Explanation</h3>
-              <p id="guide-explanation"></p>
-            </div>
-            <div class="guide-box">
-              <h3>Interactive Experiment</h3>
-              <p id="guide-experiment"></p>
-            </div>
-            <div class="guide-box">
-              <h3>Success Conditions &amp; Suggested PID</h3>
-              <p id="guide-success"></p>
-              <p id="guide-suggestion" class="guide-suggestion"></p>
-            </div>
+            <button id="btn-flight-reopen-guide" type="button" class="btn btn-outline btn-sm hidden">
+              Reopen Guide
+            </button>
           </div>
         </aside>
       </section>
 
       <!-- ==================== VIEW 5: RESULT SCREEN ==================== -->
       <section id="view-result" class="view" aria-labelledby="result-title">
-        <div class="result-hero">
-          <div>
-            <span id="result-badge" class="badge badge-stem">Mission Complete</span>
-            <h1 id="result-title">Mission Complete!</h1>
-            <p id="result-level-subtitle" class="section-subtitle"></p>
-          </div>
-          <div class="result-stars-box">
-            <div id="result-stars-display" class="result-stars" aria-label="0 of 3 stars">☆☆☆</div>
-            <strong id="result-star-label">Mission Cleared</strong>
-          </div>
-        </div>
-
-        <div class="result-grid">
-          <div class="result-left">
-            <article class="info-card">
-              <span class="card-eyebrow">Flight Performance Metrics</span>
-              <div class="specs-grid result-metrics-grid">
-                <div class="spec-box">
-                  <span>Completion Time</span>
-                  <strong id="result-time">0.0 s</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Overshoot</span>
-                  <strong id="result-overshoot">0.00 m</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Settling Time</span>
-                  <strong id="result-settling">0.0 s</strong>
-                </div>
-                <div class="spec-box spec-highlight">
-                  <span>Route Fit (REF vs Actual)</span>
-                  <strong id="result-route-fit">100% (0.00 m)</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Flight Stability</span>
-                  <strong id="result-smoothness">100%</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Avg Tracking Error</span>
-                  <strong id="result-avg-error">0.00 m</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Saturation Time</span>
-                  <strong id="result-saturation">0.00 s</strong>
-                </div>
-                <div class="spec-box">
-                  <span>PID Gains</span>
-                  <strong id="result-pid">0.0 / 0.00 / 0.0</strong>
-                </div>
-              </div>
-            </article>
-
-            <article class="info-card">
-              <span class="card-eyebrow">Route Fit Comparison</span>
-              <div class="route-legend">
-                <span><i class="legend-ref"></i> Commanded REF Route</span>
-                <span><i class="legend-actual"></i> Actual Drone Route</span>
-              </div>
-              <canvas id="result-route-canvas" class="result-route-canvas" aria-label="REF vs Actual Route Fit Plot"></canvas>
-            </article>
+        <div id="result-overview-wrap">
+          <div class="result-hero">
+            <div>
+              <span id="result-badge" class="badge badge-stem">Mission Complete</span>
+              <h1 id="result-title">Mission Complete!</h1>
+              <p id="result-level-subtitle" class="section-subtitle"></p>
+            </div>
+            <div id="result-stars-box" class="result-stars-box">
+              <div id="result-stars-display" class="result-stars" aria-label="0 of 3 stars">☆☆☆</div>
+              <strong id="result-star-label">Mission Cleared</strong>
+            </div>
+            <div id="result-tutorial-outcome-box" class="result-stars-box hidden">
+              <div id="result-tutorial-status-icon" class="result-tut-icon">✓</div>
+              <strong id="result-tutorial-status-label">Learning Objective Completed</strong>
+            </div>
           </div>
 
-          <div class="result-right">
-            <article class="info-card">
-              <span class="card-eyebrow">Star Rating Breakdown</span>
-              <div class="criteria-section">
-                <h3>2-Star Requirements</h3>
-                <ul id="result-checks-2star" class="criteria-list"></ul>
-              </div>
-              <div class="criteria-section">
-                <h3>3-Star Mastery</h3>
-                <ul id="result-checks-3star" class="criteria-list"></ul>
-              </div>
-            </article>
+          <div class="result-grid">
+            <div class="result-left">
+              <article class="info-card">
+                <span class="card-eyebrow">Flight Performance Metrics</span>
+                <div class="specs-grid result-metrics-grid">
+                  <div class="spec-box">
+                    <span>Completion Time</span>
+                    <strong id="result-time">0.0 s</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>Overshoot</span>
+                    <strong id="result-overshoot">0.00 m</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>Settling Time</span>
+                    <strong id="result-settling">0.0 s</strong>
+                  </div>
+                  <div class="spec-box spec-highlight">
+                    <span>Route Fit (REF vs Actual)</span>
+                    <strong id="result-route-fit">100% (0.00 m)</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>Flight Stability</span>
+                    <strong id="result-smoothness">100%</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>Avg Tracking Error</span>
+                    <strong id="result-avg-error">0.00 m</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>Saturation Time</span>
+                    <strong id="result-saturation">0.00 s</strong>
+                  </div>
+                  <div class="spec-box">
+                    <span>PID Gains</span>
+                    <strong id="result-pid">0.0 / 0.00 / 0.0</strong>
+                  </div>
+                </div>
+              </article>
 
-            <article class="info-card result-pip-card">
-              <div class="outcome-pip-header">
-                <span class="pip-mini-badge">PIP</span>
-                <strong id="result-pip-title">PIP Flight Debrief</strong>
-              </div>
-              <p id="result-pip-explanation"></p>
-              <p id="result-pip-tip" class="outcome-pip-tip"></p>
-              <p id="result-best-ref" class="outcome-best-ref hidden"></p>
-            </article>
+              <article class="info-card">
+                <span class="card-eyebrow">Route Fit Comparison</span>
+                <div class="route-legend">
+                  <span><i class="legend-ref"></i> Commanded REF Route</span>
+                  <span><i class="legend-actual"></i> Actual Drone Route</span>
+                </div>
+                <canvas id="result-route-canvas" class="result-route-canvas" aria-label="REF vs Actual Route Fit Plot"></canvas>
+              </article>
+            </div>
 
-            <div class="result-actions">
-              <button id="btn-result-levels" type="button" class="btn btn-ghost">Back to Levels</button>
-              <button id="btn-result-preflight" type="button" class="btn btn-outline hidden">Pre-flight Tuning</button>
-              <button id="btn-result-retry" type="button" class="btn btn-outline">Retry</button>
-              <button id="btn-result-next" type="button" class="btn btn-primary">Next Level</button>
+            <div class="result-right">
+              <article id="result-rating-card" class="info-card">
+                <span class="card-eyebrow">Star Rating Breakdown</span>
+                <div class="criteria-section">
+                  <h3>2-Star Requirements</h3>
+                  <ul id="result-checks-2star" class="criteria-list"></ul>
+                </div>
+                <div class="criteria-section">
+                  <h3>3-Star Mastery</h3>
+                  <ul id="result-checks-3star" class="criteria-list"></ul>
+                </div>
+              </article>
+
+              <article id="result-tutorial-card" class="info-card result-tutorial-card hidden">
+                <span class="card-eyebrow">Lesson Outcome</span>
+                <h2 id="result-tut-heading">Learning Objective Completed</h2>
+                <p id="result-tut-objective"></p>
+                <div class="spec-box" style="margin-top:10px;">
+                  <span>Practice Performance Rating</span>
+                  <strong id="result-tut-practice-stars">★★★ (3 / 3)</strong>
+                </div>
+              </article>
+
+              <article class="info-card result-pip-card">
+                <div class="outcome-pip-header">
+                  <span class="pip-mini-badge">PIP</span>
+                  <strong id="result-pip-title">PIP Flight Debrief</strong>
+                </div>
+                <p id="result-pip-explanation"></p>
+                <p id="result-pip-tip" class="outcome-pip-tip"></p>
+                <p id="result-best-ref" class="outcome-best-ref hidden"></p>
+              </article>
+
+              <div class="result-actions">
+                <button id="btn-result-levels" type="button" class="btn btn-ghost">Back to Levels</button>
+                <button id="btn-result-preflight" type="button" class="btn btn-outline">Pre-flight Tuning</button>
+                <button id="btn-result-retry" type="button" class="btn btn-outline">Retry</button>
+                <button id="btn-result-challenges" type="button" class="btn btn-challenge hidden">Enter Challenge Levels</button>
+                <button id="btn-result-next" type="button" class="btn btn-primary">Next Level</button>
+              </div>
             </div>
           </div>
         </div>
       </section>
     </main>
+
+    <!-- Non-blocking Interactive Tutorial Spotlight Layer -->
+    <div id="tutorial-spotlight-layer" class="tutorial-spotlight-layer hidden" aria-live="polite">
+      <div id="tut-mask-top" class="tut-mask"></div>
+      <div id="tut-mask-bottom" class="tut-mask"></div>
+      <div id="tut-mask-left" class="tut-mask"></div>
+      <div id="tut-mask-right" class="tut-mask"></div>
+      <div id="tut-spotlight-frame" class="tut-spotlight-frame"></div>
+
+      <aside id="tut-guide-card" class="tut-guide-card" role="region" aria-label="Interactive Tutorial Guide">
+        <div class="tut-guide-top">
+          <span class="pip-mini-badge">PIP GUIDE</span>
+          <span id="tut-step-pill" class="tut-step-pill">Step 1 / 10</span>
+        </div>
+        <h3 id="tut-step-title">Step 1 — Mission Briefing</h3>
+        <p id="tut-step-body"></p>
+        <div id="tut-wasd-chips" class="tut-wasd-chips hidden"></div>
+        <p id="tut-step-hint" class="tut-step-hint"></p>
+        <div class="tut-guide-actions">
+          <button id="btn-tut-back" type="button" class="btn btn-ghost btn-sm">Back</button>
+          <button id="btn-tut-skip" type="button" class="btn btn-ghost btn-sm">Hide Guide</button>
+          <button id="btn-tut-next" type="button" class="btn btn-primary btn-sm">Next Step &rarr;</button>
+        </div>
+      </aside>
+    </div>
 
     <!-- Status / Milestone Preview Modal -->
     <div id="notice-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">

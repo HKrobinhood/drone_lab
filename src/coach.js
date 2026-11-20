@@ -1,12 +1,14 @@
 /**
  * PIP — Your PID Flight Coach (Virtual STEM Flight Instructor).
  *
- * Performs real-time parameter pre-checks (single-gain and multi-gain coupling),
- * prioritized non-spam coaching tips, slider zone classification (Low / Recommended / High)
- * without leaking exact numeric targets, and post-flight "What went wrong?" debriefing.
+ * Unified coaching engine shared across Tutorial Village, Challenge Levels,
+ * and Playground. Performs pre-flight PID checks, live in-flight coaching,
+ * and post-flight telemetry debriefing.
  *
  * Pure JS module (no DOM/Canvas dependency).
  */
+
+import { evaluateTutorialCoaching } from './scenes.js';
 
 export function getSliderZone(value, min, max) {
   if (!Number.isFinite(value)) return 'low';
@@ -216,10 +218,22 @@ export function evaluatePostFlightFeedback(outcome, metrics, scene) {
   const rec = scene?.recommendedPID;
 
   if (outcome?.status === 'completed') {
+    const baseExplanation = `Completed in ${metrics.completionTime.toFixed(1)} s with max overshoot ${maxOver.toFixed(2)} m and ${satSec.toFixed(2)} s of thrust saturation.`;
+    if (scene?.mode === 'tutorial') {
+      return {
+        state: 'success',
+        title: 'PIP Lesson Debrief — Objective Mastered!',
+        explanation: `${baseExplanation} ${scene.learningObjective || ''}`.trim(),
+        tip:
+          scene.nextLevelId
+            ? 'Great work! Advance to the next Tutorial lesson or experiment with Retry to compare PID curves.'
+            : 'Tutorial Village complete! You are ready to tackle Challenge Levels using everything you practiced.'
+      };
+    }
     return {
       state: 'success',
       title: 'PIP Flight Debrief — Nice Flying!',
-      explanation: `Completed in ${metrics.completionTime.toFixed(1)} s with max overshoot ${maxOver.toFixed(2)} m and ${satSec.toFixed(2)} s of thrust saturation.`,
+      explanation: baseExplanation,
       tip:
         maxOver > 1.2
           ? 'You passed! For an even cleaner run, try adding a bit more Kd or trimming Ki to cut overshoot.'
@@ -313,5 +327,81 @@ export function evaluatePostFlightFeedback(outcome, metrics, scene) {
         : rec && kd > rec.kdMax
           ? 'Lower excessive Kd so the drone does not feel sluggish.'
           : 'Try balancing Kp and Kd so the drone enters and settles inside the target zone sooner.'
+  };
+}
+
+/**
+ * Unified live Flight Screen PIP coaching shared by Tutorial, Challenge, and Playground.
+ */
+export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
+  if (!sim || !scene) {
+    return {
+      state: 'teaching',
+      headline: 'PIP Ready',
+      messages: ['Use WASD to move the yellow REF target and monitor live telemetry.']
+    };
+  }
+
+  if (scene.mode === 'tutorial') {
+    const tutHint = evaluateTutorialCoaching(sim, scene);
+    const pidCheck = evaluatePidCoaching(sim.gains, scene);
+    const msgs = [];
+    if (guideStep?.instruction) {
+      msgs.push(guideStep.instruction);
+    }
+    if (tutHint && !msgs.includes(tutHint)) {
+      msgs.push(tutHint);
+    }
+    return {
+      state: pidCheck.state === 'warning' ? 'warning' : sim.targetZone?.stabilized ? 'success' : 'teaching',
+      headline: guideStep?.title || scene.stemTopic || 'Tutorial Coach',
+      messages: msgs.slice(0, 2)
+    };
+  }
+
+  // Challenge & Playground live telemetry coaching
+  if (sim.paused) {
+    return {
+      state: 'teaching',
+      headline: 'Flight Paused',
+      messages: ['Press Resume (P) to continue flying, or Restart (R) to reset cleanly.']
+    };
+  }
+
+  const speed = Math.hypot(sim.drone.vx, sim.drone.vz);
+  const thrustSat = sim.drone.thrust >= sim.config.maxThrust - 0.05;
+  if (thrustSat) {
+    return {
+      state: 'warning',
+      headline: 'Thrust Limit Reached',
+      messages: ['Motors are at max thrust! Smooth step commands with WASD help prevent saturation lag.']
+    };
+  }
+  if (sim.targetZone?.inside) {
+    return {
+      state: speed <= sim.targetZone.maxSpeed ? 'ready' : 'teaching',
+      headline: speed <= sim.targetZone.maxSpeed ? 'Hold Steady!' : 'Brake Inside Target',
+      messages: [
+        speed <= sim.targetZone.maxSpeed
+          ? `Stabilizing in target (${sim.targetZone.holdTimer.toFixed(1)} / ${sim.targetZone.holdRequired.toFixed(1)} s).`
+          : `Speed ${speed.toFixed(2)} m/s is above ${sim.targetZone.maxSpeed.toFixed(2)} m/s—release WASD to settle.`
+      ]
+    };
+  }
+  if (sim.padStatus?.inside) {
+    return {
+      state: 'ready',
+      headline: 'On Helipad',
+      messages: [`Hold steady to complete landing (${sim.padStatus.holdTimer.toFixed(1)} s).`]
+    };
+  }
+
+  const livePid = evaluatePidCoaching(sim.gains, scene);
+  return {
+    state: livePid.state === 'warning' ? 'warning' : 'teaching',
+    headline: scene.mode === 'playground' ? 'Sandbox Telemetry Active' : 'In Flight',
+    messages: [
+      scene.briefing || 'Guide the yellow REF marker smoothly with WASD toward your mission goal.'
+    ]
   };
 }

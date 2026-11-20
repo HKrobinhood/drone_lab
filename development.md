@@ -32,6 +32,7 @@
 | **M3.1** | Challenge Physics & Pre-flight Tuning | 起飞前调参界面、关卡差异化动力学（质量/载荷/推力限幅/阵风）、Heavy Cargo 重构、重试参数保留与 M4 指标接口 | **已完成** |
 | **M3.2** | Progressive PID Tuning & Virtual Flight Instructor | 关卡教学递进重构、每关零初始调参、虚拟教练 PIP 实时诊断与组合建议、离线参数扫描标定、手感度强化 | **已完成** |
 | **M4** | Scoring and Progress | 1~3 星评分算法（含 REF 与实际路线拟合度指标）、Result Screen、localStorage 进度与最高星级存档 | **已完成** |
+| **M4.1** | Tutorial & Challenge UI Alignment | 统一新手村与正式关核心界面/状态流、统一 PIP 教练与配置驱动交互式 Spotlight 引导、Tutorial 1 十步 UI+WASD 教学 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
@@ -102,6 +103,28 @@
 - [x] 完善 Result Screen（`#view-result`：Mission Complete/Failed、1~3 星展示、路线拟合对比小图、2★/3★ 明细、Retry/Pre-flight/Next/Back）
 - [x] 接入 `localStorage` 历史最高星级与最佳参考 PID 存档（不覆盖高星级、不自动填入挑战滑块）
 
+### M4.1 — Tutorial & Challenge UI Alignment
+- **原有不一致问题**：
+  - Tutorial 原直接跳过 `#view-preflight` 进入飞行页，玩家在新手村看不到 Mission Briefing、Drone Specifications 与 PIP Coach 卡片。
+  - 飞行页曾分别存在 `#tutorial-guide-panel`/`#tutorial-coach-bar` 与 `#challenge-briefing-panel` 两套提示卡片，以及分裂的 `pre-slider-*` vs `slider-*` 区间提示与重置逻辑。
+  - Result Screen 在 Tutorial 与 Challenge 均只展示固定 2★/3★ 清单，未按模式区分 Learning Objective Completed 展示。
+- **统一后的页面结构**：
+  - `Level Selection` → 统一进入 `#view-preflight`（Mission Briefing、Drone Specifications、PIP Coach Card、PID Tuning Panel、Start Flight）→ `#view-flight`（Top HUD、Canvas、PIP Live Coach、统一 PID Tuning Panel、WASD + Flight Information Bar、统一 Briefing & Drone Specs Summary）→ `#view-result`（按模式配置展示 Learning Objective Completed 或 1~3 Stars + Breakdown + Flight Statistics + PIP Debrief + Retry / Pre-flight Tuning / Back / Next）。
+- **复用的核心组件**：
+  - `PIDController`（`src/pid.js`）、`stepDronePhysics`（`src/physics.js`）、`FlightSimulation` 与 `getSceneInitialGains`（`src/simulation.js`）。
+  - 统一 `PID_PANEL_GROUPS` 与 `applyPidGains` / `resetScenePid`（`src/main.js`），共用 `PID_SLIDER_BOUNDS` 与 `Low / Recommended / High` 区间条。
+  - 统一 PIP 虚拟教练（`src/coach.js`：`evaluatePidCoaching`、`evaluateLiveFlightCoaching`、`evaluatePostFlightFeedback`）与 `renderPipCard`。
+- **新手村教学步骤**：
+  - `Tutorial 1 — Flight Control Basics`（`full` 10 步引导）：Step 1 Mission Briefing → Step 2 Drone Specifications → Step 3 PID Tuning Panel → Step 4 Kp/Ki/Kd 滑块实操 → Step 5 PIP Assistant → Step 6 Start Flight → Step 7 WASD + 松键悬停真实输入验证 → Step 8 Flight Information → Step 9 Reach Target → Step 10 Results & Retry（`src/tutorial_guide.js` + `src/guide_overlay.js`）。
+  - `Tutorial 2`（`medium` 3 步）、`Tutorial 3`（`light` 2 步）、`Tutorial 4`（`minimal` 1 步自主调参过渡）。
+- **验收标准**：
+  - [x] Tutorial 与 Challenge 共用核心页面（Briefing / Specs / PIP / PID Panel / Flight HUD / Result Screen）、同一 PID 控制器与物理引擎。
+  - [x] 配置驱动 Spotlight 引导（`pointer-events: none` 遮罩）不阻挡滑块、按钮与 WASD 交互，支持 Back/Next/Hide/Replay 与跨视图自动清理。
+  - [x] 全量 Node 自动化测试（22 suites, 60 pass）与真实 Chrome 无头浏览器交互验证（1440×900 / 1280×800、真实按键、零控制台报错）全部通过。
+- **测试结果与已知问题**：
+  - `node --test tests/*.test.mjs`：60/60 通过；Chrome E2E 交互脚本通过（无水平溢出、无遮罩残留）。
+  - 已知问题：暂无已知阻塞缺陷；更精细的时序曲线对比图将在 M5 实现。
+
 ### M5 — PID Diagnostics
 - [ ] 记录完整飞行遥测时间序列（参考位置、实际位置、速度、误差、P/I/D 分量、输出）
 - [ ] 实现过冲、振荡、响应速度、稳态误差、积分饱和分析
@@ -118,8 +141,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M4 — Scoring and Progress`（已完成，待确认后进入 M5）
-- **已完成**：1~3 星评价系统（含时间、过冲、稳定时间、平滑度与 **REF 路线 vs 实际路线几何拟合度**）、独立 Result Screen 与轨迹拟合对比小图、`localStorage` 最高星级持久化。
+- **当前里程碑**：`M4.1 — Tutorial & Challenge UI Alignment`（已完成，待确认后进入 M5）
+- **已完成**：统一 Tutorial Village 与 Challenge Levels 核心界面（Briefing / Drone Specs / PID Tuning / PIP Coach / Flight HUD / Result Screen），统一 PID 状态与重置逻辑，新增可复用配置驱动 Spotlight 交互引导系统与 Tutorial 1 十步 UI+WASD+Result 新手引导。
 - **尚未完成的功能**：M5（时间序列 PID 诊断分析与上次/本次试飞双轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
 
 ---
@@ -165,6 +188,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m3.1): add level-specific physics and PID tuning challenges` — 完成 M3.1 Pre-flight Tuning 调参流程、关卡物理差异（载荷/推重比/饱和/阵风）、L3 Heavy Cargo 重构与 M4 指标接口。
 - `feat(m3.2): add progressive PID tuning and virtual coach` — 完成 M3.2 关卡教学递进、零初始 PID、虚拟教练 PIP、参数扫描标定与失败遥测解释。
 - `feat(m4): implement stars and game progress` — 完成 M4 三星评分系统（含 REF 路线与实际路线拟合度）、独立 Result Screen 与 localStorage 最高星级存档。
+- `feat(m4.1): align tutorial and challenge flight experience` — 统一 Tutorial 与 Challenge 核心界面、共享 PID/PIP/物理控制流，并实现基于真实输入验证的 10 步交互式新手村引导系统。
 
 ---
 

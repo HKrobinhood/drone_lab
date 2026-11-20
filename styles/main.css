@@ -1856,3 +1856,285 @@ body {
   flex: 1 1 120px;
   padding: 11px 14px;
 }
+
+/* ==================== M4.1 ALIGNMENT & SPOTLIGHT GUIDE ==================== */
+.preflight-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.briefing-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.briefing-top-row .card-eyebrow {
+  margin-bottom: 0;
+}
+
+.briefing-meta-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.briefing-meta-row div {
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.briefing-meta-row span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.briefing-meta-row strong {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.specs-explain-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 5px;
+}
+
+.flight-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pip-card-compact {
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.pip-card-compact .pip-avatar-wrap {
+  flex: 0 0 44px;
+}
+
+.pip-card-compact .pip-robot-svg {
+  width: 44px;
+  height: 44px;
+}
+
+.pip-card-compact .pip-headline {
+  font-size: 0.84rem;
+}
+
+.pip-card-compact .pip-messages {
+  font-size: 0.77rem;
+}
+
+#flight-pid-panel .slider-group {
+  margin-bottom: 8px;
+}
+
+#flight-pid-panel .slider-help {
+  margin-top: 2px;
+  font-size: 0.72rem;
+}
+
+.flight-briefing-copy {
+  flex: 1 1 520px;
+}
+
+.flight-briefing-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.flight-briefing-head .card-eyebrow {
+  margin-bottom: 0;
+}
+
+.spec-summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spec-summary-pills span {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.flight-briefing-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-tut-icon {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #4ade80;
+  line-height: 1.1;
+}
+
+.result-tutorial-card {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+}
+
+.result-tutorial-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.08rem;
+}
+
+/* Non-blocking Interactive Tutorial Spotlight */
+.tutorial-spotlight-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.tut-mask {
+  position: fixed;
+  background: rgba(15, 23, 42, 0.52);
+  pointer-events: none;
+  transition: all 140ms ease-out;
+}
+
+.tut-spotlight-frame {
+  position: fixed;
+  border: 3px solid #38bdf8;
+  border-radius: 14px;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.28), 0 0 24px rgba(56, 189, 248, 0.38);
+  pointer-events: none;
+  transition: all 140ms ease-out;
+}
+
+.tutorial-target-active {
+  position: relative;
+  z-index: 901;
+}
+
+.tut-guide-card {
+  position: fixed;
+  width: min(370px, calc(100vw - 24px));
+  background: #0f172a;
+  color: #f8fafc;
+  border: 2px solid #38bdf8;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+  pointer-events: auto;
+  z-index: 910;
+}
+
+.tut-guide-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tut-step-pill {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+.tut-guide-card h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+.tut-guide-card p {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.tut-step-hint {
+  color: #7dd3fc !important;
+  font-weight: 600;
+  font-size: 0.82rem !important;
+}
+
+.tut-wasd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tut-chip {
+  padding: 3px 9px;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+
+.tut-chip.is-current {
+  background: rgba(56, 189, 248, 0.22);
+  color: #e0f2fe;
+  border-color: #38bdf8;
+}
+
+.tut-chip.is-done {
+  background: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+  border-color: #4ade80;
+}
+
+.tut-guide-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tut-guide-actions .btn-ghost {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+.tut-guide-actions .btn-ghost:hover:not(:disabled) {
+  background: #334155;
+}
+
+.tut-guide-actions .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .briefing-meta-row {
+    grid-template-columns: 1fr;
+  }
+}

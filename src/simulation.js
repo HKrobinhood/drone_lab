@@ -27,6 +27,15 @@ export const DEFAULT_PID_GAINS = Object.freeze({
   kd: 3.8
 });
 
+export function getSceneInitialGains(scene) {
+  const src = scene?.initialPID || scene?.initialGains || DEFAULT_PID_GAINS;
+  return {
+    kp: Number.isFinite(src.kp) ? src.kp : DEFAULT_PID_GAINS.kp,
+    ki: Number.isFinite(src.ki) ? src.ki : DEFAULT_PID_GAINS.ki,
+    kd: Number.isFinite(src.kd) ? src.kd : DEFAULT_PID_GAINS.kd
+  };
+}
+
 export const PID_SLIDER_BOUNDS = Object.freeze({
   kp: { min: 0, max: 18, step: 0.1 },
   ki: { min: 0, max: 8, step: 0.05 },
@@ -284,8 +293,9 @@ export class FlightSimulation {
     this.pidZ.setGains(this.gains);
   }
 
-  resetGains() {
-    this.setGains(DEFAULT_PID_GAINS);
+  resetGains(scene = this.activeScene) {
+    const initial = getSceneInitialGains(scene);
+    this.setGains(initial);
     return { ...this.gains };
   }
 

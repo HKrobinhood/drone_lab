@@ -8,11 +8,11 @@ export const TUTORIAL_LEVELS = [
     id: 'tutorial-1',
     mode: 'tutorial',
     order: 1,
-    name: 'Tutorial 1 — Take Off',
+    name: 'Tutorial 1 — Flight Control Basics',
     difficulty: 'Beginner',
-    learningFocus: 'Gravity and Thrust',
-    summary: 'Learn W/S vertical reference control and why a drone needs thrust to overcome gravity.',
-    milestone: 'M2'
+    learningFocus: 'Flight UI, Gravity & Thrust',
+    summary: 'Learn the game interface, tune PID sliders, practice WASD movement, and hover in the target zone.',
+    milestone: 'M4.1'
   },
   {
     id: 'tutorial-2',

@@ -230,6 +230,7 @@ const els = {
   resultPipTitle: document.getElementById('result-pip-title'),
   resultPipHeadline: document.getElementById('result-pip-headline'),
   resultPipExplanation: document.getElementById('result-pip-explanation'),
+  resultPipLessonNote: document.getElementById('result-pip-lesson-note'),
   resultPipComparison: document.getElementById('result-pip-comparison'),
   resultDiagList: document.getElementById('result-diag-list'),
   resultPipTip: document.getElementById('result-pip-tip'),
@@ -412,7 +413,7 @@ function applyPidGains(rawGains, scene = state.activeScene) {
     state.tunedGainsByLevel[scene.id] = { ...gains };
   }
   const analysis = syncAllPidPanels(gains, scene);
-  renderPipCard(els.prePipCard, analysis);
+  renderPreflightPipWithTutorialBrief(analysis, scene);
 
   if (scene?.mode === 'tutorial' && tutorialGuide.active) {
     const baseline = state.baselineGainsByLevel[scene.id];
@@ -424,6 +425,22 @@ function applyPidGains(rawGains, scene = state.activeScene) {
     }
   }
   return gains;
+}
+
+function renderPreflightPipWithTutorialBrief(analysis, scene = state.activeScene) {
+  if (scene?.mode === 'tutorial' && scene.pipMetricBrief && analysis.state !== 'warning') {
+    const metricsBadge = scene.measuredMetrics?.length
+      ? `Metrics focus: ${scene.measuredMetrics.join(' · ')}`
+      : null;
+    renderPipCard(els.prePipCard, {
+      ...analysis,
+      mood: 'explaining',
+      headline: scene.id === 'tutorial-1' ? 'Hi Pilot! WASD & Lesson Metrics' : `Lesson Focus: ${scene.stemTopic}`,
+      messages: metricsBadge ? [scene.pipMetricBrief, metricsBadge] : [scene.pipMetricBrief]
+    });
+    return;
+  }
+  renderPipCard(els.prePipCard, analysis);
 }
 
 function resetScenePid(scene = state.activeScene) {
@@ -445,7 +462,7 @@ function schedulePipUpdate(gains, scene) {
   pipDebounceTimer = window.setTimeout(() => {
     pipDebounceTimer = null;
     const analysis = syncAllPidPanels(gains, scene);
-    renderPipCard(els.prePipCard, analysis);
+    renderPreflightPipWithTutorialBrief(analysis, scene);
   }, 120);
 }
 
@@ -564,6 +581,12 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   els.resultPipTitle.textContent = report.title;
   els.resultPipHeadline.textContent = report.headline;
   els.resultPipExplanation.textContent = report.spokenSummary;
+  if (report.metricLessonNote) {
+    els.resultPipLessonNote.textContent = report.metricLessonNote;
+    els.resultPipLessonNote.classList.remove('hidden');
+  } else {
+    els.resultPipLessonNote.classList.add('hidden');
+  }
   if (report.comparisonNote) {
     els.resultPipComparison.textContent = report.comparisonNote;
     els.resultPipComparison.classList.remove('hidden');
@@ -783,7 +806,7 @@ function openPreflightTuning(scene, options = {}) {
   sim.setGains(gainsToUse);
 
   const analysis = syncAllPidPanels(gainsToUse, scene);
-  renderPipCard(els.prePipCard, analysis);
+  renderPreflightPipWithTutorialBrief(analysis, scene);
 
   const prev = state.lastAttempts[scene.id];
   if (prev) {

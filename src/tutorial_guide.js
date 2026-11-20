@@ -37,14 +37,14 @@ export const TUTORIAL_GUIDE_FLOWS = {
       stepId: 't1-briefing',
       view: 'preflight',
       targetSelector: '#mission-briefing-panel',
-      pipMood: 'explaining',
-      visualId: null,
-      title: 'Step 1 — Mission Briefing',
-      headline: 'Read Your Mission Goal',
-      instruction: 'Check Mission Objective and Success Requirements before takeoff.',
-      actionHint: 'Review the highlighted card, then click Next Step.',
+      pipMood: 'greeting',
+      visualId: 'wasd-controls',
+      title: 'Step 1 — Mission & WASD Basics',
+      headline: "Hi Pilot! I'm PIP — Meet WASD & Your Goal",
+      instruction: 'Use W, S, A, D to move REF; PID chases it to complete goals.',
+      actionHint: 'Check WASD controls and Mission Goal, then click Next Step.',
       learnMore:
-        'Mission Briefing summarizes target coordinates, hold duration, speed limits, and what changed from previous lessons.',
+        "I'm PIP! You never teleport the drone—W climbs, S descends, A/D steer left/right to move the yellow REF marker, and I'll measure how closely your drone tracks REF (Route Fit).",
       requiredAction: 'acknowledge'
     },
     {
@@ -138,11 +138,11 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'thinking',
       visualId: null,
       title: 'Step 8 — Flight Information',
-      headline: 'Read Live Telemetry',
-      instruction: 'Watch Speed and Position—low speed at REF means steady hover.',
-      actionHint: 'Check Position, Speed, and Thrust, then click Next Step.',
+      headline: 'Watch Speed, Error & Thrust',
+      instruction: 'Watch Speed and Ref Target—near-zero speed locks in fast Settling Time.',
+      actionHint: 'Check live Position, Speed, and Thrust, then click Next Step.',
       learnMore:
-        'Look for (SAT) near Thrust if motors hit max output, and verify Speed drops near 0.00 m/s inside target zones.',
+        'I track how quickly Speed settles near zero (Settling Time), motor saturation (SAT), and how closely Position matches Ref Target (Route Fit).',
       requiredAction: 'acknowledge'
     },
     {
@@ -166,11 +166,11 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'celebrating',
       visualId: 'pid-loop-steps',
       title: 'Step 10 — Results and Retry',
-      headline: "Great job! You've completed your first flight.",
-      instruction: 'Review Route Fit and metrics, then Retry or pick Next Level.',
-      actionHint: 'Click Finish Guide when ready.',
+      headline: "Great job, pilot! Meet My Diagnostic Report",
+      instruction: "I graded Time and Route Fit—let's review my telemetry report!",
+      actionHint: 'Read what I measured below, then click Finish Guide.',
       learnMore:
-        'Use Pre-flight Tuning or Retry to test faster Kp or cleaner Kd damping and watch Route Fit improve.',
+        'In later lessons, I will teach you each metric I grade: Tracking Lag, Steady-State Offset, Overshoot, Settling Time, and Stability.',
       requiredAction: 'acknowledge'
     }
   ],
@@ -182,12 +182,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-pid-panel',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Proportional Gain (Kp)',
-      headline: 'Test Low Kp = 1.2 First',
-      instruction: 'Kp controls how strongly your drone reacts to position errors.',
-      actionHint: 'Press Start Flight to feel slow lag with Kp = 1.2.',
+      title: 'Metric Focus: Lag & Route Fit',
+      headline: 'Pilot, Today I Measure Tracking Lag!',
+      instruction: 'Kp sets response speed—low Kp adds Tracking Lag and cuts Route Fit.',
+      actionHint: 'Press Start Flight to feel low Kp = 1.2 lag first.',
       learnMore:
-        'Low Kp produces gentle, slow tracking. Higher Kp speeds up response, though very high Kp relative to damping can cause overshoot.',
+        'I measure Average Tracking Error (lag behind REF) and Route Fit (% overlap with REF). Watch how raising Kp cuts lag.',
       requiredAction: 'start_flight'
     },
     {
@@ -196,12 +196,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-pid-panel',
       pipMood: 'explaining',
       visualId: 'kp-response',
-      title: 'Observe Lag & Raise Kp',
-      headline: 'Fly Right, Then Raise Kp',
-      instruction: 'Hold D to spot lag, then drag Kp up (>= 4.5).',
-      actionHint: 'Tap D, then raise Kp into the Recommended zone.',
+      title: 'Spot Tracking Lag & Raise Kp',
+      headline: 'Feel Lag First, Then Boost Kp',
+      instruction: 'Hold D to see Tracking Lag, then raise Kp (>= 4.5).',
+      actionHint: 'Tap D, then drag Kp into the Recommended zone.',
       learnMore:
-        'Notice how larger Kp multiplies horizontal error into a sharper pitch angle and faster acceleration.',
+        'Watch Position lag behind Ref Target at Kp = 1.2—raising Kp boosts acceleration, shortening Completion Time and improving Route Fit.',
       requiredAction: 'tune_kp_above_4_5'
     },
     {
@@ -211,11 +211,11 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'celebrating',
       visualId: null,
       title: 'Hold Inside Target',
-      headline: 'Finish Proportional Control',
+      headline: 'Lock In Your Route Fit',
       instruction: 'Guide REF into the right target zone and hold steady.',
       actionHint: 'Hold inside (18.0 m, 5.5 m) for 2.0 s.',
       learnMore:
-        'Balanced Kp reaches the zone quickly without overshooting past its boundary.',
+        'When we reach the Result Screen, I will show you your exact Average Tracking Error, Completion Time, and Route Fit score.',
       requiredAction: 'reach_target'
     }
   ],
@@ -227,12 +227,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#drone-specs-panel',
       pipMood: 'thinking',
       visualId: 'ki-integral',
-      title: 'Integral Gain (Ki)',
-      headline: 'Spot the +4.8 N Crosswind',
-      instruction: 'Steady wind causes persistent error when Ki is zero.',
-      actionHint: 'Press Start Flight to observe wind drift first.',
+      title: 'Metric Focus: Steady-State Offset',
+      headline: 'Pilot, Today I Measure Steady-State Offset!',
+      instruction: 'Steady wind leaves Persistent Error when Ki is zero—watch I measure it.',
+      actionHint: 'Press Start Flight to observe wind drift at Ki = 0.',
       learnMore:
-        'P control alone needs a remaining error to keep leaning against steady wind. Ki sums error over time until offset drops to zero.',
+        'I measure late-flight Steady-State Offset (remaining distance from REF) plus Saturation Time / Windup when Ki is pushed too high.',
       requiredAction: 'start_flight'
     },
     {
@@ -242,11 +242,11 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'explaining',
       visualId: 'ki-integral',
       title: 'Cancel Drift With Ki',
-      headline: 'Raise Ki to Center Drone',
-      instruction: 'Raise Ki (>= 0.80) so integral action fights the crosswind.',
+      headline: 'Shrink Steady-State Offset With Ki',
+      instruction: 'Raise Ki (>= 0.80) so integral error pulls the drone onto REF.',
       actionHint: 'Tune Ki smoothly and hold inside (16.0 m, 5.5 m).',
       learnMore:
-        'Avoid excessive Ki—too much integral windup builds up during travel and causes overshoot past the target.',
+        'On the Result Screen, I will check whether your Steady-State Offset dropped near zero without causing integral windup overshoot.',
       requiredAction: 'reach_target'
     }
   ],
@@ -258,12 +258,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-pid-panel',
       pipMood: 'thinking',
       visualId: 'kd-damping',
-      title: 'Derivative Gain (Kd)',
-      headline: 'Tune Damping Before Takeoff',
-      instruction: 'Try increasing Kd to reduce overshoot and improve braking.',
-      actionHint: 'Adjust Kd from 0.4 as needed, then press Start Flight.',
+      title: 'Metric Focus: Overshoot & Stability',
+      headline: 'Pilot, Watch Overshoot, Settling & Stability!',
+      instruction: 'Raise Kd to cut Overshoot, Oscillation, and Settling Time.',
+      actionHint: 'Adjust Kd from 0.4, then press Start Flight.',
       learnMore:
-        'Kd opposes velocity (D = -Kd × v) like an aerodynamic brake. Too little Kd bounces; too much Kd slows motion.',
+        'In this final lesson, I grade every metric you will face in Challenge Levels: Max Overshoot, Oscillation Reversals, Settling Time, Stability %, and Route Fit!',
       requiredAction: 'start_flight'
     }
   ]

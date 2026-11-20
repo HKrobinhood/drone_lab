@@ -296,11 +296,30 @@ export function generatePipDiagnosticReport(
     tips.push(baseDebrief.tip);
   }
 
+  let metricLessonNote = null;
+  if (isTutorial && scene?.id) {
+    const pathFitVal = Number(metrics.pathFitScore ?? 0).toFixed(0);
+    const compTimeVal = Number(metrics.completionTime ?? 0).toFixed(1);
+    const settlingVal = Number(metrics.settlingTime ?? 0).toFixed(1);
+    const smoothVal = Number(metrics.flightSmoothness ?? 100).toFixed(0);
+
+    if (scene.id === 'tutorial-1') {
+      metricLessonNote = `Metrics I taught you today: W/S/A/D moves REF, Completion Time (${compTimeVal} s) tracks speed, and Route Fit (${pathFitVal}%) measures how closely your drone followed REF.`;
+    } else if (scene.id === 'tutorial-2') {
+      metricLessonNote = `Metrics I measured for Kp: Average Tracking Lag (${diag.avgError.toFixed(2)} m) and Route Fit (${pathFitVal}%). Faster Kp cuts lag so your drone hugs the REF route.`;
+    } else if (scene.id === 'tutorial-3') {
+      metricLessonNote = `Metrics I measured for Ki: Steady-State Offset (${diag.steadyStateError.toFixed(2)} m) and Thrust Saturation (${diag.satDuration.toFixed(2)} s). Moderate Ki trims constant drift without windup.`;
+    } else if (scene.id === 'tutorial-4') {
+      metricLessonNote = `Full metric check: Max Overshoot (${diag.maxOvershoot.toFixed(2)} m), Oscillation (${diag.oscillationReversals} reversals), Settling Time (${settlingVal} s), Stability (${smoothVal}%), and Route Fit (${pathFitVal}%). You're ready for Challenge Levels!`;
+    }
+  }
+
   return {
     mood,
     title: 'PIP Flight Coach — Telemetry Analysis',
     headline,
     spokenSummary: narrativeParts.join(' '),
+    metricLessonNote,
     comparisonNote,
     diagnostics: diag,
     adviceList: tips.slice(0, 3),

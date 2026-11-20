@@ -101,8 +101,8 @@ export const LEVEL_STAR_THRESHOLDS = Object.freeze({
     threeStar: { maxTime: 25, maxOvershoot: 1.3, maxSettling: 4.5, minPathFit: 68, minSmoothness: 65 }
   },
   'tutorial-3': {
-    twoStar: { maxTime: 55, maxOvershoot: 2.5, minPathFit: 50 },
-    threeStar: { maxTime: 30, maxOvershoot: 1.5, maxSettling: 5.5, minPathFit: 64, minSmoothness: 65 }
+    twoStar: { maxTime: 55, maxOvershoot: 2.6, minPathFit: 36 },
+    threeStar: { maxTime: 30, maxOvershoot: 2.25, maxSettling: 4.5, minPathFit: 42, minSmoothness: 65 }
   },
   'tutorial-4': {
     twoStar: { maxTime: 55, maxOvershoot: 2.2, minPathFit: 52 },

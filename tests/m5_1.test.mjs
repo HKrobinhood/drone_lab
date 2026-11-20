@@ -201,6 +201,11 @@ describe('M5.1 — Visual-First UI, Interactive Diagrams & Animated Star Breakdo
     assert.ok(mainCss.includes('starPopBounce'));
     assert.ok(mainCss.includes('prefers-reduced-motion'));
 
+    const mainJs = fs.readFileSync(path.join(rootDir, 'src/main.js'), 'utf8');
+    // Tutorial and Challenge share the exact same star display & breakdown UI
+    assert.equal(mainJs.includes('!isChallenge || !isSuccess'), false);
+    assert.equal(mainJs.includes("els.resultRatingCard.classList.toggle('hidden', !isChallenge)"), false);
+
     const cjkRegex = /[\u4e00-\u9fff]/;
     for (const [name, content] of [
       ['src/visual_aids.js', visualJs],

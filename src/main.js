@@ -720,12 +720,12 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     previousAttempt
   );
 
-  // Mode-configured & success/failure hero
-  els.resultStarsBox.classList.toggle('hidden', !isChallenge || !isSuccess);
-  els.resultTutorialOutcomeBox.classList.toggle('hidden', isChallenge || !isSuccess);
+  // Unified Result Showcase & Star Rating Breakdown (Shared across Tutorial & Challenge)
+  els.resultStarsBox.classList.toggle('hidden', !isSuccess);
+  els.resultTutorialOutcomeBox.classList.add('hidden');
   els.resultFailedHero.classList.toggle('hidden', isSuccess);
-  els.resultRatingCard.classList.toggle('hidden', !isChallenge);
-  els.resultTutorialCard.classList.toggle('hidden', isChallenge);
+  els.resultRatingCard.classList.remove('hidden');
+  els.resultTutorialCard.classList.add('hidden');
 
   const breakdown = buildRatingBreakdown(scoreResult, metrics, outcome);
   renderSummaryCriteriaRows(breakdown);
@@ -747,13 +747,7 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
       <span class="result-failed-stat-pill">Avg Error<strong>${metrics.averageTrackingError.toFixed(2)} m</strong></span>
       <span class="result-failed-stat-pill">PID<strong>${formatGainsText(metrics.pidParameters)}</strong></span>
     `;
-    if (isTutorial) {
-      els.resultTutHeading.textContent = 'Keep Experimenting — Try Retry';
-      els.resultTutObjective.textContent =
-        state.activeScene.learningObjective || state.activeScene.objective;
-      els.resultTutPracticeStars.textContent = `${renderStarsText(0)} (0 / 3 Practice Rating)`;
-    }
-  } else if (isChallenge) {
+  } else {
     els.resultStarsDisplay.textContent = renderStarsText(scoreResult.stars);
     els.resultStarsDisplay.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
     els.resultStarRow?.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
@@ -766,16 +760,6 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
       els.resultNextStarTip.classList.add('hidden');
     }
     playStarRevealAnimation(scoreResult.stars);
-  } else {
-    els.resultDetailsStage?.classList.remove('is-pending-reveal');
-    els.btnResultSkipAnim?.classList.add('hidden');
-    els.resultTutorialStatusIcon.textContent = '✓';
-    els.resultTutorialStatusIcon.style.color = '#4ade80';
-    els.resultTutorialStatusLabel.textContent = 'Learning Objective Completed';
-    els.resultTutHeading.textContent = 'Learning Objective Completed';
-    els.resultTutObjective.textContent =
-      state.activeScene.learningObjective || state.activeScene.objective;
-    els.resultTutPracticeStars.textContent = `${renderStarsText(scoreResult.stars)} (${scoreResult.stars} / 3 Practice Rating)`;
   }
 
   els.resultTime.textContent = `${metrics.completionTime.toFixed(1)} s`;
@@ -827,7 +811,7 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   }
 
   const bestRef = getBestPidReference(state.progress, state.activeScene?.id);
-  if (isChallenge && bestRef) {
+  if (bestRef) {
     els.resultBestRef.classList.remove('hidden');
     els.resultBestRef.textContent = `Best Recorded PID (reference only): Kp ${bestRef.kp.toFixed(1)} / Ki ${bestRef.ki.toFixed(2)} / Kd ${bestRef.kd.toFixed(1)}`;
   } else {

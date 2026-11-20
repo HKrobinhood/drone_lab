@@ -159,6 +159,7 @@
 - **PIP UI 优化（`src/coach.js`, `src/visual_aids.js`, `src/main.js`）**：
   - 支持 `Greeting / Teaching / Warning / Ready / Success / Failure` 六类状态与 5 种轻量表情动画，每次优先展示 1 条核心建议，补充信息收纳于可折叠 `Learn More`。
 - **居中三星动画与评级依据（`src/scoring.js`, `styles/main.css`, `src/main.js`, `index.html`）**：
+  - 新手村（Tutorial Village）与正式关卡（Challenge Levels）统一使用同一套居中三星动画展示、1~3 星评级依据面板（`Mission Completed / Time Target / Precision Target` + 2★/3★ 明细）与下一颗星改进建议。
   - 通关结算顶部居中展示 3 颗原创矢量金星（未获星暗灰显示），按 `0.3s → 0.7s → 1.1s` 顺序逐颗弹跳点亮，三星时触发庆祝光效与轻量粒子动画；支持 `Skip Animation`、`prefers-reduced-motion` 以及同关 `Retry` 重新播放。
   - 失败界面不播放庆祝动画，以简洁 `Mission Failed` 卡片展示失败原因、关键指标与 PIP 一句话改进建议。
   - 新增 `buildRatingBreakdown` 与 `buildNextStarAdvice`，直接读取 M4 `scoreFlightRun` 与 `LEVEL_STAR_THRESHOLDS` 真实阈值生成 `Mission Completed / Time Target / Precision Target` 明细与无矛盾的下一颗星优化建议。

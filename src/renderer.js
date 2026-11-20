@@ -37,7 +37,6 @@ export class FlightRenderer {
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // Reserve bottom strip for ground visual
     const groundPx = 38;
     const padX = 16;
     const padTop = 16;
@@ -73,47 +72,78 @@ export class FlightRenderer {
     }
     ctx.stroke();
 
-    // Arena Boundary Outline
+    // Arena Boundary Outline & Challenge Out-of-Bounds Perimeter
     ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(toPxX(0), toPxY(worldH), worldW * scale, worldH * scale);
 
-    // 3. Wind Indicator Arrows (when active)
-    if (sim.windMode !== 'calm') {
-      this.#drawWindOverlay(ctx, width, padTop + 14, sim.drone.windX, sim.windMode);
+    if (Number.isFinite(sim.outOfBoundsMargin)) {
+      const m = sim.outOfBoundsMargin;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(248, 113, 113, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(toPxX(m), groundY);
+      ctx.lineTo(toPxX(m), toPxY(worldH - m));
+      ctx.lineTo(toPxX(worldW - m), toPxY(worldH - m));
+      ctx.lineTo(toPxX(worldW - m), groundY);
+      ctx.stroke();
+      ctx.restore();
     }
 
-    // 4. Ground & Launch Pad
+    // 3. Wind Indicator Overlay
+    if (sim.windMode !== 'calm') {
+      this.#drawWindOverlay(ctx, width, padTop + 14, sim.drone.windX, sim.drone.windZ, sim.windMode);
+    }
+
+    // 4. Obstacles
+    if (sim.obstacles?.length) {
+      this.#drawObstacles(ctx, sim.obstacles, toPxX, toPxY, scale);
+    }
+
+    // 5. Ground & Launch Pad
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(0, groundY, width, groundPx);
     ctx.fillStyle = '#334155';
     ctx.fillRect(0, groundY, width, 4);
 
-    // Takeoff Pad at startPos.x
     const padCenterPx = toPxX(sim.startPos.x);
     ctx.fillStyle = '#0284c7';
-    ctx.fillRect(padCenterPx - 1.1 * scale, groundY - 4, 2.2 * scale, 6);
+    ctx.fillRect(padCenterPx - 1.0 * scale, groundY - 4, 2.0 * scale, 6);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('LAUNCH PAD', padCenterPx, groundY + 22);
 
-    // 5. Target Zone (Playground Hover Test)
-    this.#drawTargetZone(ctx, sim.targetZone, toPxX, toPxY, scale);
+    // 6. Elevated Precision Landing Pad
+    if (sim.landingPad) {
+      this.#drawLandingPad(ctx, sim.landingPad, sim.padStatus, toPxX, toPxY, groundY, scale);
+    }
 
-    // 6. Flight Trail
+    // 7. Sequential Checkpoints / Rings
+    if (sim.rings?.length) {
+      this.#drawRings(ctx, sim.rings, sim.nextRingIndex, toPxX, toPxY, scale);
+    }
+
+    // 8. Aerial Target Zone
+    if (sim.targetZone) {
+      this.#drawTargetZone(ctx, sim.targetZone, toPxX, toPxY, scale);
+    }
+
+    // 9. Flight Trail
     this.#drawTrail(ctx, sim.trail, toPxX, toPxY);
 
-    // 7. Reference Position Crosshair & Tether
+    // 10. Reference Position Crosshair & Tether
     this.#drawReferenceMarker(ctx, sim.reference, sim.drone, toPxX, toPxY);
 
-    // 8. Drone Body
+    // 11. Drone Body
     if (!sim.paused && sim.started) {
       this.rotorPhase += frameDt * (18 + sim.drone.thrust * 1.4);
     }
     this.#drawDrone(ctx, sim.drone, sim.config, toPxX, toPxY, scale);
 
-    // 9. Pause Overlay
+    // 12. Pause Overlay
     if (sim.paused) {
       ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
       ctx.fillRect(0, 0, width, height);
@@ -129,21 +159,123 @@ export class FlightRenderer {
     ctx.restore();
   }
 
-  #drawWindOverlay(ctx, canvasW, y, windX, mode) {
-    const label = mode === 'gust' ? `GUST WIND (${windX.toFixed(1)} N)` : `STEADY WIND (+${windX.toFixed(1)} N)`;
+  #drawWindOverlay(ctx, canvasW, y, windX, windZ, mode) {
+    const isGusting = (mode === 'challenge_gust' || mode === 'gust') && windX > 4.5;
+    const label = isGusting
+      ? `GUST SURGE (+${windX.toFixed(1)} N)`
+      : `CROSSWIND (+${windX.toFixed(1)} N)`;
     ctx.save();
-    ctx.fillStyle = 'rgba(251, 146, 60, 0.16)';
-    ctx.strokeStyle = 'rgba(251, 146, 60, 0.55)';
-    ctx.lineWidth = 1;
+    ctx.fillStyle = isGusting ? 'rgba(239, 68, 68, 0.24)' : 'rgba(251, 146, 60, 0.16)';
+    ctx.strokeStyle = isGusting ? 'rgba(248, 113, 113, 0.8)' : 'rgba(251, 146, 60, 0.55)';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.roundRect(canvasW - 184, y, 166, 28, 8);
+    ctx.roundRect(canvasW - 196, y, 178, 28, 8);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#fdba74';
+    ctx.fillStyle = isGusting ? '#fca5a5' : '#fdba74';
     ctx.font = '700 11px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`→ ${label}`, canvasW - 101, y + 18);
+    const downArrow = windZ < -0.5 ? ' ↘' : '';
+    ctx.fillText(`→ ${label}${downArrow}`, canvasW - 107, y + 18);
+    ctx.restore();
+  }
+
+  #drawObstacles(ctx, obstacles, toPxX, toPxY, scale) {
+    ctx.save();
+    for (const obs of obstacles) {
+      const px = toPxX(obs.x);
+      const py = toPxY(obs.z + obs.height);
+      const pw = obs.width * scale;
+      const ph = obs.height * scale;
+
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(px, py, pw, ph);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px, py, pw, ph);
+
+      // Subtle diagonal hazard stripe accent
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.14)';
+      ctx.fillRect(px + 2, py + 2, pw - 4, Math.min(10, ph - 4));
+    }
+    ctx.restore();
+  }
+
+  #drawLandingPad(ctx, pad, padStatus, toPxX, toPxY, groundY, scale) {
+    const leftX = toPxX(pad.x - pad.halfWidth);
+    const padW = pad.halfWidth * 2 * scale;
+    const topY = toPxY(pad.topZ);
+    const pedH = Math.max(0, groundY - topY);
+
+    ctx.save();
+    // Pedestal
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(leftX + 4, topY, padW - 8, pedH);
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(leftX + 4, topY, padW - 8, pedH);
+
+    // Top Deck
+    ctx.fillStyle = padStatus?.landedSafely ? '#22c55e' : padStatus?.inside ? '#38bdf8' : '#0ea5e9';
+    ctx.fillRect(leftX, topY - 4, padW, 7);
+
+    // Hold Progress Bar
+    const progress = Math.min(1, (padStatus?.holdTimer || 0) / pad.holdRequired);
+    if (progress > 0) {
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(leftX, topY - 10, padW * progress, 4);
+    }
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '700 11px sans-serif';
+    ctx.textAlign = 'center';
+    const label = padStatus?.landedSafely
+      ? 'LANDED!'
+      : padStatus?.inside
+        ? `HOLD ${padStatus.holdTimer.toFixed(1)}/${pad.holdRequired.toFixed(1)}s`
+        : 'HELIPAD';
+    ctx.fillText(label, toPxX(pad.x), topY - 16);
+    ctx.restore();
+  }
+
+  #drawRings(ctx, rings, nextIndex, toPxX, toPxY, scale) {
+    ctx.save();
+    for (let i = 0; i < rings.length; i++) {
+      const ring = rings[i];
+      const rx = toPxX(ring.x);
+      const topOpenY = toPxY(ring.z + ring.apertureHalfH);
+      const botOpenY = toPxY(ring.z - ring.apertureHalfH);
+      const rimPx = 0.42 * scale;
+      const postW = 0.32 * scale;
+
+      const isPassed = ring.passed;
+      const isActive = i === nextIndex;
+      const rimColor = isPassed ? '#22c55e' : isActive ? '#facc15' : '#64748b';
+      const gateColor = isPassed
+        ? 'rgba(34, 197, 94, 0.25)'
+        : isActive
+          ? 'rgba(250, 204, 21, 0.28)'
+          : 'rgba(100, 116, 139, 0.16)';
+
+      // Aperture Corridor Line
+      ctx.strokeStyle = gateColor;
+      ctx.lineWidth = isActive ? 5 : 3;
+      ctx.beginPath();
+      ctx.moveTo(rx, topOpenY);
+      ctx.lineTo(rx, botOpenY);
+      ctx.stroke();
+
+      // Solid Top & Bottom Rim Posts
+      ctx.fillStyle = rimColor;
+      ctx.fillRect(rx - postW * 0.5, topOpenY - rimPx, postW, rimPx);
+      ctx.fillRect(rx - postW * 0.5, botOpenY, postW, rimPx);
+
+      ctx.fillStyle = isPassed ? '#86efac' : isActive ? '#fde047' : '#94a3b8';
+      ctx.font = '700 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`#${i + 1}`, rx, topOpenY - rimPx - 6);
+    }
     ctx.restore();
   }
 
@@ -167,7 +299,6 @@ export class FlightRenderer {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Hold progress arc
     const progress = Math.min(1, zone.holdTimer / zone.holdRequired);
     if (progress > 0) {
       ctx.beginPath();
@@ -183,7 +314,7 @@ export class FlightRenderer {
     const text = zone.stabilized
       ? 'STABILIZED'
       : zone.inside
-        ? `HOLD ${zone.holdTimer.toFixed(1)}/${zone.holdRequired.toFixed(0)}s`
+        ? `HOLD ${zone.holdTimer.toFixed(1)}/${zone.holdRequired.toFixed(1)}s`
         : 'TARGET ZONE';
     ctx.fillText(text, cx, cy - r - 10);
     ctx.restore();
@@ -210,7 +341,6 @@ export class FlightRenderer {
     const dy = toPxY(drone.z);
 
     ctx.save();
-    // Error tether line between reference target and actual drone position
     ctx.beginPath();
     ctx.setLineDash([4, 4]);
     ctx.moveTo(dx, dy);
@@ -220,7 +350,6 @@ export class FlightRenderer {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Target Crosshair
     ctx.strokeStyle = '#facc15';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -246,10 +375,8 @@ export class FlightRenderer {
 
     ctx.save();
     ctx.translate(cx, cy);
-    // Positive theta tilts thrust toward +x (clockwise in Canvas)
     ctx.rotate(drone.theta);
 
-    // Thrust Plumes
     if (thrustNorm > 0.03) {
       const plumeLen = (8 + thrustNorm * 26) * (0.9 + 0.1 * Math.sin(this.rotorPhase * 2));
       ctx.fillStyle = `rgba(251, 146, 60, ${0.3 + thrustNorm * 0.55})`;
@@ -263,7 +390,6 @@ export class FlightRenderer {
       }
     }
 
-    // Landing Skids
     ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -275,7 +401,6 @@ export class FlightRenderer {
     ctx.lineTo(bodyHalfW * 0.75, 12);
     ctx.stroke();
 
-    // Main Chassis Bar
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
@@ -284,7 +409,6 @@ export class FlightRenderer {
     ctx.lineTo(bodyHalfW * 0.85, 0);
     ctx.stroke();
 
-    // Rotor Masts & Spinning Blades
     const bladeHalf = bodyHalfW * (0.35 + 0.14 * Math.abs(Math.cos(this.rotorPhase)));
     ctx.strokeStyle = '#7dd3fc';
     ctx.lineWidth = 3;
@@ -300,13 +424,11 @@ export class FlightRenderer {
       ctx.stroke();
     }
 
-    // Center Flight Controller Hub
     ctx.fillStyle = '#0ea5e9';
     ctx.beginPath();
     ctx.roundRect(-10, -6, 20, 11, 4);
     ctx.fill();
 
-    // Nose LED Indicator
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
     ctx.arc(0, -1, 2.5, 0, Math.PI * 2);

@@ -28,7 +28,7 @@
 | **M0** | Project Initialization | 初始化 Git 仓库、工程文档、英文首页、Mode Selection、关卡入口框架 | **已完成** |
 | **M1** | PID Physics and Flight Feel | 2D 无人机物理、PID-X/Z、WASD 手动控制、Flight Test Playground、自动化测试与**人工手感验收** | **已验收通过** |
 | **M2** | Tutorial Village | 4 个交互式教学关卡（Take Off, Kp, Ki, Kd）及实时教学反馈 | **已完成** |
-| **M3** | Challenge Levels | 6 个正式挑战关卡、障碍物、检查点、圆环穿越、风扰与碰撞检测 | 待开始 |
+| **M3** | Challenge Levels | 6 个正式挑战关卡、障碍物、检查点、圆环穿越、风扰与碰撞检测 | **已完成** |
 | **M4** | Scoring and Progress | 1~3 星评分算法、结果界面、localStorage 进度与最高星级存档 | 待开始 |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
@@ -68,13 +68,13 @@
 - [x] 教学目标提示、失败反馈与建议调参提示
 
 ### M3 — Challenge Levels
-- [ ] Level 1 — Stable Hover（目标区 3 秒稳定悬停与计时重置）
-- [ ] Level 2 — Precision Landing（小型平台精准降落与硬着陆判定）
-- [ ] Level 3 — Ring Flight（按顺序真实穿越圆环检测）
-- [ ] Level 4 — Narrow Corridor（狭窄障碍通道）
-- [ ] Level 5 — Wind Challenge（持续横风 + 短时阵风）
-- [ ] Level 6 — Final Rescue Mission（综合任务）
-- [ ] 碰撞、越界、超时判定与关卡解锁逻辑
+- [x] Level 1 — Stable Hover（目标区 3 秒稳定悬停与计时重置）
+- [x] Level 2 — Precision Landing（小型平台精准降落与硬着陆判定）
+- [x] Level 3 — Ring Flight（按顺序真实穿越圆环检测）
+- [x] Level 4 — Narrow Corridor（狭窄障碍通道）
+- [x] Level 5 — Wind Challenge（持续横风 + 短时阵风）
+- [x] Level 6 — Final Rescue Mission（综合任务）
+- [x] 碰撞、越界、超时判定与关卡解锁逻辑
 
 ### M4 — Scoring and Progress
 - [ ] 实现 `src/scoring.js`（1~3 星评价与各关卡阈值）
@@ -97,9 +97,9 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M2 — Tutorial Village`（已完成，待确认后进入 M3）
-- **已完成**：4 个交互式新手教学关卡（`Take Off`、`Proportional Control`、`Integral Control`、`Derivative Control`）、实时遥测教学教练提示、通关/失败结果弹窗与顺序解锁持久化。
-- **当前阻塞 / 注意事项**：Challenge Levels（6 个正式关卡）将在 M3 实现。
+- **当前里程碑**：`M3 — Challenge Levels`（已完成，待确认后进入 M4）
+- **已完成**：6 个正式挑战关卡（`Stable Hover`、`Precision Landing`、`Ring Flight`、`Narrow Corridor`、`Wind Challenge`、`Final Rescue Mission`）、障碍物碰撞、高台软着陆、顺序圆环平面穿越检测、边界越界判定与关卡解锁。
+- **当前阻塞 / 注意事项**：1~3 星性能评分与独立 Result Screen 将在 M4 实现，详细时间序列 PID 诊断分析将在 M5 实现。
 
 ---
 
@@ -140,11 +140,12 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `chore(m0): initialize PID drone game and start screen` — 完成 M0 项目初始化、英文首页、模式与关卡入口框架及工程文档。
 - `feat(m1): implement PID flight physics and manual controls` — 完成 M1 二维 PID 控制器、无人机动力学、WASD 操控与 Flight Test Playground。
 - `feat(m2): implement PID tutorial village` — 完成 M2 新手村 4 个交互式 PID 教学实验关卡、实时教学反馈与顺序解锁。
+- `feat(m3): implement drone challenge levels` — 完成 M3 六个正式挑战关卡、障碍物碰撞、高台着陆、顺序圆环穿越检测与越界判定。
 
 ---
 
 ## 九、下一步开发任务
 
-等待用户确认 M2 后，启动 **M3 — Challenge Levels**：
-1. 扩展 `src/scenes.js` 与 `src/renderer.js` 支持障碍物、着陆平台、顺序圆环检测与多阶段风扰。
-2. 实现 6 个正式挑战关卡（Stable Hover / Precision Landing / Ring Flight / Narrow Corridor / Wind Challenge / Final Rescue Mission）。
+等待用户确认 M3 后，启动 **M4 — Scoring and Progress**：
+1. 实现 `src/scoring.js`（1~3 星评价指标与各关卡阈值）。
+2. 完善 Result Screen 并持久化历史最高星级。

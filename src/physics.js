@@ -36,6 +36,8 @@ export function createDroneState(startPos = {}) {
   return {
     x,
     z,
+    prevX: x,
+    prevZ: z,
     vx: 0,
     vz: 0,
     ax: 0,
@@ -43,11 +45,20 @@ export function createDroneState(startPos = {}) {
     theta: 0,
     thrust: 0,
     onGround: z <= 0.001,
+    onPad: false,
     landedHard: false,
     maxImpactSpeed: 0,
     windX: 0,
     windZ: 0
   };
+}
+
+export function circleIntersectsRect(cx, cz, radius, rect) {
+  const closestX = clamp(cx, rect.x, rect.x + rect.width);
+  const closestZ = clamp(cz, rect.z, rect.z + rect.height);
+  const dx = cx - closestX;
+  const dz = cz - closestZ;
+  return dx * dx + dz * dz <= radius * radius;
 }
 
 /**
@@ -64,9 +75,13 @@ export function stepDronePhysics(
   accelCmd,
   windForce = { x: 0, z: 0 },
   dt = 1 / 120,
-  config = DEFAULT_PHYSICS_CONFIG
+  config = DEFAULT_PHYSICS_CONFIG,
+  landingPad = null
 ) {
   if (!Number.isFinite(dt) || dt <= 0) return state;
+
+  state.prevX = state.x;
+  state.prevZ = state.z;
 
   const axCmd = Number.isFinite(accelCmd?.axCmd) ? accelCmd.axCmd : 0;
   const azCmd = Number.isFinite(accelCmd?.azCmd) ? accelCmd.azCmd : 0;
@@ -74,10 +89,11 @@ export function stepDronePhysics(
   const windZ = Number.isFinite(windForce?.z) ? windForce.z : 0;
 
   // Nominal hover lift compensation plus PID vertical acceleration command.
-  // When resting on ground with non-positive upward command, motors remain idle.
+  // When resting on ground/pad with non-positive upward command, motors remain idle.
   const desiredLiftAccel = config.gravity + azCmd;
+  const restingSurface = state.z <= 0.002 || state.onPad;
   const restingIdle =
-    state.z <= 0.002 &&
+    restingSurface &&
     azCmd <= 0.05 &&
     Math.abs(axCmd) <= 0.05 &&
     Math.abs(state.vz) <= 0.05;
@@ -112,6 +128,30 @@ export function stepDronePhysics(
   let z = state.z + vz * dt;
 
   let onGround = false;
+  let onPad = false;
+
+  // Elevated landing pad surface support (when descending onto top deck)
+  if (landingPad) {
+    const overDeck = Math.abs(x - landingPad.x) <= landingPad.halfWidth - 0.12;
+    const crossedTop = state.prevZ >= landingPad.topZ - 0.12 && z <= landingPad.topZ;
+    if (overDeck && crossedTop && vz <= 0) {
+      const impactSpeed = Math.abs(state.vz);
+      if (impactSpeed > state.maxImpactSpeed) {
+        state.maxImpactSpeed = impactSpeed;
+      }
+      const padLimit = landingPad.maxTouchdownSpeed ?? config.hardLandingSpeed;
+      if (impactSpeed > padLimit) {
+        state.landedHard = true;
+      }
+      z = landingPad.topZ;
+      vz = 0;
+      vx *= 0.85;
+      if (Math.abs(vx) < 0.01) vx = 0;
+      theta *= 0.85;
+      onPad = true;
+    }
+  }
+
   if (z <= 0) {
     const impactSpeed = state.vz < 0 ? Math.abs(state.vz) : 0;
     if (impactSpeed > state.maxImpactSpeed) {
@@ -155,6 +195,7 @@ export function stepDronePhysics(
   state.theta = Number.isFinite(theta) ? theta : 0;
   state.thrust = Number.isFinite(thrust) ? thrust : 0;
   state.onGround = onGround;
+  state.onPad = onPad;
   state.windX = windX;
   state.windZ = windZ;
 

@@ -83,6 +83,11 @@ const els = {
   flightThrust: document.getElementById('flight-thrust'),
   flightRef: document.getElementById('flight-ref'),
 
+  // Challenge Briefing Panel
+  challengeBriefingPanel: document.getElementById('challenge-briefing-panel'),
+  challengeBriefingText: document.getElementById('challenge-briefing-text'),
+  challengeCheckpointPill: document.getElementById('challenge-checkpoint-pill'),
+
   // Tutorial Guide Panel
   tutorialGuidePanel: document.getElementById('tutorial-guide-panel'),
   tutorialCoachBar: document.getElementById('tutorial-coach-bar'),
@@ -156,7 +161,12 @@ function hideOutcomeModal() {
 
 function showOutcomeModal(outcome) {
   const isSuccess = outcome.status === 'completed';
-  els.outcomeBadge.textContent = isSuccess ? 'Tutorial Complete' : 'Try Again';
+  const isChallenge = state.activeScene?.mode === 'challenge';
+  els.outcomeBadge.textContent = isSuccess
+    ? isChallenge
+      ? 'Mission Complete'
+      : 'Tutorial Complete'
+    : 'Mission Failed';
   els.outcomeTitle.textContent = outcome.title;
   els.outcomeMessage.textContent = outcome.message;
   els.outcomeTime.textContent = `${sim.elapsedTime.toFixed(1)} s`;
@@ -221,7 +231,7 @@ function renderLevelSelection(mode) {
       ? 'Complete Previous'
       : isTutorial
         ? 'Start Lesson'
-        : 'Scheduled (M3)';
+        : 'Start Mission';
 
     const card = document.createElement('button');
     card.type = 'button';
@@ -310,6 +320,20 @@ function renderTutorialGuide(scene) {
   els.guideSuggestion.textContent = `Tip: ${guide.suggestedAdjustment}`;
 }
 
+function renderMissionBriefing(scene) {
+  if (scene?.mode === 'challenge') {
+    els.challengeBriefingPanel.classList.remove('hidden');
+    els.challengeBriefingText.textContent = scene.briefing || scene.objective;
+    const totalRings = scene.rings?.length || 0;
+    els.challengeCheckpointPill.classList.toggle('hidden', totalRings === 0);
+    if (totalRings > 0) {
+      els.challengeCheckpointPill.textContent = `Rings Cleared: 0 / ${totalRings}`;
+    }
+  } else {
+    els.challengeBriefingPanel.classList.add('hidden');
+  }
+}
+
 function updateFlightHud() {
   const snap = sim.getSnapshot();
   const limit = state.activeScene?.timeLimit;
@@ -331,10 +355,12 @@ function updateFlightHud() {
   if (snap.paused) {
     statusLabel = 'Paused';
     els.flightStatus.classList.add('is-paused');
-  } else if (snap.targetZone.stabilized) {
-    statusLabel = 'Target Stabilized!';
+  } else if (snap.targetZone?.stabilized || snap.landingPad?.landedSafely) {
+    statusLabel = 'Mission Complete!';
     els.flightStatus.classList.add('is-stabilized');
-  } else if (snap.targetZone.inside) {
+  } else if (snap.landingPad?.inside) {
+    statusLabel = `On Helipad (${snap.landingPad.holdTimer.toFixed(1)}s)`;
+  } else if (snap.targetZone?.inside) {
     statusLabel = `Inside Target (${snap.targetZone.holdTimer.toFixed(1)}s)`;
   } else if (snap.started) {
     statusLabel = snap.drone.onGround ? 'Armed (On Ground)' : 'In Flight';
@@ -346,11 +372,14 @@ function updateFlightHud() {
     if (hint) {
       els.tutorialCoachBar.textContent = hint;
     }
+  } else if (state.activeScene?.mode === 'challenge' && snap.rings.length > 0) {
+    els.challengeCheckpointPill.textContent = `Rings Cleared: ${snap.nextRingIndex} / ${snap.rings.length}`;
   }
 }
 
 function handleSceneOutcomeIfNeeded() {
-  if (state.runFinished || state.activeScene?.mode !== 'tutorial') return;
+  const mode = state.activeScene?.mode;
+  if (state.runFinished || (mode !== 'tutorial' && mode !== 'challenge')) return;
 
   const outcome = evaluateSceneOutcome(sim, state.activeScene);
   if (outcome.status === 'completed' || outcome.status === 'failed') {
@@ -446,13 +475,19 @@ function launchScene(scene) {
 
   els.flightLevelName.textContent = scene.name;
   els.flightObjective.textContent = scene.objective;
-  els.btnFlightBack.innerHTML = scene.mode === 'tutorial' ? '&larr; Tutorials' : '&larr; Modes';
+  els.btnFlightBack.innerHTML =
+    scene.mode === 'tutorial'
+      ? '&larr; Tutorials'
+      : scene.mode === 'challenge'
+        ? '&larr; Challenges'
+        : '&larr; Modes';
 
   els.selectWind.value = sim.windMode;
   els.selectWind.disabled = scene.allowWindSelect === false;
 
   syncSlidersFromGains(sim.gains);
   renderTutorialGuide(scene);
+  renderMissionBriefing(scene);
   syncFlightControlsUi();
   navigateTo('flight');
 }
@@ -492,8 +527,8 @@ function bindEvents() {
 
   els.btnFlightBack.addEventListener('click', () => {
     hideOutcomeModal();
-    if (state.activeScene?.mode === 'tutorial') {
-      navigateTo('levels', { mode: 'tutorial' });
+    if (state.activeScene?.mode === 'tutorial' || state.activeScene?.mode === 'challenge') {
+      navigateTo('levels', { mode: state.activeScene.mode });
     } else {
       navigateTo('modes');
     }
@@ -527,7 +562,8 @@ function bindEvents() {
   els.btnOutcomeRetry.addEventListener('click', restartFlight);
   els.btnOutcomeLevels.addEventListener('click', () => {
     hideOutcomeModal();
-    navigateTo('levels', { mode: 'tutorial' });
+    const backMode = state.activeScene?.mode === 'challenge' ? 'challenge' : 'tutorial';
+    navigateTo('levels', { mode: backMode });
   });
   els.btnOutcomeNext.addEventListener('click', () => {
     const nextId = els.btnOutcomeNext.dataset.nextId;

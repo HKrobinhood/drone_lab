@@ -158,9 +158,180 @@ export const TUTORIAL_SCENES = {
   }
 };
 
+export const CHALLENGE_SCENES = {
+  'level-1': {
+    id: 'level-1',
+    mode: 'challenge',
+    nextLevelId: 'level-2',
+    name: 'Level 1 — Stable Hover',
+    objective: 'Take off, enter the aerial target zone, and maintain a steady hover for 3.0 seconds.',
+    startPos: { x: 3.5, z: 0.0 },
+    initialGains: { ...DEFAULT_PID_GAINS },
+    windMode: 'calm',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    targetZone: {
+      x: 17.5,
+      z: 8.0,
+      radius: 1.25,
+      holdRequired: 3.0,
+      maxSpeed: 0.38
+    },
+    timeLimit: 65,
+    briefing: 'Overshooting out of the zone resets the 3.0 s hover timer. Keep speed below 0.38 m/s inside the circle.',
+    suggestedAdjustment: 'Keep Kp balanced (~6.5) and Kd around 3.8–4.5 so the drone stops smoothly inside the target zone.'
+  },
+
+  'level-2': {
+    id: 'level-2',
+    mode: 'challenge',
+    nextLevelId: 'level-3',
+    name: 'Level 2 — Precision Landing',
+    objective: 'Clear the mid-field wall and land softly on the elevated helipad (<= 1.8 m/s vertical speed).',
+    startPos: { x: 3.5, z: 0.0 },
+    initialGains: { ...DEFAULT_PID_GAINS },
+    windMode: 'calm',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    forbidGroundOutsidePad: true,
+    obstacles: [
+      { x: 10.2, z: 0.0, width: 1.2, height: 4.6 }
+    ],
+    landingPad: {
+      x: 19.0,
+      topZ: 1.6,
+      halfWidth: 1.1,
+      maxTouchdownSpeed: 1.8,
+      holdRequired: 1.2
+    },
+    targetZone: null,
+    timeLimit: 70,
+    briefing: 'Fly over the 4.6 m barrier and descend gently onto the compact helipad. Slamming down above 1.8 m/s triggers a hard landing.',
+    suggestedAdjustment: 'Raise Kd slightly (4.0–5.0) to soften vertical descent and prevent horizontal overshoot past the pad.'
+  },
+
+  'level-3': {
+    id: 'level-3',
+    mode: 'challenge',
+    nextLevelId: 'level-4',
+    name: 'Level 3 — Ring Flight',
+    objective: 'Fly sequentially through Rings 1, 2, and 3 in order, then stabilize in the finish zone.',
+    startPos: { x: 2.8, z: 0.0 },
+    initialGains: { ...DEFAULT_PID_GAINS },
+    windMode: 'calm',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    rings: [
+      { x: 7.5, z: 4.5, apertureHalfH: 1.45 },
+      { x: 12.5, z: 8.5, apertureHalfH: 1.4 },
+      { x: 17.2, z: 5.2, apertureHalfH: 1.35 }
+    ],
+    targetZone: {
+      x: 21.0,
+      z: 6.0,
+      radius: 1.25,
+      holdRequired: 1.0,
+      maxSpeed: 0.45
+    },
+    timeLimit: 75,
+    briefing: 'Pass cleanly through the center of each highlighted ring in order (#1 → #2 → #3) without clipping the top or bottom rims.',
+    suggestedAdjustment: 'Use moderate Kp (6.5–7.5) for responsive climbing between rings and Kd (3.8–4.4) to avoid clipping rims.'
+  },
+
+  'level-4': {
+    id: 'level-4',
+    mode: 'challenge',
+    nextLevelId: 'level-5',
+    name: 'Level 4 — Narrow Corridor',
+    objective: 'Thread your drone through the tight zig-zag obstacle corridor without collisions.',
+    startPos: { x: 2.8, z: 0.0 },
+    initialGains: { ...DEFAULT_PID_GAINS },
+    windMode: 'calm',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    obstacles: [
+      { x: 7.2, z: 0.0, width: 1.1, height: 5.2 },
+      { x: 7.2, z: 8.6, width: 1.1, height: 5.4 },
+      { x: 12.2, z: 0.0, width: 1.1, height: 3.0 },
+      { x: 12.2, z: 6.4, width: 1.1, height: 7.6 },
+      { x: 16.8, z: 0.0, width: 1.1, height: 5.8 },
+      { x: 16.8, z: 9.2, width: 1.1, height: 4.8 }
+    ],
+    targetZone: {
+      x: 20.8,
+      z: 7.2,
+      radius: 1.15,
+      holdRequired: 1.5,
+      maxSpeed: 0.42
+    },
+    timeLimit: 80,
+    briefing: 'Narrow 3.4 m vertical gaps demand low overshoot. Avoid oscillation as you step up and down through the gates.',
+    suggestedAdjustment: 'Ensure Kd >= 4.0 and avoid excessive Kp (> 10) or Ki (> 1.5) to prevent vertical bounce into beams.'
+  },
+
+  'level-5': {
+    id: 'level-5',
+    mode: 'challenge',
+    nextLevelId: 'level-6',
+    name: 'Level 5 — Wind Challenge',
+    objective: 'Overcome the barrier and hold steady in the target zone under sustained crosswind and gusts.',
+    startPos: { x: 3.2, z: 0.0 },
+    initialGains: { kp: 6.5, ki: 0.2, kd: 3.8 },
+    windMode: 'challenge_gust',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    obstacles: [
+      { x: 11.2, z: 0.0, width: 1.2, height: 5.0 }
+    ],
+    targetZone: {
+      x: 19.0,
+      z: 7.5,
+      radius: 1.1,
+      holdRequired: 2.5,
+      maxSpeed: 0.42
+    },
+    timeLimit: 85,
+    briefing: 'Strong +3.5 N crosswind plus periodic +6.6 N / -1.4 N gusts will push you right and down. Tune Ki to reject steady drift!',
+    suggestedAdjustment: 'Increase Ki into the 1.2–2.2 range and keep Kp around 6.5–7.5, Kd around 3.8–4.5 to resist wind gusts.'
+  },
+
+  'level-6': {
+    id: 'level-6',
+    mode: 'challenge',
+    nextLevelId: null,
+    name: 'Level 6 — Final Rescue Mission',
+    objective: 'Clear obstacles and both rescue rings in gusty wind, then land softly on the rescue helipad.',
+    startPos: { x: 2.6, z: 0.0 },
+    initialGains: { kp: 6.8, ki: 1.1, kd: 4.2 },
+    windMode: 'challenge_gust',
+    allowWindSelect: false,
+    outOfBoundsMargin: 0.7,
+    forbidGroundOutsidePad: true,
+    obstacles: [
+      { x: 6.8, z: 0.0, width: 1.0, height: 4.5 },
+      { x: 13.8, z: 8.6, width: 1.1, height: 5.4 }
+    ],
+    rings: [
+      { x: 10.2, z: 6.8, apertureHalfH: 1.35 },
+      { x: 15.4, z: 5.2, apertureHalfH: 1.3 }
+    ],
+    landingPad: {
+      x: 19.5,
+      topZ: 1.6,
+      halfWidth: 1.2,
+      maxTouchdownSpeed: 1.9,
+      holdRequired: 1.5
+    },
+    targetZone: null,
+    timeLimit: 95,
+    briefing: 'Final exam: Takeoff → Ring #1 → Ring #2 under gusts → Soft Rescue Helipad Touchdown (<= 1.9 m/s).',
+    suggestedAdjustment: 'Balanced rescue tuning: Kp ~6.5–7.5, Ki ~1.0–1.5 for wind, Kd ~4.0–4.6 for ring accuracy and soft touchdown.'
+  }
+};
+
 export function getSceneById(id) {
   if (id === 'playground') return PLAYGROUND_SCENE;
-  return TUTORIAL_SCENES[id] || null;
+  return TUTORIAL_SCENES[id] || CHALLENGE_SCENES[id] || null;
 }
 
 /**
@@ -241,24 +412,71 @@ export function evaluateSceneOutcome(sim, scene) {
     return { status: 'ready' };
   }
 
-  if (sim.targetZone.stabilized) {
+  const targetComplete = scene.targetZone ? sim.targetZone?.stabilized : true;
+  const padComplete = scene.landingPad ? sim.padStatus?.landedSafely : true;
+  const ringsComplete = (scene.rings?.length || 0) === 0 || sim.nextRingIndex >= scene.rings.length;
+
+  if (
+    !sim.collided &&
+    !sim.outOfBounds &&
+    !sim.landedOffPad &&
+    !sim.drone.landedHard &&
+    ringsComplete &&
+    targetComplete &&
+    padComplete &&
+    (scene.targetZone || scene.landingPad)
+  ) {
     return {
       status: 'completed',
       title: 'Mission Complete!',
-      message: `You stabilized inside ${scene.name} in ${sim.elapsedTime.toFixed(1)} s.`,
-      suggestedAdjustment: scene.tutorialGuide?.suggestedAdjustment || null
+      message: `You completed ${scene.name} in ${sim.elapsedTime.toFixed(1)} s.`,
+      suggestedAdjustment: scene.suggestedAdjustment || scene.tutorialGuide?.suggestedAdjustment || null
     };
   }
 
-  if (scene.mode === 'tutorial' && sim.drone.landedHard) {
+  if (sim.collided) {
+    return {
+      status: 'failed',
+      reason: 'collision',
+      title: 'Mission Failed — Collision',
+      message: 'Your drone struck an obstacle or ring rim. Reduce overshoot and approach tight gaps smoothly.',
+      suggestedAdjustment:
+        scene.suggestedAdjustment || 'Try increasing Kd (3.8–4.6) to reduce overshoot and improve braking precision.'
+    };
+  }
+
+  if (sim.outOfBounds) {
+    return {
+      status: 'failed',
+      reason: 'out_of_bounds',
+      title: 'Mission Failed — Out of Bounds',
+      message: 'Your drone crossed the arena safety boundary. Keep flight trajectories inside the marked perimeter.',
+      suggestedAdjustment:
+        scene.suggestedAdjustment || 'Lower excessive Kp or increase Kd so your drone brakes before reaching the walls.'
+    };
+  }
+
+  if (sim.landedOffPad) {
+    return {
+      status: 'failed',
+      reason: 'off_pad',
+      title: 'Mission Failed — Missed Landing Pad',
+      message: `Your drone touched down on the ground instead of the helipad at X = ${scene.landingPad?.x?.toFixed(1)} m.`,
+      suggestedAdjustment:
+        scene.suggestedAdjustment || 'Align the REF crosshair directly above the helipad before descending with S.'
+    };
+  }
+
+  if ((scene.mode === 'tutorial' || scene.mode === 'challenge') && sim.drone.landedHard) {
     return {
       status: 'failed',
       reason: 'hard_landing',
       title: 'Mission Failed — Hard Landing',
       message:
         scene.tutorialGuide?.failureFeedbackHardLanding ||
-        `Touchdown speed (${sim.drone.maxImpactSpeed.toFixed(1)} m/s) exceeded safe limits.`,
-      suggestedAdjustment: scene.tutorialGuide?.suggestedAdjustment || null
+        `Touchdown speed (${sim.drone.maxImpactSpeed.toFixed(1)} m/s) exceeded safe landing limits.`,
+      suggestedAdjustment:
+        scene.suggestedAdjustment || scene.tutorialGuide?.suggestedAdjustment || 'Increase Kd slightly and descend gradually with S.'
     };
   }
 
@@ -269,8 +487,8 @@ export function evaluateSceneOutcome(sim, scene) {
       title: 'Mission Failed — Time Expired',
       message:
         scene.tutorialGuide?.failureFeedbackTimeout ||
-        `Time limit (${scene.timeLimit} s) reached before stabilizing in the target zone.`,
-      suggestedAdjustment: scene.tutorialGuide?.suggestedAdjustment || null
+        `Time limit (${scene.timeLimit} s) reached before completing all mission objectives.`,
+      suggestedAdjustment: scene.suggestedAdjustment || scene.tutorialGuide?.suggestedAdjustment || null
     };
   }
 

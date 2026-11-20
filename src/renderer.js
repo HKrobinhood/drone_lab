@@ -25,7 +25,9 @@ export class FlightRenderer {
     return { width: rect.width, height: rect.height, dpr };
   }
 
-  render(sim, frameDt = 1 / 60) {
+  render(sim, frameDt = 1 / 60, options = {}) {
+    const showGhostDrone = options.showGhostDrone !== false;
+    const showTrails = options.showTrails !== false;
     const dims = this.resizeIfNeeded();
     if (!dims || !this.ctx) return;
 
@@ -132,14 +134,16 @@ export class FlightRenderer {
     }
 
     // 9. Previous Attempt (if retrying), Commanded REF & Actual Flight Trails
-    if (sim.previousTrail?.length > 1) {
-      this.#drawPreviousTrail(ctx, sim.previousTrail, toPxX, toPxY);
+    if (showTrails) {
+      if (sim.previousTrail?.length > 1) {
+        this.#drawPreviousTrail(ctx, sim.previousTrail, toPxX, toPxY);
+      }
+      this.#drawRefTrail(ctx, sim.refTrail, toPxX, toPxY);
+      this.#drawTrail(ctx, sim.trail, toPxX, toPxY);
     }
-    this.#drawRefTrail(ctx, sim.refTrail, toPxX, toPxY);
-    this.#drawTrail(ctx, sim.trail, toPxX, toPxY);
 
-    // 10. Reference Position Crosshair & Tether
-    this.#drawReferenceMarker(ctx, sim.reference, sim.drone, toPxX, toPxY);
+    // 10. Reference Position (Ghost Drone + Error Tether)
+    this.#drawReferenceMarker(ctx, sim.reference, sim.drone, sim.config, toPxX, toPxY, scale, showGhostDrone);
 
     // 11. Drone Body
     if (!sim.paused && sim.started) {
@@ -372,36 +376,108 @@ export class FlightRenderer {
     ctx.restore();
   }
 
-  #drawReferenceMarker(ctx, ref, drone, toPxX, toPxY) {
+  #drawReferenceMarker(ctx, ref, drone, config, toPxX, toPxY, scale, showGhostDrone = true) {
     const rx = toPxX(ref.x);
     const ry = toPxY(ref.z);
     const dx = toPxX(drone.x);
     const dy = toPxY(drone.z);
+    const errDist = Math.hypot(ref.x - drone.x, ref.z - drone.z);
 
     ctx.save();
-    ctx.beginPath();
-    ctx.setLineDash([4, 4]);
-    ctx.moveTo(dx, dy);
-    ctx.lineTo(rx, ry);
-    ctx.strokeStyle = 'rgba(250, 204, 21, 0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.setLineDash([]);
+    if (showGhostDrone) {
+      // Position Error Tether + Arrow between Actual Drone and Ghost REF Drone
+      if (errDist > 0.12) {
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(dx, dy);
+        ctx.lineTo(rx, ry);
+        ctx.strokeStyle = errDist > 1.2 ? 'rgba(251, 113, 133, 0.72)' : 'rgba(250, 204, 21, 0.58)';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Arrowhead pointing toward REF
+        const ang = Math.atan2(ry - dy, rx - dx);
+        const ax = rx - Math.cos(ang) * 14;
+        const ay = ry - Math.sin(ang) * 14;
+        ctx.fillStyle = errDist > 1.2 ? '#fb7185' : '#facc15';
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax - Math.cos(ang - 0.45) * 7, ay - Math.sin(ang - 0.45) * 7);
+        ctx.lineTo(ax - Math.cos(ang + 0.45) * 7, ay - Math.sin(ang + 0.45) * 7);
+        ctx.closePath();
+        ctx.fill();
+
+        // Compact error magnitude badge midway
+        const mx = (dx + rx) * 0.5;
+        const my = (dy + ry) * 0.5 - 8;
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+        ctx.beginPath();
+        ctx.roundRect(mx - 24, my - 9, 48, 15, 4);
+        ctx.fill();
+        ctx.fillStyle = errDist > 1.2 ? '#fda4af' : '#fde047';
+        ctx.font = '700 9.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`e ${errDist.toFixed(2)}m`, mx, my + 2);
+      }
+
+      // Semi-transparent Ghost Drone silhouette at Reference Position
+      const bodyHalfW = (config?.droneRadius || 0.45) * scale;
+      ctx.save();
+      ctx.translate(rx, ry);
+      ctx.globalAlpha = 0.42;
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-bodyHalfW * 0.85, 0);
+      ctx.lineTo(bodyHalfW * 0.85, 0);
+      ctx.stroke();
+
+      for (const bx of [-bodyHalfW * 0.72, bodyHalfW * 0.72]) {
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(bx - bodyHalfW * 0.36, -6);
+        ctx.lineTo(bx + bodyHalfW * 0.36, -6);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath();
+      ctx.roundRect(-9, -5, 18, 9, 4);
+      ctx.fill();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.4;
+      ctx.strokeRect(-bodyHalfW * 0.9, -11, bodyHalfW * 1.8, 22);
+      ctx.setLineDash([]);
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(dx, dy);
+      ctx.lineTo(rx, ry);
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     ctx.strokeStyle = '#facc15';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.arc(rx, ry, 9, 0, Math.PI * 2);
-    ctx.moveTo(rx - 14, ry);
-    ctx.lineTo(rx + 14, ry);
-    ctx.moveTo(rx, ry - 14);
-    ctx.lineTo(rx, ry + 14);
+    ctx.arc(rx, ry, 7, 0, Math.PI * 2);
+    ctx.moveTo(rx - 11, ry);
+    ctx.lineTo(rx + 11, ry);
+    ctx.moveTo(rx, ry - 11);
+    ctx.lineTo(rx, ry + 11);
     ctx.stroke();
 
     ctx.fillStyle = '#fde047';
     ctx.font = '700 10px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('REF', rx + 13, ry - 8);
+    ctx.fillText(showGhostDrone ? 'GHOST REF' : 'REF', rx + 13, ry - 10);
     ctx.restore();
   }
 
@@ -675,6 +751,126 @@ export function renderTelemetryTimeSeriesPlot(canvas, telemetry = [], maxThrust 
   ctx.fillText(`0 s`, padL, height - 6);
   ctx.textAlign = 'right';
   ctx.fillText(`${tEnd.toFixed(1)} s`, width - padR, height - 6);
+
+  ctx.restore();
+}
+
+/**
+ * Draw real-time PID response strip on the Flight Screen from actual telemetry samples:
+ * Target Position (gold dashed), Actual Position (cyan solid), and Position Error (coral).
+ */
+export function renderLivePidResponseChart(canvas, telemetry = [], axis = 'z', worldSpan = 14) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 460;
+  const height = rect.height || 108;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, width, height);
+
+  const series = Array.isArray(telemetry) ? telemetry : [];
+  if (series.length < 2) {
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Live PID telemetry appears once flight begins', width * 0.5, height * 0.52);
+    ctx.restore();
+    return;
+  }
+
+  const lastT = series[series.length - 1].t;
+  const windowSec = 12;
+  const tMin = Math.max(0, lastT - windowSec);
+  const windowPts = series.filter((s) => s.t >= tMin);
+  const pts = windowPts.length >= 2 ? windowPts : series.slice(-2);
+  const tStart = pts[0].t;
+  const tEnd = Math.max(tStart + 1.0, pts[pts.length - 1].t);
+
+  const padL = 32;
+  const padR = 12;
+  const padT = 14;
+  const padB = 18;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  const isX = axis === 'x';
+  const maxVal = Math.max(4, worldSpan);
+  const toX = (t) => padL + ((t - tStart) / (tEnd - tStart)) * plotW;
+  const toPosY = (v) => padT + plotH - (Math.max(0, Math.min(v, maxVal)) / maxVal) * plotH;
+  const maxErrScale = Math.max(4, maxVal * 0.45);
+  const toErrY = (e) => padT + plotH - (Math.min(Math.abs(e), maxErrScale) / maxErrScale) * (plotH * 0.85);
+
+  // Subtle horizontal guide lines
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= 2; i++) {
+    const gy = padT + (plotH * i) / 2;
+    ctx.moveTo(padL, gy);
+    ctx.lineTo(padL + plotW, gy);
+  }
+  ctx.stroke();
+
+  // Position Error |REF - Actual| (coral)
+  ctx.beginPath();
+  ctx.moveTo(toX(pts[0].t), toErrY(isX ? pts[0].errX : pts[0].errZ));
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(toX(pts[i].t), toErrY(isX ? pts[i].errX : pts[i].errZ));
+  }
+  ctx.strokeStyle = 'rgba(251, 113, 133, 0.85)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Target Position REF (dashed gold)
+  ctx.beginPath();
+  ctx.setLineDash([4, 3]);
+  ctx.moveTo(toX(pts[0].t), toPosY(isX ? pts[0].refX : pts[0].refZ));
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(toX(pts[i].t), toPosY(isX ? pts[i].refX : pts[i].refZ));
+  }
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Actual Drone Position (solid cyan)
+  ctx.beginPath();
+  ctx.moveTo(toX(pts[0].t), toPosY(isX ? pts[0].x : pts[0].z));
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineTo(toX(pts[i].t), toPosY(isX ? pts[i].x : pts[i].z));
+  }
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  const latest = pts[pts.length - 1];
+  const targetCur = isX ? latest.refX : latest.refZ;
+  const actualCur = isX ? latest.x : latest.z;
+  const errCur = isX ? latest.errX : latest.errZ;
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 9.5px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${maxVal.toFixed(0)}m`, 4, padT + 6);
+  ctx.fillText('0m', 10, padT + plotH);
+
+  ctx.fillStyle = '#cbd5e1';
+  ctx.textAlign = 'right';
+  ctx.fillText(
+    `${isX ? 'X' : 'Z'} REF ${targetCur.toFixed(1)}m · Drone ${actualCur.toFixed(1)}m · Err ${Math.abs(errCur).toFixed(2)}m`,
+    width - padR,
+    height - 5
+  );
 
   ctx.restore();
 }

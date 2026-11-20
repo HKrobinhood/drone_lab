@@ -163,18 +163,90 @@ export function scoreFlightRun(outcome, metrics, levelId) {
   const collisions = Number(metrics?.collisionCount ?? 0);
 
   const checks2Star = [
-    { label: `Completion Time <= ${thresholds.twoStar.maxTime} s`, passed: completed && time <= thresholds.twoStar.maxTime },
-    { label: `Max Overshoot <= ${thresholds.twoStar.maxOvershoot.toFixed(1)} m`, passed: completed && overshoot <= thresholds.twoStar.maxOvershoot },
-    { label: `Route Fit >= ${thresholds.twoStar.minPathFit}%`, passed: completed && pathFit >= thresholds.twoStar.minPathFit }
+    {
+      criterionKey: 'time',
+      tier: 2,
+      shortLabel: 'Completion Time',
+      actualText: `${time.toFixed(1)} s`,
+      targetText: `<= ${thresholds.twoStar.maxTime} s`,
+      label: `Completion Time <= ${thresholds.twoStar.maxTime} s`,
+      passed: completed && time <= thresholds.twoStar.maxTime
+    },
+    {
+      criterionKey: 'overshoot',
+      tier: 2,
+      shortLabel: 'Max Overshoot',
+      actualText: `${overshoot.toFixed(2)} m`,
+      targetText: `<= ${thresholds.twoStar.maxOvershoot.toFixed(1)} m`,
+      label: `Max Overshoot <= ${thresholds.twoStar.maxOvershoot.toFixed(1)} m`,
+      passed: completed && overshoot <= thresholds.twoStar.maxOvershoot
+    },
+    {
+      criterionKey: 'pathFit',
+      tier: 2,
+      shortLabel: 'Route Fit',
+      actualText: `${pathFit.toFixed(0)}%`,
+      targetText: `>= ${thresholds.twoStar.minPathFit}%`,
+      label: `Route Fit >= ${thresholds.twoStar.minPathFit}%`,
+      passed: completed && pathFit >= thresholds.twoStar.minPathFit
+    }
   ];
 
   const checks3Star = [
-    { label: `Completion Time <= ${thresholds.threeStar.maxTime} s`, passed: completed && time <= thresholds.threeStar.maxTime },
-    { label: `Max Overshoot <= ${thresholds.threeStar.maxOvershoot.toFixed(1)} m`, passed: completed && overshoot <= thresholds.threeStar.maxOvershoot },
-    { label: `Settling Time <= ${thresholds.threeStar.maxSettling.toFixed(1)} s`, passed: completed && settling <= thresholds.threeStar.maxSettling },
-    { label: `Route Fit >= ${thresholds.threeStar.minPathFit}%`, passed: completed && pathFit >= thresholds.threeStar.minPathFit },
-    { label: `Smoothness >= ${thresholds.threeStar.minSmoothness}%`, passed: completed && smoothness >= thresholds.threeStar.minSmoothness },
-    { label: 'Zero Collisions', passed: completed && collisions === 0 }
+    {
+      criterionKey: 'time',
+      tier: 3,
+      shortLabel: 'Completion Time',
+      actualText: `${time.toFixed(1)} s`,
+      targetText: `<= ${thresholds.threeStar.maxTime} s`,
+      label: `Completion Time <= ${thresholds.threeStar.maxTime} s`,
+      passed: completed && time <= thresholds.threeStar.maxTime
+    },
+    {
+      criterionKey: 'overshoot',
+      tier: 3,
+      shortLabel: 'Max Overshoot',
+      actualText: `${overshoot.toFixed(2)} m`,
+      targetText: `<= ${thresholds.threeStar.maxOvershoot.toFixed(1)} m`,
+      label: `Max Overshoot <= ${thresholds.threeStar.maxOvershoot.toFixed(1)} m`,
+      passed: completed && overshoot <= thresholds.threeStar.maxOvershoot
+    },
+    {
+      criterionKey: 'settling',
+      tier: 3,
+      shortLabel: 'Settling Time',
+      actualText: `${settling.toFixed(1)} s`,
+      targetText: `<= ${thresholds.threeStar.maxSettling.toFixed(1)} s`,
+      label: `Settling Time <= ${thresholds.threeStar.maxSettling.toFixed(1)} s`,
+      passed: completed && settling <= thresholds.threeStar.maxSettling
+    },
+    {
+      criterionKey: 'pathFit',
+      tier: 3,
+      shortLabel: 'Route Fit',
+      actualText: `${pathFit.toFixed(0)}%`,
+      targetText: `>= ${thresholds.threeStar.minPathFit}%`,
+      label: `Route Fit >= ${thresholds.threeStar.minPathFit}%`,
+      passed: completed && pathFit >= thresholds.threeStar.minPathFit
+    },
+    {
+      criterionKey: 'smoothness',
+      tier: 3,
+      shortLabel: 'Smoothness',
+      actualText: `${smoothness.toFixed(0)}%`,
+      targetText: `>= ${thresholds.threeStar.minSmoothness}%`,
+      label: `Smoothness >= ${thresholds.threeStar.minSmoothness}%`,
+      passed: completed && smoothness >= thresholds.threeStar.minSmoothness
+    },
+    {
+      criterionKey: 'collisions',
+      tier: 3,
+      shortLabel: 'Zero Collisions',
+      actualText: `${collisions}`,
+      targetText: '0 hits',
+      label: 'Zero Collisions',
+      passed: completed && collisions === 0
+    }
   ];
 
   const passedTwoStar = completed && checks2Star.every((c) => c.passed);
@@ -203,4 +275,106 @@ export function scoreFlightRun(outcome, metrics, levelId) {
     checks2Star,
     checks3Star
   };
+}
+
+/**
+ * Build concise visual rating summary rows directly from real M4 scoring criteria.
+ */
+export function buildRatingBreakdown(scoreResult, metrics, outcome) {
+  const completed = outcome?.status === 'completed';
+  const tier = scoreResult?.stars >= 2 ? scoreResult.thresholds.threeStar : scoreResult?.thresholds?.twoStar;
+  const time = Number(metrics?.completionTime ?? 0);
+  const overshoot = Number(metrics?.maxOvershoot ?? 0);
+  const pathFit = Number(metrics?.pathFitScore ?? 0);
+  const settling = Number(metrics?.settlingTime ?? time);
+  const smoothness = Number(metrics?.flightSmoothness ?? 0);
+  const collisions = Number(metrics?.collisionCount ?? 0);
+
+  const timeTarget = tier?.maxTime ?? 45;
+  const timePassed = completed && time <= timeTarget;
+  const precisionChecks = scoreResult?.stars >= 2 ? scoreResult.checks3Star : scoreResult?.checks2Star;
+  const precisionPassed =
+    completed &&
+    (precisionChecks || [])
+      .filter((c) => c.criterionKey !== 'time')
+      .every((c) => c.passed);
+
+  const summaryRows = [
+    {
+      label: 'Mission Completed',
+      passed: completed,
+      actualText: completed ? 'Cleared' : 'Failed',
+      targetText: 'Goal Reached'
+    },
+    {
+      label: 'Time Target',
+      passed: timePassed,
+      actualText: `${time.toFixed(1)} s`,
+      targetText: `<= ${timeTarget.toFixed(1)} s`
+    },
+    {
+      label: 'Precision Target',
+      passed: precisionPassed,
+      actualText: `Fit ${pathFit.toFixed(0)}% · Over ${overshoot.toFixed(2)} m · Settle ${settling.toFixed(1)} s`,
+      targetText: `Fit >= ${tier?.minPathFit ?? 50}% · Over <= ${(tier?.maxOvershoot ?? 2.4).toFixed(1)} m`
+    }
+  ];
+
+  return {
+    summaryRows,
+    checks2Star: scoreResult?.checks2Star || [],
+    checks3Star: scoreResult?.checks3Star || [],
+    metricsSnapshot: { time, overshoot, settling, pathFit, smoothness, collisions }
+  };
+}
+
+/**
+ * Generate a truthful single-focus suggestion for earning the next star,
+ * strictly derived from the failing M4 scoring checks.
+ */
+export function buildNextStarAdvice(scoreResult, metrics, diagnostics = null, scene = null) {
+  if (!scoreResult || scoreResult.stars === 0) {
+    return null;
+  }
+  if (scoreResult.stars >= 3) {
+    return 'Perfect flight! You mastered this challenge!';
+  }
+
+  const nextChecks =
+    scoreResult.stars === 1 ? scoreResult.checks2Star : scoreResult.checks3Star;
+  const failing = (nextChecks || []).find((c) => !c.passed);
+  if (!failing) {
+    return 'Refine your PID balance to unlock the next star!';
+  }
+
+  const targetTierLabel = scoreResult.stars === 1 ? 'another star' : 'the final star';
+  const th = scoreResult.stars === 1 ? scoreResult.thresholds.twoStar : scoreResult.thresholds.threeStar;
+  const time = Number(metrics?.completionTime ?? 0);
+  const overshoot = Number(metrics?.maxOvershoot ?? 0);
+  const settling = Number(metrics?.settlingTime ?? time);
+  const pathFit = Number(metrics?.pathFitScore ?? 0);
+  const smoothness = Number(metrics?.flightSmoothness ?? 0);
+
+  switch (failing.criterionKey) {
+    case 'time': {
+      const delta = Math.max(0.5, time - th.maxTime);
+      const kpHint = (metrics?.pidParameters?.kp ?? 0) < (scene?.recommendedPID?.kpMin ?? 5) ? ' (try higher Kp)' : '';
+      return `Finish ${delta.toFixed(1)} s faster${kpHint} to earn ${targetTierLabel}!`;
+    }
+    case 'overshoot':
+      return `Cut overshoot from ${overshoot.toFixed(2)} m to <= ${th.maxOvershoot.toFixed(1)} m (raise Kd) for ${targetTierLabel}!`;
+    case 'settling':
+      return `Improve your braking (Settling ${settling.toFixed(1)} s vs <= ${th.maxSettling.toFixed(1)} s) to earn ${targetTierLabel}!`;
+    case 'pathFit':
+      return `Raise Route Fit from ${pathFit.toFixed(0)}% to >= ${th.minPathFit}% for ${targetTierLabel}!`;
+    case 'smoothness':
+      return `Smooth out flight control (${smoothness.toFixed(0)}% vs >= ${th.minSmoothness}%) with steady WASD and balanced Kd for ${targetTierLabel}!`;
+    case 'collisions':
+      return `Complete the route with zero wall bumps to earn ${targetTierLabel}!`;
+    default:
+      if (diagnostics?.overshootSeverity === 'high') {
+        return `Too much overshoot—try raising Kd to earn ${targetTierLabel}!`;
+      }
+      return `Meet ${failing.label} to earn ${targetTierLabel}!`;
+  }
 }

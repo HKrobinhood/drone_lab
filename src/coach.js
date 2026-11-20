@@ -85,10 +85,12 @@ export function evaluatePidCoaching(gains, scene) {
     return {
       state: 'welcome',
       mood: 'greeting',
-      headline: 'Hi! I am PIP, your PID Flight Coach.',
+      headline: 'Hi! I am PIP, your Flight Coach.',
       messages: [
-        'All three gains start at zero, so your drone cannot respond or take off yet. Begin by raising Kp, then add Kd damping!'
+        'Gains start at zero. Raise Kp first, then add Kd!'
       ],
+      learnMore:
+        'Kp creates response toward REF, Kd brakes overshoot smoothly, and Ki cancels steady wind or payload drift.',
       zones,
       jointOk: false
     };
@@ -206,7 +208,8 @@ export function evaluatePidCoaching(gains, scene) {
     state: severity,
     mood: resolvePipMood(severity),
     headline: severity === 'warning' ? 'Flight Risk Detected' : 'Coach Suggestion',
-    messages: messages.slice(0, 2),
+    messages: messages.slice(0, 1),
+    learnMore: messages.length > 1 ? messages[1] : null,
     zones,
     jointOk: false
   };
@@ -362,8 +365,9 @@ export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
     return {
       state: liveState,
       mood: guideStep?.pipMood && liveState !== 'warning' ? guideStep.pipMood : resolvePipMood(liveState),
-      headline: guideStep?.title || scene.stemTopic || 'Tutorial Coach',
-      messages: msgs.slice(0, 2)
+      headline: guideStep?.headline || guideStep?.title || scene.stemTopic || 'Tutorial Coach',
+      messages: msgs.slice(0, 1),
+      learnMore: guideStep?.learnMore || null
     };
   }
 

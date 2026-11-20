@@ -18,7 +18,12 @@ import {
   PID_SLIDER_BOUNDS,
   getSceneInitialGains
 } from './simulation.js';
-import { FlightRenderer, renderRouteFitPreview, renderTelemetryTimeSeriesPlot } from './renderer.js';
+import {
+  FlightRenderer,
+  renderRouteFitPreview,
+  renderTelemetryTimeSeriesPlot,
+  renderLivePidResponseChart
+} from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
   getSceneById,
@@ -28,17 +33,27 @@ import {
   evaluatePidCoaching,
   evaluateLiveFlightCoaching
 } from './coach.js';
-import { generatePipDiagnosticReport } from './feedback.js';
-import { scoreFlightRun } from './scoring.js';
+import { generatePipDiagnosticReport, evaluateLiveControlStatus } from './feedback.js';
+import { scoreFlightRun, buildRatingBreakdown, buildNextStarAdvice } from './scoring.js';
 import { TutorialGuideEngine, PIP_INTRO_SCRIPT } from './tutorial_guide.js';
 import { TutorialSpotlightOverlay } from './guide_overlay.js';
-import { renderPipRobotSvg, resolvePipMood, getStemVisualAid } from './visual_aids.js';
+import {
+  renderPipRobotSvg,
+  resolvePipMood,
+  getStemVisualAid,
+  renderInteractiveVisualAidHtml,
+  bindVisualAidInteractions,
+  renderResultStarSvg
+} from './visual_aids.js';
 
 const state = {
   currentView: 'start',
   currentMode: 'tutorial',
   activeScene: null,
   runFinished: false,
+  showGhostDrone: true,
+  showFlightTrails: true,
+  livePlotAxis: 'z',
   progress: loadProgress(),
   tunedGainsByLevel: {},
   baselineGainsByLevel: {},
@@ -143,20 +158,29 @@ const els = {
     avatar: document.querySelector('#pip-coach-card .pip-avatar-wrap'),
     badge: document.getElementById('pip-state-badge'),
     headline: document.getElementById('pip-headline'),
-    messages: document.getElementById('pip-messages')
+    messages: document.getElementById('pip-messages'),
+    learnMore: document.getElementById('pre-pip-learn-more'),
+    learnMoreText: document.getElementById('pre-pip-learn-more-text')
   },
   flightPipCard: {
     card: document.getElementById('flight-pip-card'),
     avatar: document.querySelector('#flight-pip-card .pip-avatar-wrap'),
     badge: document.getElementById('flight-pip-state-badge'),
     headline: document.getElementById('flight-pip-headline'),
-    messages: document.getElementById('flight-pip-messages')
+    messages: document.getElementById('flight-pip-messages'),
+    learnMore: document.getElementById('flight-pip-learn-more'),
+    learnMoreText: document.getElementById('flight-pip-learn-more-text')
   },
 
   // Flight Screen elements
   flightLevelName: document.getElementById('flight-level-name'),
   flightObjective: document.getElementById('flight-objective'),
   flightCanvas: document.getElementById('flight-canvas'),
+  toggleGhostDrone: document.getElementById('toggle-ghost-drone'),
+  toggleFlightTrails: document.getElementById('toggle-flight-trails'),
+  liveControlBadges: document.getElementById('live-control-badges'),
+  flightResponseCanvas: document.getElementById('flight-response-canvas'),
+  btnLiveAxisToggle: document.getElementById('btn-live-axis-toggle'),
   flightTimer: document.getElementById('flight-timer'),
   btnFlightBack: document.getElementById('btn-flight-back'),
   btnFlightPause: document.getElementById('btn-flight-pause'),
@@ -197,13 +221,30 @@ const els = {
   challengeCheckpointPill: document.getElementById('challenge-checkpoint-pill'),
   btnFlightReopenGuide: document.getElementById('btn-flight-reopen-guide'),
 
-  // Result Screen elements (M4 + M4.1 mode config)
+  // Result Screen elements (M4 + M4.1 + M5.1 Animated Star Showcase)
+  resultHeroCard: document.getElementById('result-hero-card'),
   resultBadge: document.getElementById('result-badge'),
   resultTitle: document.getElementById('result-title'),
   resultLevelSubtitle: document.getElementById('result-level-subtitle'),
   resultStarsBox: document.getElementById('result-stars-box'),
+  resultStarRow: document.getElementById('result-star-row'),
+  resultStarSlots: [
+    document.getElementById('result-star-1'),
+    document.getElementById('result-star-2'),
+    document.getElementById('result-star-3')
+  ],
+  resultStarParticles: document.getElementById('result-star-particles'),
   resultStarsDisplay: document.getElementById('result-stars-display'),
   resultStarLabel: document.getElementById('result-star-label'),
+  resultNextStarTip: document.getElementById('result-next-star-tip'),
+  btnResultSkipAnim: document.getElementById('btn-result-skip-anim'),
+  resultFailedHero: document.getElementById('result-failed-hero'),
+  resultFailedPipAvatar: document.getElementById('result-failed-pip-avatar'),
+  resultFailedReason: document.getElementById('result-failed-reason'),
+  resultFailedPipTip: document.getElementById('result-failed-pip-tip'),
+  resultFailedStats: document.getElementById('result-failed-stats'),
+  resultDetailsStage: document.getElementById('result-details-stage'),
+  resultSummaryCriteria: document.getElementById('result-summary-criteria'),
   resultTutorialOutcomeBox: document.getElementById('result-tutorial-outcome-box'),
   resultTutorialStatusIcon: document.getElementById('result-tutorial-status-icon'),
   resultTutorialStatusLabel: document.getElementById('result-tutorial-status-label'),
@@ -258,6 +299,9 @@ let lastFrameTime = null;
 let pipDebounceTimer = null;
 let lastGuideRenderSig = '';
 let lastFlightPipSig = '';
+let lastControlBadgeSig = '';
+let starAnimTimers = [];
+let starAnimTargetCount = 0;
 
 function isAnyModalOpen() {
   return !els.modal.classList.contains('hidden');
@@ -353,11 +397,13 @@ function syncAllPidPanels(gains, scene = state.activeScene) {
 function renderPipCard(cardEls, coachData) {
   if (!cardEls?.card || !coachData) return;
   const stateLabels = {
-    welcome: 'Welcome',
+    welcome: 'Greeting',
+    greeting: 'Greeting',
     teaching: 'Teaching',
     warning: 'Warning',
     ready: 'Ready',
-    success: 'Complete'
+    success: 'Success',
+    failure: 'Failure'
   };
   const mood = coachData.mood || resolvePipMood(coachData.state);
   const baseClass = cardEls === els.flightPipCard ? 'pip-card pip-card-compact' : 'pip-card';
@@ -368,10 +414,21 @@ function renderPipCard(cardEls, coachData) {
   cardEls.badge.textContent = stateLabels[coachData.state] || 'Coach';
   cardEls.headline.textContent = coachData.headline;
   cardEls.messages.innerHTML = '';
-  for (const msg of coachData.messages || []) {
+  for (const msg of (coachData.messages || []).slice(0, 1)) {
     const li = document.createElement('li');
     li.textContent = msg;
     cardEls.messages.appendChild(li);
+  }
+  if (cardEls.learnMore && cardEls.learnMoreText) {
+    const extra = coachData.learnMore || ((coachData.messages || []).length > 1 ? coachData.messages[1] : null);
+    if (extra) {
+      cardEls.learnMore.classList.remove('hidden');
+      cardEls.learnMoreText.textContent = extra;
+      cardEls.learnMore.open = false;
+    } else {
+      cardEls.learnMore.classList.add('hidden');
+      cardEls.learnMoreText.textContent = '';
+    }
   }
 }
 
@@ -510,13 +567,132 @@ function updateGuideReopenButtons() {
   els.btnFlightReopenGuide.textContent = showReopen ? 'Reopen Guide' : 'Restart Guide';
 }
 
-// ==================== RESULT SCREEN (MODE-CONFIGURED) ====================
+// ==================== RESULT SCREEN (ANIMATED 3-STAR REVEAL & BREAKDOWN) ====================
+function prefersReducedMotion() {
+  return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function clearStarAnimationTimers() {
+  for (const timerId of starAnimTimers) {
+    window.clearTimeout(timerId);
+  }
+  starAnimTimers = [];
+}
+
+function spawnStarCelebrationParticles() {
+  if (!els.resultStarParticles || prefersReducedMotion()) return;
+  els.resultStarParticles.innerHTML = '';
+  const count = 16;
+  for (let i = 0; i < count; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'star-particle';
+    const angle = (Math.PI * 2 * i) / count;
+    const dist = 58 + (i % 3) * 28;
+    dot.style.setProperty('--tx', `${Math.round(Math.cos(angle) * dist)}px`);
+    dot.style.setProperty('--ty', `${Math.round(Math.sin(angle) * dist - 14)}px`);
+    dot.style.animationDelay = `${(i % 4) * 35}ms`;
+    els.resultStarParticles.appendChild(dot);
+  }
+}
+
+function setResultStarSlotsInstant(stars) {
+  starAnimTargetCount = stars;
+  els.resultStarSlots.forEach((slot, idx) => {
+    if (!slot) return;
+    if (!slot.innerHTML) {
+      slot.innerHTML = renderResultStarSvg(idx + 1);
+    }
+    const earned = idx + 1 <= stars;
+    slot.classList.remove('is-revealing', 'is-earned-burst');
+    slot.classList.toggle('is-earned', earned);
+    slot.classList.toggle('is-locked', !earned);
+  });
+  els.resultHeroCard?.classList.toggle('is-three-star-celebration', stars === 3);
+  els.resultDetailsStage?.classList.remove('is-pending-reveal');
+  els.btnResultSkipAnim?.classList.add('hidden');
+}
+
+function skipStarAnimation() {
+  clearStarAnimationTimers();
+  setResultStarSlotsInstant(starAnimTargetCount);
+}
+
+function playStarRevealAnimation(stars) {
+  clearStarAnimationTimers();
+  starAnimTargetCount = stars;
+
+  if (els.resultStarParticles) {
+    els.resultStarParticles.innerHTML = '';
+  }
+  els.resultHeroCard?.classList.remove('is-three-star-celebration');
+
+  els.resultStarSlots.forEach((slot, idx) => {
+    if (!slot) return;
+    slot.innerHTML = renderResultStarSvg(idx + 1);
+    slot.classList.remove('is-earned', 'is-revealing', 'is-earned-burst');
+    slot.classList.add('is-locked');
+  });
+
+  if (stars <= 0 || prefersReducedMotion()) {
+    setResultStarSlotsInstant(stars);
+    return;
+  }
+
+  // Trigger clean reflow so repeated attempts replay keyframes cleanly
+  void els.resultStarRow?.offsetWidth;
+
+  els.resultDetailsStage?.classList.add('is-pending-reveal');
+  els.btnResultSkipAnim?.classList.remove('hidden');
+
+  const stepDelays = [300, 700, 1100];
+  for (let i = 0; i < stars; i++) {
+    const slot = els.resultStarSlots[i];
+    const delay = stepDelays[i] ?? 300 + i * 400;
+    const tId = window.setTimeout(() => {
+      if (!slot) return;
+      slot.classList.remove('is-locked');
+      slot.classList.add('is-earned', 'is-revealing', 'is-earned-burst');
+      if (i === 2 && stars === 3) {
+        els.resultHeroCard?.classList.add('is-three-star-celebration');
+        spawnStarCelebrationParticles();
+      }
+    }, delay);
+    starAnimTimers.push(tId);
+  }
+
+  const finishDelay = stars === 1 ? 750 : stars === 2 ? 1150 : 1580;
+  starAnimTimers.push(
+    window.setTimeout(() => {
+      els.resultDetailsStage?.classList.remove('is-pending-reveal');
+      els.btnResultSkipAnim?.classList.add('hidden');
+    }, finishDelay)
+  );
+}
+
+function renderSummaryCriteriaRows(breakdown) {
+  if (!els.resultSummaryCriteria || !breakdown?.summaryRows) return;
+  els.resultSummaryCriteria.innerHTML = '';
+  for (const row of breakdown.summaryRows) {
+    const div = document.createElement('div');
+    div.className = `summary-criterion-row ${row.passed ? 'is-pass' : 'is-fail'}`;
+    div.innerHTML = `
+      <span class="summary-criterion-title">${row.passed ? '✓' : '✕'} ${row.label}</span>
+      <div class="summary-criterion-vals">
+        <strong>${row.actualText}</strong>
+        <span>Target: ${row.targetText}</span>
+      </div>
+    `;
+    els.resultSummaryCriteria.appendChild(div);
+  }
+}
+
 function renderCriteriaList(ulEl, checks) {
   ulEl.innerHTML = '';
   for (const c of checks) {
     const li = document.createElement('li');
     li.className = c.passed ? 'is-pass' : 'is-fail';
-    li.textContent = `${c.passed ? '✓' : '✗'} ${c.label}`;
+    const meta = c.actualText ? `<span class="criteria-meta-val">${c.actualText}</span>` : '';
+    li.innerHTML = `<span>${c.passed ? '✓' : '✕'} ${c.label}</span>${meta}`;
     ulEl.appendChild(li);
   }
 }
@@ -526,29 +702,77 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   const isChallenge = state.activeScene?.mode === 'challenge';
   const isTutorial = state.activeScene?.mode === 'tutorial';
 
+  clearStarAnimationTimers();
+  els.resultHeroCard?.classList.toggle('is-failed', !isSuccess);
+  els.resultHeroCard?.classList.remove('is-three-star-celebration');
+
   els.resultBadge.textContent = isSuccess ? 'Mission Complete' : 'Mission Failed';
-  els.resultTitle.textContent = outcome.title;
+  els.resultTitle.textContent = isSuccess ? 'Mission Complete!' : 'Mission Failed';
   els.resultLevelSubtitle.textContent = `${state.activeScene.name} — ${outcome.message}`;
 
-  // Mode-configured hero & rating card
-  els.resultStarsBox.classList.toggle('hidden', !isChallenge);
-  els.resultTutorialOutcomeBox.classList.toggle('hidden', isChallenge);
+  // M5: Unified conversational PIP Flight Coach Telemetry Report (both Tutorial & Challenge)
+  const telemetry = sim.getTelemetrySeries();
+  const report = generatePipDiagnosticReport(
+    telemetry,
+    metrics,
+    outcome,
+    state.activeScene,
+    previousAttempt
+  );
+
+  // Mode-configured & success/failure hero
+  els.resultStarsBox.classList.toggle('hidden', !isChallenge || !isSuccess);
+  els.resultTutorialOutcomeBox.classList.toggle('hidden', isChallenge || !isSuccess);
+  els.resultFailedHero.classList.toggle('hidden', isSuccess);
   els.resultRatingCard.classList.toggle('hidden', !isChallenge);
   els.resultTutorialCard.classList.toggle('hidden', isChallenge);
 
-  if (isChallenge) {
+  const breakdown = buildRatingBreakdown(scoreResult, metrics, outcome);
+  renderSummaryCriteriaRows(breakdown);
+  renderCriteriaList(els.resultChecks2Star, scoreResult.checks2Star);
+  renderCriteriaList(els.resultChecks3Star, scoreResult.checks3Star);
+
+  if (!isSuccess) {
+    els.resultStarsDisplay.textContent = renderStarsText(0);
+    els.resultStarsDisplay.setAttribute('aria-label', '0 of 3 stars');
+    els.resultStarRow?.setAttribute('aria-label', '0 of 3 stars');
+    els.resultDetailsStage?.classList.remove('is-pending-reveal');
+    els.btnResultSkipAnim?.classList.add('hidden');
+    els.resultFailedPipAvatar.innerHTML = renderPipRobotSvg('warning', 'pip-avatar-mini');
+    els.resultFailedReason.textContent = outcome.message || 'Mission failed before reaching the target.';
+    els.resultFailedPipTip.textContent = `PIP Tip: ${report.primaryTip}`;
+    els.resultFailedStats.innerHTML = `
+      <span class="result-failed-stat-pill">Time<strong>${metrics.completionTime.toFixed(1)} s</strong></span>
+      <span class="result-failed-stat-pill">Max Overshoot<strong>${metrics.maxOvershoot.toFixed(2)} m</strong></span>
+      <span class="result-failed-stat-pill">Avg Error<strong>${metrics.averageTrackingError.toFixed(2)} m</strong></span>
+      <span class="result-failed-stat-pill">PID<strong>${formatGainsText(metrics.pidParameters)}</strong></span>
+    `;
+    if (isTutorial) {
+      els.resultTutHeading.textContent = 'Keep Experimenting — Try Retry';
+      els.resultTutObjective.textContent =
+        state.activeScene.learningObjective || state.activeScene.objective;
+      els.resultTutPracticeStars.textContent = `${renderStarsText(0)} (0 / 3 Practice Rating)`;
+    }
+  } else if (isChallenge) {
     els.resultStarsDisplay.textContent = renderStarsText(scoreResult.stars);
     els.resultStarsDisplay.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
-    els.resultStarLabel.textContent = scoreResult.summaryLabel;
+    els.resultStarRow?.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
+    els.resultStarLabel.textContent = `${scoreResult.stars} / 3 Stars — ${scoreResult.summaryLabel}`;
+    const nextStarTip = buildNextStarAdvice(scoreResult, metrics, report.diagnostics, state.activeScene);
+    if (nextStarTip) {
+      els.resultNextStarTip.textContent = nextStarTip;
+      els.resultNextStarTip.classList.remove('hidden');
+    } else {
+      els.resultNextStarTip.classList.add('hidden');
+    }
+    playStarRevealAnimation(scoreResult.stars);
   } else {
-    els.resultTutorialStatusIcon.textContent = isSuccess ? '✓' : '!';
-    els.resultTutorialStatusIcon.style.color = isSuccess ? '#4ade80' : '#fb923c';
-    els.resultTutorialStatusLabel.textContent = isSuccess
-      ? 'Learning Objective Completed'
-      : 'Experiment Incomplete';
-    els.resultTutHeading.textContent = isSuccess
-      ? 'Learning Objective Completed'
-      : 'Keep Experimenting — Try Retry';
+    els.resultDetailsStage?.classList.remove('is-pending-reveal');
+    els.btnResultSkipAnim?.classList.add('hidden');
+    els.resultTutorialStatusIcon.textContent = '✓';
+    els.resultTutorialStatusIcon.style.color = '#4ade80';
+    els.resultTutorialStatusLabel.textContent = 'Learning Objective Completed';
+    els.resultTutHeading.textContent = 'Learning Objective Completed';
     els.resultTutObjective.textContent =
       state.activeScene.learningObjective || state.activeScene.objective;
     els.resultTutPracticeStars.textContent = `${renderStarsText(scoreResult.stars)} (${scoreResult.stars} / 3 Practice Rating)`;
@@ -562,19 +786,6 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   els.resultAvgError.textContent = `${metrics.averageTrackingError.toFixed(2)} m`;
   els.resultSaturation.textContent = `${metrics.controlSaturationDuration.toFixed(2)} s`;
   els.resultPid.textContent = formatGainsText(metrics.pidParameters);
-
-  renderCriteriaList(els.resultChecks2Star, scoreResult.checks2Star);
-  renderCriteriaList(els.resultChecks3Star, scoreResult.checks3Star);
-
-  // M5: Unified conversational PIP Flight Coach Telemetry Report (both Tutorial & Challenge)
-  const telemetry = sim.getTelemetrySeries();
-  const report = generatePipDiagnosticReport(
-    telemetry,
-    metrics,
-    outcome,
-    state.activeScene,
-    previousAttempt
-  );
 
   els.resultPipAvatar.innerHTML = renderPipRobotSvg(report.mood);
   els.resultPipTitle.textContent = report.title;
@@ -777,7 +988,8 @@ function openPreflightTuning(scene, options = {}) {
   if (aid) {
     els.preflightVisualAid.classList.remove('hidden');
     els.preflightVisualTitle.textContent = aid.title;
-    els.preflightVisualSvg.innerHTML = aid.renderSvg();
+    els.preflightVisualSvg.innerHTML = renderInteractiveVisualAidHtml(scene.visualId);
+    bindVisualAidInteractions(els.preflightVisualSvg);
     els.preflightLearnMoreText.textContent =
       scene.tutorialGuide?.shortExplanation || scene.learningObjective || '';
   } else {
@@ -945,6 +1157,24 @@ function updateFlightHud() {
   }
 
   updateFlightPipCard(false);
+  updateLiveControlBadges();
+  const axisSpan = state.livePlotAxis === 'x' ? sim.config.worldWidth : sim.config.worldHeight;
+  renderLivePidResponseChart(els.flightResponseCanvas, sim.telemetry, state.livePlotAxis, axisSpan);
+}
+
+function updateLiveControlBadges() {
+  if (!els.liveControlBadges) return;
+  const badges = evaluateLiveControlStatus(sim.telemetry, sim, state.activeScene);
+  const sig = badges.map((b) => `${b.key}:${b.tone}`).join('|');
+  if (sig === lastControlBadgeSig) return;
+  lastControlBadgeSig = sig;
+  els.liveControlBadges.innerHTML = '';
+  for (const badge of badges) {
+    const span = document.createElement('span');
+    span.className = `control-state-badge is-${badge.tone}`;
+    span.textContent = `${badge.icon} ${badge.label}`;
+    els.liveControlBadges.appendChild(span);
+  }
 }
 
 function handleSceneOutcomeIfNeeded() {
@@ -1017,7 +1247,10 @@ function flightLoop(timestamp) {
     }
   }
   if (state.currentView === 'flight') {
-    renderer.render(sim, rawDt);
+    renderer.render(sim, rawDt, {
+      showGhostDrone: state.showGhostDrone,
+      showTrails: state.showFlightTrails
+    });
     updateFlightHud();
     rafId = window.requestAnimationFrame(flightLoop);
   }
@@ -1143,10 +1376,18 @@ export function navigateTo(viewName, options = {}) {
     renderLevelSelection(options.mode || state.currentMode);
   }
 
+  if (viewName !== 'result') {
+    clearStarAnimationTimers();
+  }
+
   if (viewName === 'flight') {
     input.attach();
-    renderer.render(sim, 0);
+    renderer.render(sim, 0, {
+      showGhostDrone: state.showGhostDrone,
+      showTrails: state.showFlightTrails
+    });
     lastFlightPipSig = '';
+    lastControlBadgeSig = '';
     updateFlightHud();
     startFlightLoop();
   } else {
@@ -1273,6 +1514,32 @@ function bindEvents() {
   els.btnStartFlight.addEventListener('click', startOrResumeFlight);
   els.btnFlightPause.addEventListener('click', togglePauseFlight);
   els.btnFlightRestart.addEventListener('click', restartFlight);
+
+  els.toggleGhostDrone?.addEventListener('click', () => {
+    state.showGhostDrone = !state.showGhostDrone;
+    els.toggleGhostDrone.classList.toggle('is-active', state.showGhostDrone);
+    els.toggleGhostDrone.setAttribute('aria-pressed', String(state.showGhostDrone));
+    renderer.render(sim, 0, {
+      showGhostDrone: state.showGhostDrone,
+      showTrails: state.showFlightTrails
+    });
+  });
+  els.toggleFlightTrails?.addEventListener('click', () => {
+    state.showFlightTrails = !state.showFlightTrails;
+    els.toggleFlightTrails.classList.toggle('is-active', state.showFlightTrails);
+    els.toggleFlightTrails.setAttribute('aria-pressed', String(state.showFlightTrails));
+    renderer.render(sim, 0, {
+      showGhostDrone: state.showGhostDrone,
+      showTrails: state.showFlightTrails
+    });
+  });
+  els.btnLiveAxisToggle?.addEventListener('click', () => {
+    state.livePlotAxis = state.livePlotAxis === 'z' ? 'x' : 'z';
+    els.btnLiveAxisToggle.textContent = state.livePlotAxis === 'z' ? 'Axis: Z (Alt)' : 'Axis: X (Horiz)';
+    const axisSpan = state.livePlotAxis === 'x' ? sim.config.worldWidth : sim.config.worldHeight;
+    renderLivePidResponseChart(els.flightResponseCanvas, sim.telemetry, state.livePlotAxis, axisSpan);
+  });
+  els.btnResultSkipAnim?.addEventListener('click', skipStarAnimation);
 
   // Result Screen actions (shared by Tutorial & Challenge)
   els.btnResultRetry.addEventListener('click', restartFlight);

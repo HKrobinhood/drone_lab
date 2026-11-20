@@ -35,7 +35,7 @@
 | **M4.1** | Tutorial & Challenge UI Alignment | 统一新手村与正式关核心界面/状态流、统一 PIP 教练与配置驱动交互式 Spotlight 引导、Tutorial 1 十步 UI+WASD 教学 | **已完成** |
 | **M4.2** | PIP Introduction & Visual Tutorial Redesign | PIP 首次自我介绍、5 种表情动画、6 张内联 SVG 教学图解、精简短句文案与 Learn More 展开 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | **已完成** |
-| **M5.1** | Flight WASD Intro & PIP Metric Coaching | 新手村第一课飞行界面开局增加 WASD 介绍，并在 4 关课程中全程通过 PIP 教练口述教授衡量指标 | **已完成** |
+| **M5.1** | Visual-First UI & Animated Star Results | 视觉优先教学与交互图解（<=15 词）、Ghost Drone + 实时 PID 曲线与状态标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据与下一星建议、精简失败页 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -147,11 +147,25 @@
 - [x] 将新手村与正式关卡结算报告统一升级为 **PIP Flight Coach 第一人称对话式分析与调参建议**
 - [x] 实现上次试飞轨迹与本次试飞轨迹对比渲染（飞行主画布 + Result 轨迹对比图 + 时序曲线小图）
 
-### M5.1 — Flight WASD Intro & PIP Metric Coaching
-- [x] 在 `Tutorial 1` 飞行界面（`#view-flight`）开局即展示 `#flight-wasd-intro-banner`（PIP 头像 + WASD 控制说明 + Completion Time/Route Fit 提示），并与飞行第一步 `t1-wasd`（`wasd-controls` SVG）衔接
-- [x] 在 Tutorial 1–4 全程通过 **PIP Flight Coach 第一人称对话**循序渐进教授衡量指标（T1：WASD、Completion Time 与 Route Fit；T2：Tracking Lag 与 Route Fit；T3：Steady-State Offset 与 Saturation/Windup；T4：Overshoot、Oscillation、Settling Time 与 Stability）
-- [x] 在结算页 PIP 对话气泡中新增 `metricLessonNote`（`#result-pip-lesson-note`），结合本次实测指标向玩家讲解得分与控制原理
-- [x] 通过 M5.1 自动化测试与真实浏览器实测验证
+### M5.1 — Visual-First UI & Animated Star Results
+- **UI 改动目标**：将界面由大段文字说明升级为 **Visual → One Sentence → Player Action** 的视觉优先 STEM 交互体验，借鉴 PhET（即时物理实验与曲线）、Lightbot（分步动作引导）与 Angry Birds（居中三星揭晓与重玩闭环），保持纯原创 SVG/CSS/Canvas 美术与英文玩家界面。
+- **视觉教学与交互图解（`src/tutorial_guide.js`, `src/visual_aids.js`, `src/guide_overlay.js`）**：
+  - 将 Tutorial 1–4 所有步骤主提示精简至 `<= 15` 个英文单词（并保留 Tutorial 1 飞行开局 WASD 引导与全 4 关衡量指标口述）。
+  - 升级 6 套内联矢量 STEM 图解（`gravity-thrust`、`wasd-controls`、`kp-response`、`ki-integral`、`kd-damping`、`pid-loop-steps`）并接入交互式预览切换按钮，复杂说明收纳至 `Learn More`。
+- **飞行场景 PID 可视化（`src/renderer.js`, `src/feedback.js`, `index.html`, `src/main.js`）**：
+  - 在主画布中绘制半透明 **Ghost Drone**（代表参考位置 REF）、实体无人机与实时误差连线/箭头/数值标注，并提供 `Ghost Drone (REF)` 与 `Flight Trails` 开关。
+  - 在画布下方增加紧凑型 **Live PID Response** 实时折线图（直接读取 `sim.telemetry` 的 `Target`、`Actual` 与 `Error`，支持 `Z (Alt) / X (Horiz)` 轴切换，无预设假曲线）。
+  - 新增真实遥测驱动的状态短标签 `evaluateLiveControlStatus`（`Ready` / `Calibrating` / `Stable` / `Overshoot` / `Oscillation` / `Saturated` / `Slow Response`），样本不足时不生成确定性误判。
+- **PIP UI 优化（`src/coach.js`, `src/visual_aids.js`, `src/main.js`）**：
+  - 支持 `Greeting / Teaching / Warning / Ready / Success / Failure` 六类状态与 5 种轻量表情动画，每次优先展示 1 条核心建议，补充信息收纳于可折叠 `Learn More`。
+- **居中三星动画与评级依据（`src/scoring.js`, `styles/main.css`, `src/main.js`, `index.html`）**：
+  - 通关结算顶部居中展示 3 颗原创矢量金星（未获星暗灰显示），按 `0.3s → 0.7s → 1.1s` 顺序逐颗弹跳点亮，三星时触发庆祝光效与轻量粒子动画；支持 `Skip Animation`、`prefers-reduced-motion` 以及同关 `Retry` 重新播放。
+  - 失败界面不播放庆祝动画，以简洁 `Mission Failed` 卡片展示失败原因、关键指标与 PIP 一句话改进建议。
+  - 新增 `buildRatingBreakdown` 与 `buildNextStarAdvice`，直接读取 M4 `scoreFlightRun` 与 `LEVEL_STAR_THRESHOLDS` 真实阈值生成 `Mission Completed / Time Target / Precision Target` 明细与无矛盾的下一颗星优化建议。
+- **测试与已知问题**：
+  - `node --test tests/*.test.mjs`：29 suites，76 tests 全部通过。
+  - 无头 Chrome 端到端实测（1440×900 桌面与 390×844 移动端）：Tutorial 交互图解、Ghost Drone 与实时 PID 曲线、Challenge 真实失败无庆祝界面、居中三星动画与 `Skip Animation`、`prefers-reduced-motion`、`Retry` 重播及 `localStorage` 存档均通过，零控制台/运行时报错。
+  - 已知问题：暂无阻塞问题；移动端触控操作与 GitHub Pages 自动发布将在 M6 推进。
 
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
@@ -163,8 +177,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.1 — Flight WASD Intro & PIP Metric Coaching`（已完成，待确认后进入 M6）
-- **已完成**：新手村第 1 课飞行界面开局展示 PIP WASD 控制引导卡片，Tutorial 1–4 全程由 PIP 第一人称口述讲解对应飞行衡量指标并衔接 M5 诊断结算报告。
+- **当前里程碑**：`M5.1 — Visual-First UI & Animated Star Results`（已完成，待人工确认后进入 M6）
+- **已完成**：视觉优先教学（<=15 词 + 交互式 STEM 图解）、Ghost Drone + 实时 PID 曲线与状态短标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据/下一星建议与精简失败界面。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -215,6 +229,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m5): add PID diagnostics and PIP coach debrief` — 完成时间序列遥测、控制行为诊断、PIP 对话式结算分析报告（双模式共用）及历史/本次轨迹对比渲染。
 - `feat(m5.1): add flight WASD intro and PIP metric coaching in tutorials` — 新手村第一课飞行界面开局增加 WASD 介绍，并通过 PIP 对话式讲解贯穿新手村四关的全部飞行衡量指标。
 - `refactor: remove flight test playground feature` — 删除独立的 Flight Test Playground 自由沙盒入口、场景定义及多余风扰下拉控件，统一通过 Tutorial Village 与 Challenge Levels 进行飞行训练与挑战。
+- `feat(m5.1): improve STEM visuals and animated star results` — 完成 M5.1 视觉优先教学与交互图解、Ghost Drone / 实时 PID 曲线与状态标签、PIP 精简优化、居中三星动画、真实 M4 评级依据与精简失败结果页。
 
 ---
 

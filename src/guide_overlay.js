@@ -1,4 +1,4 @@
-import { renderPipRobotSvg, getStemVisualAid } from './visual_aids.js';
+import { renderPipRobotSvg, getStemVisualAid, renderInteractiveVisualAidHtml, bindVisualAidInteractions } from './visual_aids.js';
 
 /**
  * Non-blocking Spotlight & Floating Step Card Overlay for Tutorial Village.
@@ -107,7 +107,10 @@ export class TutorialSpotlightOverlay {
       const aid = step.visualId ? getStemVisualAid(step.visualId) : null;
       if (aid) {
         this.visualSlot.classList.remove('hidden');
-        this.visualSlot.innerHTML = aid.renderSvg();
+        if (stepChanged || !this.visualSlot.innerHTML) {
+          this.visualSlot.innerHTML = renderInteractiveVisualAidHtml(step.visualId);
+          bindVisualAidInteractions(this.visualSlot);
+        }
       } else {
         this.visualSlot.classList.add('hidden');
         this.visualSlot.innerHTML = '';

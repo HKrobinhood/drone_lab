@@ -326,3 +326,67 @@ export function generatePipDiagnosticReport(
     primaryTip: tips[0]
   };
 }
+
+/**
+ * Evaluate live in-flight control status badges strictly from real simulation telemetry.
+ * Avoids deterministic claims when insufficient telemetry samples exist.
+ */
+export function evaluateLiveControlStatus(telemetry = [], sim = null, scene = null) {
+  if (!sim?.started) {
+    return [{ key: 'standby', label: 'Ready', tone: 'neutral', icon: '○' }];
+  }
+
+  const series = Array.isArray(telemetry) ? telemetry : [];
+  if (series.length < 12) {
+    return [{ key: 'calibrating', label: 'Calibrating', tone: 'neutral', icon: '◔' }];
+  }
+
+  const recent = series.slice(-40);
+  const errX = recent.map((s) => Number(s.errX ?? 0));
+  const errZ = recent.map((s) => Number(s.errZ ?? 0));
+  const recentReversals =
+    countOscillationReversals(errX, 0.18) + countOscillationReversals(errZ, 0.18);
+
+  const satCount = recent.filter((s) => Boolean(s.saturated)).length;
+  const last = recent[recent.length - 1];
+  const speed = Math.hypot(Number(last.vx ?? 0), Number(last.vz ?? 0));
+  const curErr = Math.hypot(Number(last.errX ?? 0), Number(last.errZ ?? 0));
+
+  let recentErrSum = 0;
+  for (const s of recent) {
+    recentErrSum += Math.hypot(Number(s.errX ?? 0), Number(s.errZ ?? 0));
+  }
+  const recentAvgErr = recentErrSum / recent.length;
+
+  const movingAwayFromRef =
+    Number(last.vx ?? 0) * -Number(last.errX ?? 0) +
+      Number(last.vz ?? 0) * -Number(last.errZ ?? 0) >
+    0.15;
+
+  const badges = [];
+
+  if (last.saturated || satCount >= 6) {
+    badges.push({ key: 'saturated', label: 'Saturated', tone: 'danger', icon: '⚡' });
+  }
+  if (recentReversals >= 3) {
+    badges.push({ key: 'oscillation', label: 'Oscillation', tone: 'warning', icon: '〰' });
+  }
+  if (movingAwayFromRef && curErr > 0.75) {
+    badges.push({ key: 'overshoot', label: 'Overshoot', tone: 'caution', icon: '↗' });
+  }
+
+  const lowKpHint = (sim?.gains?.kp ?? 5) < (scene?.recommendedPID?.kpMin ?? 3.5);
+  if (!movingAwayFromRef && recentAvgErr > 1.15 && speed < 1.25 && (lowKpHint || curErr > 1.35)) {
+    badges.push({ key: 'slow', label: 'Slow Response', tone: 'info', icon: '◔' });
+  }
+
+  if (badges.length === 0) {
+    if (recentAvgErr <= 0.65 && speed <= 0.65) {
+      badges.push({ key: 'stable', label: 'Stable', tone: 'good', icon: '✓' });
+    } else {
+      badges.push({ key: 'tracking', label: 'Tracking', tone: 'info', icon: '◎' });
+    }
+  }
+
+  return badges.slice(0, 3);
+}

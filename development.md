@@ -26,7 +26,7 @@
 | 里程碑 | 名称 | 核心目标 | 状态 |
 | :--- | :--- | :--- | :--- |
 | **M0** | Project Initialization | 初始化 Git 仓库、工程文档、英文首页、Mode Selection、关卡入口框架 | **已完成** |
-| **M1** | PID Physics and Flight Feel | 2D 无人机物理、PID-X/Z、WASD 手动控制、Flight Test Playground、自动化测试与**人工手感验收** | 待开始 |
+| **M1** | PID Physics and Flight Feel | 2D 无人机物理、PID-X/Z、WASD 手动控制、Flight Test Playground、自动化测试与**人工手感验收** | **已完成开发（待人工手感验收）** |
 | **M2** | Tutorial Village | 4 个交互式教学关卡（Take Off, Kp, Ki, Kd）及实时教学反馈 | 待开始 |
 | **M3** | Challenge Levels | 6 个正式挑战关卡、障碍物、检查点、圆环穿越、风扰与碰撞检测 | 待开始 |
 | **M4** | Scoring and Progress | 1~3 星评分算法、结果界面、localStorage 进度与最高星级存档 | 待开始 |
@@ -50,14 +50,14 @@
 - [x] 编写并运行 M0 自动化测试
 - [x] 创建 M0 独立 Git Commit：`chore(m0): initialize PID drone game and start screen`
 
-### M1 — PID Physics and Flight Feel（待 M0 验收后启动）
-- [ ] 实现 `src/pid.js`（真实位置式 P/I/D、抗积分饱和、输出限幅、测量速度微分 `-Kd * v`、Reset）
-- [ ] 实现 `src/physics.js`（2D 无人机动力学：重力、推力限幅、倾角限幅、惯性、风扰、地面碰撞）
-- [ ] 实现 `src/input.js`（WASD / R / P 键盘状态、窗口失焦/暂停防卡键）
-- [ ] 实现 `src/simulation.js`（固定步长 `dt = 1/120` s 积分器、参考位置生成器、帧率防跳变）
-- [ ] 实现 `src/renderer.js`（Canvas 2D 侧视角无人机、推力/倾角视觉反馈、地面、边界、轨迹、测试目标区）
-- [ ] 提供独立 **Flight Test Playground** 入口与 PID 滑块面板（Kp / Ki / Kd / Reset PID / Pause / Restart）
-- [ ] 编写并运行 M1 全部 8 项自动化测试（Test 1 ~ Test 8）
+### M1 — PID Physics and Flight Feel（待人工手感验收）
+- [x] 实现 `src/pid.js`（真实位置式 P/I/D、抗积分饱和、输出限幅、测量速度微分 `-Kd * v`、Reset）
+- [x] 实现 `src/physics.js`（2D 无人机动力学：重力、推力限幅、倾角限幅、惯性、风扰、地面碰撞）
+- [x] 实现 `src/input.js`（WASD / R / P 键盘状态、窗口失焦/暂停防卡键）
+- [x] 实现 `src/simulation.js`（固定步长 `dt = 1/120` s 积分器、参考位置生成器、帧率防跳变）
+- [x] 实现 `src/renderer.js`（Canvas 2D 侧视角无人机、推力/倾角视觉反馈、地面、边界、轨迹、测试目标区）
+- [x] 提供独立 **Flight Test Playground** 入口与 PID 滑块面板（Kp / Ki / Kd / Reset PID / Pause / Restart）
+- [x] 编写并运行 M1 全部 8 项自动化测试（Test 1 ~ Test 8）
 - [ ] **停止推进并提交用户人工手感验收**
 
 ### M2 — Tutorial Village（待 M1 人工验收通过后启动）
@@ -97,9 +97,9 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M0 — Project Initialization`
-- **已完成**：工程目录初始化、文档体系建设、英文首页与 Mode Selection / Level Selection 入口框架实现。
-- **当前阻塞 / 注意事项**：M0 仅建立页面框架与存档/关卡元数据，尚未实现 M1 物理仿真，点击未开放的飞行关卡会展示英文里程碑解锁说明。
+- **当前里程碑**：`M1 — PID Physics and Flight Feel`（等待用户人工试玩验收）
+- **已完成**：真实 PID-X / PID-Z 控制器、2D 无人机动力学、固定步长 `1/120 s` 仿真循环、WASD 防卡键输入、Canvas 2D 侧视角渲染与独立 **Flight Test Playground**。
+- **当前阻塞 / 注意事项**：按工程规则，必须等待用户人工试玩并确认 M1 飞行手感验收通过后，方可进入 M2（Tutorial Village）。
 
 ---
 
@@ -138,12 +138,10 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 ## 八、Git Commit 记录
 
 - `chore(m0): initialize PID drone game and start screen` — 完成 M0 项目初始化、英文首页、模式与关卡入口框架及工程文档。
+- `feat(m1): implement PID flight physics and manual controls` — 完成 M1 二维 PID 控制器、无人机动力学、WASD 操控与 Flight Test Playground。
 
 ---
 
 ## 九、下一步开发任务
 
-等待用户确认 M0 验收后，启动 **M1 — PID Physics and Flight Feel**：
-1. 实现独立可测的 `pid.js` 与 `physics.js`。
-2. 实现 `input.js`、`simulation.js`、`renderer.js` 与独立 **Flight Test Playground**。
-3. 通过 M1 8 项自动化测试并停止等待用户人工手感验收。
+等待用户完成 **M1 人工飞行手感验收** 并明确确认通过后，再启动 **M2 — Tutorial Village**（4 个交互式教学关卡）。

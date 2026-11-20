@@ -230,18 +230,18 @@
           </article>
         </div>
 
-        <!-- M1 Flight Test Playground Roadmap Notice -->
+        <!-- M1 Flight Test Playground -->
         <aside class="playground-strip">
           <div>
-            <span class="card-eyebrow">Upcoming in Milestone 1</span>
+            <span class="card-eyebrow">Milestone 1 Active Sandbox</span>
             <h3>Flight Test Playground</h3>
             <p>
-              Interactive 2D Canvas PID physics simulation with WASD reference control and live Kp/Ki/Kd sliders
-              will unlock in Milestone 1.
+              Experiment freely with the 2D Canvas PID physics simulation, live Kp/Ki/Kd sliders,
+              wind disturbances, and WASD reference control.
             </p>
           </div>
-          <button id="btn-preview-playground" type="button" class="btn btn-outline">
-            View M1 Readiness
+          <button id="btn-launch-playground" type="button" class="btn btn-primary">
+            Launch Flight Test Playground
           </button>
         </aside>
       </section>
@@ -263,6 +263,129 @@
 
         <div id="levels-grid" class="levels-grid" aria-live="polite">
           <!-- Rendered dynamically from src/levels.js -->
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 4: FLIGHT SCREEN ==================== -->
+      <section id="view-flight" class="view" aria-labelledby="flight-level-name">
+        <!-- Top Flight HUD -->
+        <div class="flight-topbar">
+          <div class="flight-title-group">
+            <button id="btn-flight-back" type="button" class="btn btn-ghost btn-sm">&larr; Modes</button>
+            <div>
+              <h1 id="flight-level-name">Flight Test Playground</h1>
+              <p id="flight-objective" class="flight-objective">
+                Take off, fly with WASD, and hover steadily inside the target zone.
+              </p>
+            </div>
+          </div>
+          <div class="flight-controls-top">
+            <div class="timer-pill">
+              <span>Time</span>
+              <strong id="flight-timer">0.0 s</strong>
+            </div>
+            <button id="btn-flight-pause" type="button" class="btn btn-outline btn-sm">Pause</button>
+            <button id="btn-flight-restart" type="button" class="btn btn-ghost btn-sm">Restart</button>
+          </div>
+        </div>
+
+        <!-- Center Canvas + Side PID Panel -->
+        <div class="flight-workspace">
+          <div class="canvas-stage">
+            <canvas id="flight-canvas" aria-label="2D Drone Flight Simulation Canvas"></canvas>
+          </div>
+
+          <aside class="pid-panel" aria-label="PID Tuning Panel">
+            <div class="pid-panel-header">
+              <h2>PID Tuning Panel</h2>
+              <span class="badge badge-stem">Live Gains</span>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="slider-kp">Kp — Proportional</label>
+                <output id="val-kp" for="slider-kp">6.5</output>
+              </div>
+              <input id="slider-kp" type="range" min="0" max="18" step="0.1" value="6.5" />
+              <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="slider-ki">Ki — Integral</label>
+                <output id="val-ki" for="slider-ki">0.60</output>
+              </div>
+              <input id="slider-ki" type="range" min="0" max="8" step="0.05" value="0.6" />
+              <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="slider-kd">Kd — Derivative</label>
+                <output id="val-kd" for="slider-kd">3.8</output>
+              </div>
+              <input id="slider-kd" type="range" min="0" max="16" step="0.1" value="3.8" />
+              <p class="slider-help">Kd — How strongly motion is damped.</p>
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-label-row">
+                <label for="select-wind">Wind Disturbance</label>
+              </div>
+              <select id="select-wind" class="wind-select">
+                <option value="calm">Calm Air (0 N)</option>
+                <option value="breeze">Steady Crosswind (+3.6 N)</option>
+                <option value="gust">Gusty Crosswind</option>
+              </select>
+            </div>
+
+            <div class="pid-actions">
+              <button id="btn-start-flight" type="button" class="btn btn-primary">Start Flight</button>
+              <button id="btn-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
+            </div>
+
+            <div class="pid-telemetry-box">
+              <span class="telemetry-title">Controller Output (X / Z)</span>
+              <div class="telemetry-grid-sm">
+                <div><span>P</span><strong id="tel-p">0.0 / 0.0</strong></div>
+                <div><span>I</span><strong id="tel-i">0.0 / 0.0</strong></div>
+                <div><span>D</span><strong id="tel-d">0.0 / 0.0</strong></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Bottom Control Guide & Live Telemetry -->
+        <div class="flight-bottom-bar">
+          <div class="control-guide">
+            <span class="guide-label">WASD Control Guide:</span>
+            <kbd>W</kbd> Up
+            <kbd>S</kbd> Down
+            <kbd>A</kbd> Left
+            <kbd>D</kbd> Right
+            <span class="guide-sep">|</span>
+            <kbd>R</kbd> Restart
+            <kbd>P</kbd> Pause
+          </div>
+
+          <div class="flight-status-strip">
+            <div class="status-item">
+              <span>Flight Status</span>
+              <strong id="flight-status" class="status-pill">Ready</strong>
+            </div>
+            <div class="status-item">
+              <span>Position (X, Z)</span>
+              <strong id="flight-pos">4.0 m, 0.0 m</strong>
+            </div>
+            <div class="status-item">
+              <span>Speed (Vx, Vz)</span>
+              <strong id="flight-speed">0.0 m/s, 0.0 m/s</strong>
+            </div>
+            <div class="status-item">
+              <span>Ref Target</span>
+              <strong id="flight-ref">4.0 m, 0.0 m</strong>
+            </div>
+          </div>
         </div>
       </section>
     </main>

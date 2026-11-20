@@ -18,7 +18,7 @@ import {
   PID_SLIDER_BOUNDS,
   getSceneInitialGains
 } from './simulation.js';
-import { FlightRenderer, renderRouteFitPreview } from './renderer.js';
+import { FlightRenderer, renderRouteFitPreview, renderTelemetryTimeSeriesPlot } from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
   PLAYGROUND_SCENE,
@@ -27,9 +27,9 @@ import {
 } from './scenes.js';
 import {
   evaluatePidCoaching,
-  evaluateLiveFlightCoaching,
-  evaluatePostFlightFeedback
+  evaluateLiveFlightCoaching
 } from './coach.js';
+import { generatePipDiagnosticReport } from './feedback.js';
 import { scoreFlightRun } from './scoring.js';
 import { TutorialGuideEngine, PIP_INTRO_SCRIPT } from './tutorial_guide.js';
 import { TutorialSpotlightOverlay } from './guide_overlay.js';
@@ -216,7 +216,9 @@ const els = {
   resultAvgError: document.getElementById('result-avg-error'),
   resultSaturation: document.getElementById('result-saturation'),
   resultPid: document.getElementById('result-pid'),
+  resultPrevLegend: document.getElementById('result-prev-legend'),
   resultRouteCanvas: document.getElementById('result-route-canvas'),
+  resultTelemetryCanvas: document.getElementById('result-telemetry-canvas'),
   resultRatingCard: document.getElementById('result-rating-card'),
   resultChecks2Star: document.getElementById('result-checks-2star'),
   resultChecks3Star: document.getElementById('result-checks-3star'),
@@ -224,9 +226,14 @@ const els = {
   resultTutHeading: document.getElementById('result-tut-heading'),
   resultTutObjective: document.getElementById('result-tut-objective'),
   resultTutPracticeStars: document.getElementById('result-tut-practice-stars'),
+  resultPipAvatar: document.getElementById('result-pip-avatar'),
   resultPipTitle: document.getElementById('result-pip-title'),
+  resultPipHeadline: document.getElementById('result-pip-headline'),
   resultPipExplanation: document.getElementById('result-pip-explanation'),
+  resultPipComparison: document.getElementById('result-pip-comparison'),
+  resultDiagList: document.getElementById('result-diag-list'),
   resultPipTip: document.getElementById('result-pip-tip'),
+  resultPipAdviceList: document.getElementById('result-pip-advice-list'),
   resultBestRef: document.getElementById('result-best-ref'),
   btnResultLevels: document.getElementById('btn-result-levels'),
   btnResultPreflight: document.getElementById('btn-result-preflight'),
@@ -498,7 +505,7 @@ function renderCriteriaList(ulEl, checks) {
   }
 }
 
-function showResultScreen(outcome, metrics, scoreResult) {
+function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null) {
   const isSuccess = outcome.status === 'completed';
   const isChallenge = state.activeScene?.mode === 'challenge';
   const isTutorial = state.activeScene?.mode === 'tutorial';
@@ -543,10 +550,48 @@ function showResultScreen(outcome, metrics, scoreResult) {
   renderCriteriaList(els.resultChecks2Star, scoreResult.checks2Star);
   renderCriteriaList(els.resultChecks3Star, scoreResult.checks3Star);
 
-  const debrief = evaluatePostFlightFeedback(outcome, metrics, state.activeScene);
-  els.resultPipTitle.textContent = debrief.title;
-  els.resultPipExplanation.textContent = debrief.explanation;
-  els.resultPipTip.textContent = debrief.tip;
+  // M5: Unified conversational PIP Flight Coach Telemetry Report (both Tutorial & Challenge)
+  const telemetry = sim.getTelemetrySeries();
+  const report = generatePipDiagnosticReport(
+    telemetry,
+    metrics,
+    outcome,
+    state.activeScene,
+    previousAttempt
+  );
+
+  els.resultPipAvatar.innerHTML = renderPipRobotSvg(report.mood);
+  els.resultPipTitle.textContent = report.title;
+  els.resultPipHeadline.textContent = report.headline;
+  els.resultPipExplanation.textContent = report.spokenSummary;
+  if (report.comparisonNote) {
+    els.resultPipComparison.textContent = report.comparisonNote;
+    els.resultPipComparison.classList.remove('hidden');
+  } else {
+    els.resultPipComparison.classList.add('hidden');
+  }
+
+  els.resultDiagList.innerHTML = '';
+  for (const item of report.diagnostics.findings) {
+    const card = document.createElement('div');
+    card.className = `diag-pill is-${item.severity}`;
+    card.innerHTML = `
+      <div class="diag-pill-top">
+        <span>${item.label}</span>
+        <strong>${item.value}</strong>
+      </div>
+      <p>${item.coachLine}</p>
+    `;
+    els.resultDiagList.appendChild(card);
+  }
+
+  els.resultPipTip.textContent = report.primaryTip;
+  els.resultPipAdviceList.innerHTML = '';
+  for (const extraTip of report.adviceList.slice(1)) {
+    const li = document.createElement('li');
+    li.textContent = extraTip;
+    els.resultPipAdviceList.appendChild(li);
+  }
 
   const bestRef = getBestPidReference(state.progress, state.activeScene?.id);
   if (isChallenge && bestRef) {
@@ -569,8 +614,12 @@ function showResultScreen(outcome, metrics, scoreResult) {
     tutorialGuide.jumpToView('result');
   }
 
+  const prevTrail = previousAttempt?.trail || null;
+  els.resultPrevLegend.classList.toggle('hidden', !(prevTrail?.length > 1));
+
   navigateTo('result');
-  renderRouteFitPreview(els.resultRouteCanvas, sim);
+  renderRouteFitPreview(els.resultRouteCanvas, sim, prevTrail);
+  renderTelemetryTimeSeriesPlot(els.resultTelemetryCanvas, telemetry, sim.config.maxThrust);
 }
 
 function updateProgressSummaries() {
@@ -890,8 +939,14 @@ function handleSceneOutcomeIfNeeded() {
 
     const metrics = sim.getFlightMetrics();
     const scoreResult = scoreFlightRun(outcome, metrics, state.activeScene.id);
+    const previousAttempt = state.lastAttempts[state.activeScene.id] || null;
 
-    state.lastAttempts[state.activeScene.id] = { outcome, metrics, scoreResult };
+    state.lastAttempts[state.activeScene.id] = {
+      outcome,
+      metrics,
+      scoreResult,
+      trail: sim.trail.slice()
+    };
     state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
 
     if (mode === 'tutorial' && tutorialGuide.active) {
@@ -913,7 +968,7 @@ function handleSceneOutcomeIfNeeded() {
       updateProgressSummaries();
     }
 
-    showResultScreen(outcome, metrics, scoreResult);
+    showResultScreen(outcome, metrics, scoreResult, previousAttempt);
   }
   return outcome;
 }
@@ -975,8 +1030,12 @@ function startPlaygroundFlight() {
 function restartFlight() {
   state.runFinished = false;
   input.clearMovementKeys();
+  const prevTrail = state.lastAttempts[state.activeScene?.id]?.trail || sim.trail.slice();
   // Preserve player's current tuned PID gains on Retry within the same level
   sim.reset(true);
+  if (prevTrail.length > 1) {
+    sim.setPreviousTrail(prevTrail);
+  }
   if (state.activeScene?.mode === 'tutorial' && tutorialGuide.active) {
     tutorialGuide.wasdSubIndex = 0;
     tutorialGuide.wasdDone = { w: false, s: false, a: false, d: false, release: false };
@@ -1012,6 +1071,7 @@ function launchScene(scene, options = {}) {
   }
 
   state.tunedGainsByLevel[scene.id] = { ...sim.gains };
+  sim.setPreviousTrail(state.lastAttempts[scene.id]?.trail || []);
   els.flightLevelName.textContent = scene.name;
   els.flightObjective.textContent = scene.objective;
   els.btnFlightBack.innerHTML =

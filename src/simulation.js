@@ -138,6 +138,8 @@ export class FlightSimulation {
 
     this.trail = [];
     this.refTrail = [];
+    this.telemetry = [];
+    this.previousTrail = [];
     this.trailSampleTimer = 0;
     this.windMode = options.windMode || 'calm';
     this.activeScene = null;
@@ -149,6 +151,9 @@ export class FlightSimulation {
   }
 
   loadScene(scene, startRunning = false, options = {}) {
+    if (scene?.id !== this.activeScene?.id) {
+      this.previousTrail = [];
+    }
     this.activeScene = scene || null;
     if (scene) {
       const maxTiltRad = Number.isFinite(scene.maxTilt)
@@ -217,6 +222,7 @@ export class FlightSimulation {
     this.paused = false;
     this.trail = [{ x: this.drone.x, z: this.drone.z }];
     this.refTrail = [{ x: this.reference.x, z: this.reference.z }];
+    this.telemetry = [];
     this.trailSampleTimer = 0;
 
     this.targetZone = this.defaultTarget
@@ -384,15 +390,37 @@ export class FlightSimulation {
       this.metrics.controlSaturationDuration += dt;
     }
 
-    // Sample actual & REF trails at ~20 Hz (keep full mission route up to 2400 pts = 120s)
+    // Sample actual/REF trails and M5 time-series telemetry at ~20 Hz (up to 2400 pts = 120s)
     this.trailSampleTimer += dt;
     if (this.trailSampleTimer >= 0.05) {
       this.trailSampleTimer = 0;
       this.trail.push({ x: this.drone.x, z: this.drone.z });
       this.refTrail.push({ x: this.reference.x, z: this.reference.z });
+      this.telemetry.push({
+        t: this.elapsedTime,
+        refX: this.reference.x,
+        refZ: this.reference.z,
+        x: this.drone.x,
+        z: this.drone.z,
+        vx: this.drone.vx,
+        vz: this.drone.vz,
+        errX,
+        errZ,
+        pX: resX.pTerm,
+        iX: resX.iTerm,
+        dX: resX.dTerm,
+        outX: resX.output,
+        pZ: resZ.pTerm,
+        iZ: resZ.iTerm,
+        dZ: resZ.dTerm,
+        outZ: resZ.output,
+        thrust: this.drone.thrust,
+        saturated: Boolean(thrustSaturated || resX.saturated || resZ.saturated)
+      });
       if (this.trail.length > 2400) {
         this.trail.shift();
         this.refTrail.shift();
+        this.telemetry.shift();
       }
     }
 
@@ -548,6 +576,14 @@ export class FlightSimulation {
       substeps += 1;
     }
     return substeps;
+  }
+
+  setPreviousTrail(trail) {
+    this.previousTrail = Array.isArray(trail) ? trail.map((p) => ({ x: p.x, z: p.z })) : [];
+  }
+
+  getTelemetrySeries() {
+    return this.telemetry.slice();
   }
 
   getFlightMetrics() {

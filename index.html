@@ -785,12 +785,46 @@
                 <div class="route-legend">
                   <span><i class="legend-ref"></i> Commanded REF Route</span>
                   <span><i class="legend-actual"></i> Actual Drone Route</span>
+                  <span id="result-prev-legend" class="hidden"><i class="legend-prev"></i> Previous Attempt</span>
                 </div>
                 <canvas id="result-route-canvas" class="result-route-canvas" aria-label="REF vs Actual Route Fit Plot"></canvas>
+              </article>
+
+              <article class="info-card">
+                <span class="card-eyebrow">Telemetry Time-Series</span>
+                <div class="route-legend">
+                  <span><i class="legend-actual"></i> Tracking Error (m)</span>
+                  <span><i class="legend-thrust"></i> Rotor Thrust (N)</span>
+                </div>
+                <canvas id="result-telemetry-canvas" class="result-telemetry-canvas" aria-label="Tracking Error and Thrust Time Series"></canvas>
               </article>
             </div>
 
             <div class="result-right">
+              <article id="result-pip-report-card" class="info-card result-pip-coach-card">
+                <div class="result-pip-coach-top">
+                  <div id="result-pip-avatar" class="result-pip-avatar"></div>
+                  <div>
+                    <div class="pip-title-row">
+                      <span class="pip-mini-badge">PIP COACH</span>
+                      <strong id="result-pip-title">PIP Flight Coach — Telemetry Analysis</strong>
+                    </div>
+                    <h2 id="result-pip-headline" class="result-pip-headline"></h2>
+                  </div>
+                </div>
+                <div class="result-pip-bubble">
+                  <p id="result-pip-explanation"></p>
+                  <p id="result-pip-comparison" class="result-pip-comparison hidden"></p>
+                </div>
+                <div id="result-diag-list" class="diag-grid"></div>
+                <div class="result-pip-advice">
+                  <span class="card-eyebrow" style="color:#7dd3fc;">PIP's Recommendation For You</span>
+                  <p id="result-pip-tip" class="outcome-pip-tip"></p>
+                  <ul id="result-pip-advice-list" class="result-advice-list"></ul>
+                </div>
+                <p id="result-best-ref" class="outcome-best-ref hidden"></p>
+              </article>
+
               <article id="result-rating-card" class="info-card">
                 <span class="card-eyebrow">Star Rating Breakdown</span>
                 <div class="criteria-section">
@@ -811,16 +845,6 @@
                   <span>Practice Performance Rating</span>
                   <strong id="result-tut-practice-stars">★★★ (3 / 3)</strong>
                 </div>
-              </article>
-
-              <article class="info-card result-pip-card">
-                <div class="outcome-pip-header">
-                  <span class="pip-mini-badge">PIP</span>
-                  <strong id="result-pip-title">PIP Flight Debrief</strong>
-                </div>
-                <p id="result-pip-explanation"></p>
-                <p id="result-pip-tip" class="outcome-pip-tip"></p>
-                <p id="result-best-ref" class="outcome-best-ref hidden"></p>
               </article>
 
               <div class="result-actions">

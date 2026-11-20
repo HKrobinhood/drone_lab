@@ -131,7 +131,10 @@ export class FlightRenderer {
       this.#drawTargetZone(ctx, sim.targetZone, toPxX, toPxY, scale);
     }
 
-    // 9. REF & Actual Flight Trails
+    // 9. Previous Attempt (if retrying), Commanded REF & Actual Flight Trails
+    if (sim.previousTrail?.length > 1) {
+      this.#drawPreviousTrail(ctx, sim.previousTrail, toPxX, toPxY);
+    }
     this.#drawRefTrail(ctx, sim.refTrail, toPxX, toPxY);
     this.#drawTrail(ctx, sim.trail, toPxX, toPxY);
 
@@ -323,6 +326,22 @@ export class FlightRenderer {
     ctx.restore();
   }
 
+  #drawPreviousTrail(ctx, prevTrail, toPxX, toPxY) {
+    if (!prevTrail || prevTrail.length < 2) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(toPxX(prevTrail[0].x), toPxY(prevTrail[0].z));
+    for (let i = 1; i < prevTrail.length; i++) {
+      ctx.lineTo(toPxX(prevTrail[i].x), toPxY(prevTrail[i].z));
+    }
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.48)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   #drawRefTrail(ctx, refTrail, toPxX, toPxY) {
     if (!refTrail || refTrail.length < 2) return;
     ctx.save();
@@ -458,10 +477,11 @@ export class FlightRenderer {
 }
 
 /**
- * Draw a side-by-side comparison of the commanded REF path (dashed gold)
- * and actual drone path (cyan) on the M4 Result Screen mini-canvas.
+ * Draw a comparison of Previous Attempt (dashed purple, if present),
+ * Commanded REF path (dashed gold), and Actual drone path (cyan)
+ * on the Result Screen mini-canvas.
  */
-export function renderRouteFitPreview(canvas, sim) {
+export function renderRouteFitPreview(canvas, sim, previousTrail = null) {
   if (!canvas || !sim) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -524,6 +544,21 @@ export function renderRouteFitPreview(canvas, sim) {
     );
   }
 
+  // Previous Attempt trail (dashed violet)
+  const prevPts = previousTrail || sim.previousTrail;
+  if (prevPts?.length > 1) {
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(toX(prevPts[0].x), toY(prevPts[0].z));
+    for (let i = 1; i < prevPts.length; i++) {
+      ctx.lineTo(toX(prevPts[i].x), toY(prevPts[i].z));
+    }
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.72)';
+    ctx.lineWidth = 1.7;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   // REF route (dashed gold)
   if (sim.refTrail?.length > 1) {
     ctx.beginPath();
@@ -549,6 +584,97 @@ export function renderRouteFitPreview(canvas, sim) {
     ctx.lineWidth = 2.2;
     ctx.stroke();
   }
+
+  ctx.restore();
+}
+
+/**
+ * Draw time-series tracking error magnitude and thrust/PID output on the Result Screen.
+ */
+export function renderTelemetryTimeSeriesPlot(canvas, telemetry = [], maxThrust = 28) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 420;
+  const height = rect.height || 170;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, width, height);
+
+  if (!telemetry || telemetry.length < 2) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Not enough flight samples yet', width * 0.5, height * 0.5);
+    ctx.restore();
+    return;
+  }
+
+  const padL = 28;
+  const padR = 14;
+  const padT = 16;
+  const padB = 22;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  const tStart = telemetry[0].t;
+  const tEnd = Math.max(tStart + 0.5, telemetry[telemetry.length - 1].t);
+  let maxErr = 2.5;
+  for (const s of telemetry) {
+    const mag = Math.hypot(s.errX ?? 0, s.errZ ?? 0);
+    if (mag > maxErr) maxErr = mag;
+  }
+  maxErr = Math.ceil(maxErr * 1.1);
+
+  const toX = (t) => padL + ((t - tStart) / (tEnd - tStart)) * plotW;
+  const toErrY = (e) => padT + plotH - (Math.min(e, maxErr) / maxErr) * plotH;
+  const toThrustY = (th) => padT + plotH - (Math.min(th, maxThrust) / maxThrust) * plotH;
+
+  // Grid & axes
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.stroke();
+
+  // Thrust normalized curve (amber)
+  ctx.beginPath();
+  ctx.moveTo(toX(telemetry[0].t), toThrustY(telemetry[0].thrust ?? 0));
+  for (let i = 1; i < telemetry.length; i++) {
+    ctx.lineTo(toX(telemetry[i].t), toThrustY(telemetry[i].thrust ?? 0));
+  }
+  ctx.strokeStyle = 'rgba(251, 146, 60, 0.75)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  // Position error curve (cyan)
+  ctx.beginPath();
+  ctx.moveTo(toX(telemetry[0].t), toErrY(Math.hypot(telemetry[0].errX ?? 0, telemetry[0].errZ ?? 0)));
+  for (let i = 1; i < telemetry.length; i++) {
+    const s = telemetry[i];
+    ctx.lineTo(toX(s.t), toErrY(Math.hypot(s.errX ?? 0, s.errZ ?? 0)));
+  }
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 10px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`0 s`, padL, height - 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(`${tEnd.toFixed(1)} s`, width - padR, height - 6);
 
   ctx.restore();
 }

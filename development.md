@@ -34,7 +34,7 @@
 | **M4** | Scoring and Progress | 1~3 星评分算法（含 REF 与实际路线拟合度指标）、Result Screen、localStorage 进度与最高星级存档 | **已完成** |
 | **M4.1** | Tutorial & Challenge UI Alignment | 统一新手村与正式关核心界面/状态流、统一 PIP 教练与配置驱动交互式 Spotlight 引导、Tutorial 1 十步 UI+WASD 教学 | **已完成** |
 | **M4.2** | PIP Introduction & Visual Tutorial Redesign | PIP 首次自我介绍、5 种表情动画、6 张内联 SVG 教学图解、精简短句文案与 Learn More 展开 | **已完成** |
-| **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
+| **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -141,10 +141,10 @@
   - 已知问题：暂无阻塞问题。
 
 ### M5 — PID Diagnostics
-- [ ] 记录完整飞行遥测时间序列（参考位置、实际位置、速度、误差、P/I/D 分量、输出）
-- [ ] 实现过冲、振荡、响应速度、稳态误差、积分饱和分析
-- [ ] 生成针对性英文调参建议
-- [ ] 实现上次试飞轨迹与本次试飞轨迹对比渲染
+- [x] 记录完整飞行遥测时间序列（参考位置、实际位置、速度、误差、P/I/D 分量、输出、推力与饱和标记）
+- [x] 实现过冲、振荡、响应速度、稳态误差、积分饱和/控制饱和定量分析（`src/feedback.js`）
+- [x] 将新手村与正式关卡结算报告统一升级为 **PIP Flight Coach 第一人称对话式分析与调参建议**
+- [x] 实现上次试飞轨迹与本次试飞轨迹对比渲染（飞行主画布 + Result 轨迹对比图 + 时序曲线小图）
 
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
@@ -156,9 +156,9 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M4.2 — PIP Introduction & Visual Tutorial Redesign`（已完成，待确认后进入 M5）
-- **已完成**：PIP 首次进入 Tutorial Village 3 步自我介绍与 `localStorage` 持久化（含 `Meet PIP / Help` 重播）、5 种轻量 SVG/CSS 表情状态、6 套内联矢量 STEM 图解、精简短句文案与 `Learn More` 展开卡片。
-- **尚未完成的功能**：M5（时间序列 PID 诊断分析与上次/本次试飞双轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
+- **当前里程碑**：`M5 — PID Diagnostics`（已完成，待确认后进入 M6）
+- **已完成**：完整时间序列遥测采样、`src/feedback.js` 五维控制诊断引擎、新手村与正式关卡共用的 PIP Flight Coach 对话式分析报告、上次/本次试飞双轨迹叠加渲染与时序误差/推力曲线图。
+- **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
 
@@ -205,11 +205,12 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m4): implement stars and game progress` — 完成 M4 三星评分系统（含 REF 路线与实际路线拟合度）、独立 Result Screen 与 localStorage 最高星级存档。
 - `feat(m4.1): align tutorial and challenge flight experience` — 统一 Tutorial 与 Challenge 核心界面、共享 PID/PIP/物理控制流，并实现基于真实输入验证的 10 步交互式新手村引导系统。
 - `feat(m4.2): add PIP introduction and visual tutorials` — 新增 PIP 首次自我介绍、5 种表情动画、6 套内联矢量 STEM 教学图解与精简短句引导。
+- `feat(m5): add PID diagnostics and PIP coach debrief` — 完成时间序列遥测、控制行为诊断、PIP 对话式结算分析报告（双模式共用）及历史/本次轨迹对比渲染。
 
 ---
 
 ## 九、下一步开发任务
 
-等待用户确认 **M4** 后，启动 **M5 — PID Diagnostics**：
-1. 记录完整时间序列遥测并实现过冲/振荡/滞后/稳态误差/抗饱和智能诊断（`src/feedback.js`）。
-2. 在 Canvas 飞行场景中叠加展示上次试飞轨迹与本次试飞轨迹对比。
+等待用户确认 **M5** 后，启动 **M6 — Polish and Deployment**：
+1. 移动端触控与窄屏适配、UI 细节打磨与难度校准。
+2. 配置 GitHub Actions 与 GitHub Pages 自动化发布并完善 `README.md`。

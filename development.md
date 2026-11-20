@@ -35,6 +35,7 @@
 | **M4.1** | Tutorial & Challenge UI Alignment | 统一新手村与正式关核心界面/状态流、统一 PIP 教练与配置驱动交互式 Spotlight 引导、Tutorial 1 十步 UI+WASD 教学 | **已完成** |
 | **M4.2** | PIP Introduction & Visual Tutorial Redesign | PIP 首次自我介绍、5 种表情动画、6 张内联 SVG 教学图解、精简短句文案与 Learn More 展开 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | **已完成** |
+| **M5.1** | Flight WASD Intro & PIP Metric Coaching | 新手村第一课飞行界面开局增加 WASD 介绍，并在 4 关课程中全程通过 PIP 教练口述教授衡量指标 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -146,6 +147,12 @@
 - [x] 将新手村与正式关卡结算报告统一升级为 **PIP Flight Coach 第一人称对话式分析与调参建议**
 - [x] 实现上次试飞轨迹与本次试飞轨迹对比渲染（飞行主画布 + Result 轨迹对比图 + 时序曲线小图）
 
+### M5.1 — Flight WASD Intro & PIP Metric Coaching
+- [x] 在 `Tutorial 1` 飞行界面（`#view-flight`）开局即展示 `#flight-wasd-intro-banner`（PIP 头像 + WASD 控制说明 + Completion Time/Route Fit 提示），并与飞行第一步 `t1-wasd`（`wasd-controls` SVG）衔接
+- [x] 在 Tutorial 1–4 全程通过 **PIP Flight Coach 第一人称对话**循序渐进教授衡量指标（T1：WASD、Completion Time 与 Route Fit；T2：Tracking Lag 与 Route Fit；T3：Steady-State Offset 与 Saturation/Windup；T4：Overshoot、Oscillation、Settling Time 与 Stability）
+- [x] 在结算页 PIP 对话气泡中新增 `metricLessonNote`（`#result-pip-lesson-note`），结合本次实测指标向玩家讲解得分与控制原理
+- [x] 通过 M5.1 自动化测试与真实浏览器实测验证
+
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
 - [ ] 校准各关卡难度与评分阈值
@@ -156,8 +163,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5 — PID Diagnostics`（已完成，待确认后进入 M6）
-- **已完成**：完整时间序列遥测采样、`src/feedback.js` 五维控制诊断引擎、新手村与正式关卡共用的 PIP Flight Coach 对话式分析报告、上次/本次试飞双轨迹叠加渲染与时序误差/推力曲线图。
+- **当前里程碑**：`M5.1 — Flight WASD Intro & PIP Metric Coaching`（已完成，待确认后进入 M6）
+- **已完成**：新手村第 1 课飞行界面开局展示 PIP WASD 控制引导卡片，Tutorial 1–4 全程由 PIP 第一人称口述讲解对应飞行衡量指标并衔接 M5 诊断结算报告。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -206,6 +213,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m4.1): align tutorial and challenge flight experience` — 统一 Tutorial 与 Challenge 核心界面、共享 PID/PIP/物理控制流，并实现基于真实输入验证的 10 步交互式新手村引导系统。
 - `feat(m4.2): add PIP introduction and visual tutorials` — 新增 PIP 首次自我介绍、5 种表情动画、6 套内联矢量 STEM 教学图解与精简短句引导。
 - `feat(m5): add PID diagnostics and PIP coach debrief` — 完成时间序列遥测、控制行为诊断、PIP 对话式结算分析报告（双模式共用）及历史/本次轨迹对比渲染。
+- `feat(m5.1): add flight WASD intro and PIP metric coaching in tutorials` — 新手村第一课飞行界面开局增加 WASD 介绍，并通过 PIP 对话式讲解贯穿新手村四关的全部飞行衡量指标。
 
 ---
 

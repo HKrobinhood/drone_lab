@@ -532,6 +532,18 @@
           </div>
         </div>
 
+        <!-- Tutorial 1 Flight Screen WASD & Metrics Coach Intro -->
+        <aside id="flight-wasd-intro-banner" class="flight-wasd-intro-banner hidden" aria-label="WASD Flight Control Introduction">
+          <div id="flight-wasd-intro-avatar" class="tut-guide-avatar"></div>
+          <div class="flight-wasd-intro-copy">
+            <strong>PIP Coach — Welcome to Flight Controls!</strong>
+            <p id="flight-wasd-intro-text">
+              Press <kbd>W</kbd> Up, <kbd>S</kbd> Down, <kbd>A</kbd> Left, <kbd>D</kbd> Right to move the yellow REF target—my PID loop follows REF. I'll measure your Completion Time and Route Fit!
+            </p>
+          </div>
+          <button id="btn-dismiss-wasd-intro" type="button" class="btn btn-ghost btn-sm">Got It</button>
+        </aside>
+
         <!-- Center Canvas + Side PIP & PID Panel -->
         <div class="flight-workspace">
           <div class="canvas-stage">
@@ -814,6 +826,7 @@
                 </div>
                 <div class="result-pip-bubble">
                   <p id="result-pip-explanation"></p>
+                  <p id="result-pip-lesson-note" class="result-pip-lesson-note hidden"></p>
                   <p id="result-pip-comparison" class="result-pip-comparison hidden"></p>
                 </div>
                 <div id="result-diag-list" class="diag-grid"></div>

@@ -131,7 +131,8 @@ export class FlightRenderer {
       this.#drawTargetZone(ctx, sim.targetZone, toPxX, toPxY, scale);
     }
 
-    // 9. Flight Trail
+    // 9. REF & Actual Flight Trails
+    this.#drawRefTrail(ctx, sim.refTrail, toPxX, toPxY);
     this.#drawTrail(ctx, sim.trail, toPxX, toPxY);
 
     // 10. Reference Position Crosshair & Tether
@@ -322,6 +323,22 @@ export class FlightRenderer {
     ctx.restore();
   }
 
+  #drawRefTrail(ctx, refTrail, toPxX, toPxY) {
+    if (!refTrail || refTrail.length < 2) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([5, 5]);
+    ctx.moveTo(toPxX(refTrail[0].x), toPxY(refTrail[0].z));
+    for (let i = 1; i < refTrail.length; i++) {
+      ctx.lineTo(toPxX(refTrail[i].x), toPxY(refTrail[i].z));
+    }
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.35)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   #drawTrail(ctx, trail, toPxX, toPxY) {
     if (trail.length < 2) return;
     ctx.save();
@@ -438,4 +455,100 @@ export class FlightRenderer {
 
     ctx.restore();
   }
+}
+
+/**
+ * Draw a side-by-side comparison of the commanded REF path (dashed gold)
+ * and actual drone path (cyan) on the M4 Result Screen mini-canvas.
+ */
+export function renderRouteFitPreview(canvas, sim) {
+  if (!canvas || !sim) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 420;
+  const height = rect.height || 200;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, width, height);
+
+  const worldW = sim.config.worldWidth;
+  const worldH = sim.config.worldHeight;
+  const pad = 16;
+  const scale = Math.min((width - pad * 2) / worldW, (height - pad * 2) / worldH);
+  const offsetX = (width - worldW * scale) * 0.5;
+  const groundY = height - pad;
+
+  const toX = (wx) => offsetX + wx * scale;
+  const toY = (wz) => groundY - wz * scale;
+
+  // Ground line
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(toX(0), groundY);
+  ctx.lineTo(toX(worldW), groundY);
+  ctx.stroke();
+
+  // Obstacles silhouette
+  if (sim.obstacles?.length) {
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
+    for (const obs of sim.obstacles) {
+      ctx.fillRect(toX(obs.x), toY(obs.z + obs.height), obs.width * scale, obs.height * scale);
+    }
+  }
+
+  // Target / Pad marker
+  if (sim.targetZone) {
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(toX(sim.targetZone.x), toY(sim.targetZone.z), sim.targetZone.radius * scale, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (sim.landingPad) {
+    ctx.fillStyle = '#0ea5e9';
+    ctx.fillRect(
+      toX(sim.landingPad.x - sim.landingPad.halfWidth),
+      toY(sim.landingPad.topZ) - 2,
+      sim.landingPad.halfWidth * 2 * scale,
+      4
+    );
+  }
+
+  // REF route (dashed gold)
+  if (sim.refTrail?.length > 1) {
+    ctx.beginPath();
+    ctx.setLineDash([5, 4]);
+    ctx.moveTo(toX(sim.refTrail[0].x), toY(sim.refTrail[0].z));
+    for (let i = 1; i < sim.refTrail.length; i++) {
+      ctx.lineTo(toX(sim.refTrail[i].x), toY(sim.refTrail[i].z));
+    }
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Actual route (solid cyan)
+  if (sim.trail?.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(toX(sim.trail[0].x), toY(sim.trail[0].z));
+    for (let i = 1; i < sim.trail.length; i++) {
+      ctx.lineTo(toX(sim.trail[i].x), toY(sim.trail[i].z));
+    }
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }

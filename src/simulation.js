@@ -16,6 +16,7 @@ import {
   stepDronePhysics,
   circleIntersectsRect
 } from './physics.js';
+import { computePathFit } from './scoring.js';
 
 export const FIXED_DT = 1 / 120;
 export const MAX_FRAME_DT = 0.05;
@@ -127,6 +128,7 @@ export class FlightSimulation {
     });
 
     this.trail = [];
+    this.refTrail = [];
     this.trailSampleTimer = 0;
     this.windMode = options.windMode || 'calm';
     this.activeScene = null;
@@ -205,6 +207,7 @@ export class FlightSimulation {
     this.started = startRunning;
     this.paused = false;
     this.trail = [{ x: this.drone.x, z: this.drone.z }];
+    this.refTrail = [{ x: this.reference.x, z: this.reference.z }];
     this.trailSampleTimer = 0;
 
     this.targetZone = this.defaultTarget
@@ -240,7 +243,12 @@ export class FlightSimulation {
       maxOvershoot: 0,
       trackingErrorSum: 0,
       sampleCount: 0,
-      controlSaturationDuration: 0
+      controlSaturationDuration: 0,
+      lastRefMoveTime: 0,
+      settledSince: null,
+      accelDeltaSqSum: 0,
+      prevAx: 0,
+      prevAz: 0
     };
 
     this.lastPid = {
@@ -307,6 +315,10 @@ export class FlightSimulation {
     if (!this.started || this.paused) return;
 
     this.updateReference(axes, dt);
+    if (Math.abs(axes?.moveX || 0) > 0 || Math.abs(axes?.moveZ || 0) > 0) {
+      this.metrics.lastRefMoveTime = this.elapsedTime;
+      this.metrics.settledSince = null;
+    }
 
     const wind = computeSceneWindForce(this.activeScene, this.windMode, this.elapsedTime);
     const resX = this.pidX.update(this.reference.x, this.drone.x, dt, this.drone.vx);
@@ -334,6 +346,23 @@ export class FlightSimulation {
     this.metrics.trackingErrorSum += trackingErr;
     this.metrics.sampleCount += 1;
 
+    // Smoothness: RMS acceleration rate-of-change (jerk proxy)
+    const dAx = (this.drone.ax - this.metrics.prevAx) / dt;
+    const dAz = (this.drone.az - this.metrics.prevAz) / dt;
+    this.metrics.accelDeltaSqSum += dAx * dAx + dAz * dAz;
+    this.metrics.prevAx = this.drone.ax;
+    this.metrics.prevAz = this.drone.az;
+
+    // Settling tracking: continuous time inside reference tolerance with low speed
+    const speed = Math.hypot(this.drone.vx, this.drone.vz);
+    if (trackingErr <= 0.45 && speed <= 0.35) {
+      if (this.metrics.settledSince === null) {
+        this.metrics.settledSince = this.elapsedTime;
+      }
+    } else {
+      this.metrics.settledSince = null;
+    }
+
     // Overshoot: excursion past reference while velocity carries drone away from reference
     const movingPastRef = this.drone.vx * -errX + this.drone.vz * -errZ > 0.05;
     if (movingPastRef && trackingErr > this.metrics.maxOvershoot) {
@@ -345,13 +374,15 @@ export class FlightSimulation {
       this.metrics.controlSaturationDuration += dt;
     }
 
-    // Sample trail at ~20 Hz
+    // Sample actual & REF trails at ~20 Hz (keep full mission route up to 2400 pts = 120s)
     this.trailSampleTimer += dt;
     if (this.trailSampleTimer >= 0.05) {
       this.trailSampleTimer = 0;
       this.trail.push({ x: this.drone.x, z: this.drone.z });
-      if (this.trail.length > 320) {
+      this.refTrail.push({ x: this.reference.x, z: this.reference.z });
+      if (this.trail.length > 2400) {
         this.trail.shift();
+        this.refTrail.shift();
       }
     }
 
@@ -517,12 +548,29 @@ export class FlightSimulation {
     const averageTrackingError =
       this.metrics.sampleCount > 0 ? this.metrics.trackingErrorSum / this.metrics.sampleCount : 0;
 
+    const rmsJerk =
+      this.metrics.sampleCount > 0
+        ? Math.sqrt(this.metrics.accelDeltaSqSum / this.metrics.sampleCount)
+        : 0;
+    const flightSmoothness = clamp(100 * Math.exp(-rmsJerk / 95), 0, 100);
+
+    const settlingTime =
+      this.metrics.settledSince !== null
+        ? Math.max(0, this.metrics.settledSince - this.metrics.lastRefMoveTime)
+        : Math.max(0, this.elapsedTime - this.metrics.lastRefMoveTime);
+
+    const { pathDeviation, pathFitScore } = computePathFit(this.refTrail, this.trail);
+
     return {
       completionTime: this.elapsedTime,
       maxOvershoot: this.metrics.maxOvershoot,
+      settlingTime,
       averageTrackingError,
       finalPositionError,
       finalVelocity,
+      flightSmoothness,
+      pathDeviation,
+      pathFitScore,
       collisionCount: this.collisionCount,
       controlSaturationDuration: this.metrics.controlSaturationDuration,
       pidParameters: { ...this.gains }

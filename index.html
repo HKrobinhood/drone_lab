@@ -641,39 +641,104 @@
           </div>
         </aside>
       </section>
-    </main>
 
-    <!-- Tutorial Outcome Modal -->
-    <div id="outcome-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="outcome-title">
-      <div class="modal-card outcome-card">
-        <span id="outcome-badge" class="badge badge-stem">Mission Result</span>
-        <h2 id="outcome-title">Mission Complete!</h2>
-        <p id="outcome-message"></p>
-        <div class="outcome-meta">
-          <div><span>Flight Time</span><strong id="outcome-time">0.0 s</strong></div>
-          <div><span>PID (Kp / Ki / Kd)</span><strong id="outcome-pid">6.5 / 0.60 / 3.8</strong></div>
-          <div><span>Max Overshoot</span><strong id="outcome-overshoot">0.00 m</strong></div>
-          <div><span>Avg Tracking Error</span><strong id="outcome-avg-error">0.00 m</strong></div>
-          <div><span>Saturation Time</span><strong id="outcome-saturation">0.00 s</strong></div>
-          <div><span>Final Speed</span><strong id="outcome-final-speed">0.00 m/s</strong></div>
-        </div>
-        <div id="outcome-suggestion-box" class="outcome-suggestion">
-          <div class="outcome-pip-header">
-            <span class="pip-mini-badge">PIP</span>
-            <strong id="outcome-pip-title">What went wrong?</strong>
+      <!-- ==================== VIEW 5: RESULT SCREEN ==================== -->
+      <section id="view-result" class="view" aria-labelledby="result-title">
+        <div class="result-hero">
+          <div>
+            <span id="result-badge" class="badge badge-stem">Mission Complete</span>
+            <h1 id="result-title">Mission Complete!</h1>
+            <p id="result-level-subtitle" class="section-subtitle"></p>
           </div>
-          <p id="outcome-suggestion"></p>
-          <p id="outcome-pip-tip" class="outcome-pip-tip"></p>
-          <p id="outcome-best-ref" class="outcome-best-ref hidden"></p>
+          <div class="result-stars-box">
+            <div id="result-stars-display" class="result-stars" aria-label="0 of 3 stars">☆☆☆</div>
+            <strong id="result-star-label">Mission Cleared</strong>
+          </div>
         </div>
-        <div class="modal-actions outcome-actions">
-          <button id="btn-outcome-levels" type="button" class="btn btn-ghost">Back to Levels</button>
-          <button id="btn-outcome-preflight" type="button" class="btn btn-outline hidden">Pre-flight Tuning</button>
-          <button id="btn-outcome-retry" type="button" class="btn btn-outline">Retry Level</button>
-          <button id="btn-outcome-next" type="button" class="btn btn-primary">Next Level</button>
+
+        <div class="result-grid">
+          <div class="result-left">
+            <article class="info-card">
+              <span class="card-eyebrow">Flight Performance Metrics</span>
+              <div class="specs-grid result-metrics-grid">
+                <div class="spec-box">
+                  <span>Completion Time</span>
+                  <strong id="result-time">0.0 s</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Overshoot</span>
+                  <strong id="result-overshoot">0.00 m</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Settling Time</span>
+                  <strong id="result-settling">0.0 s</strong>
+                </div>
+                <div class="spec-box spec-highlight">
+                  <span>Route Fit (REF vs Actual)</span>
+                  <strong id="result-route-fit">100% (0.00 m)</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Flight Stability</span>
+                  <strong id="result-smoothness">100%</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Avg Tracking Error</span>
+                  <strong id="result-avg-error">0.00 m</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Saturation Time</span>
+                  <strong id="result-saturation">0.00 s</strong>
+                </div>
+                <div class="spec-box">
+                  <span>PID Gains</span>
+                  <strong id="result-pid">0.0 / 0.00 / 0.0</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="info-card">
+              <span class="card-eyebrow">Route Fit Comparison</span>
+              <div class="route-legend">
+                <span><i class="legend-ref"></i> Commanded REF Route</span>
+                <span><i class="legend-actual"></i> Actual Drone Route</span>
+              </div>
+              <canvas id="result-route-canvas" class="result-route-canvas" aria-label="REF vs Actual Route Fit Plot"></canvas>
+            </article>
+          </div>
+
+          <div class="result-right">
+            <article class="info-card">
+              <span class="card-eyebrow">Star Rating Breakdown</span>
+              <div class="criteria-section">
+                <h3>2-Star Requirements</h3>
+                <ul id="result-checks-2star" class="criteria-list"></ul>
+              </div>
+              <div class="criteria-section">
+                <h3>3-Star Mastery</h3>
+                <ul id="result-checks-3star" class="criteria-list"></ul>
+              </div>
+            </article>
+
+            <article class="info-card result-pip-card">
+              <div class="outcome-pip-header">
+                <span class="pip-mini-badge">PIP</span>
+                <strong id="result-pip-title">PIP Flight Debrief</strong>
+              </div>
+              <p id="result-pip-explanation"></p>
+              <p id="result-pip-tip" class="outcome-pip-tip"></p>
+              <p id="result-best-ref" class="outcome-best-ref hidden"></p>
+            </article>
+
+            <div class="result-actions">
+              <button id="btn-result-levels" type="button" class="btn btn-ghost">Back to Levels</button>
+              <button id="btn-result-preflight" type="button" class="btn btn-outline hidden">Pre-flight Tuning</button>
+              <button id="btn-result-retry" type="button" class="btn btn-outline">Retry</button>
+              <button id="btn-result-next" type="button" class="btn btn-primary">Next Level</button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
 
     <!-- Status / Milestone Preview Modal -->
     <div id="notice-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">

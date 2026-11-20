@@ -14,7 +14,9 @@ export function createDefaultProgress() {
       'tutorial-1': true,
       'level-1': true
     },
-    completed: {}
+    completed: {},
+    bestPid: {},
+    bestMetrics: {}
   };
 }
 
@@ -47,7 +49,9 @@ export function loadProgress(customStorage) {
         ...defaults.unlocked,
         ...(typeof parsed.unlocked === 'object' && parsed.unlocked ? parsed.unlocked : {})
       },
-      completed: typeof parsed.completed === 'object' && parsed.completed ? { ...parsed.completed } : {}
+      completed: typeof parsed.completed === 'object' && parsed.completed ? { ...parsed.completed } : {},
+      bestPid: typeof parsed.bestPid === 'object' && parsed.bestPid ? { ...parsed.bestPid } : {},
+      bestMetrics: typeof parsed.bestMetrics === 'object' && parsed.bestMetrics ? { ...parsed.bestMetrics } : {}
     };
   } catch {
     return defaults;
@@ -85,21 +89,53 @@ export function isLevelCompleted(progress, levelId) {
  * and unlocks progression cleanly without inflating star counts prematurely.
  */
 export function recordLevelCompletion(progress, levelId, nextLevelId = null, customStorage) {
+  return recordLevelResult(progress, levelId, { stars: 0, completed: true }, nextLevelId, customStorage);
+}
+
+/**
+ * Record flight result, preserving the player's highest historical star count
+ * and unlocking the next sequential level when completed.
+ */
+export function recordLevelResult(progress, levelId, result = {}, nextLevelId = null, customStorage) {
   const updated = {
     version: 1,
     stars: { ...(progress?.stars || {}) },
     unlocked: { ...(progress?.unlocked || {}) },
-    completed: { ...(progress?.completed || {}) }
+    completed: { ...(progress?.completed || {}) },
+    bestPid: { ...(progress?.bestPid || {}) },
+    bestMetrics: { ...(progress?.bestMetrics || {}) }
   };
 
   updated.unlocked[levelId] = true;
-  updated.completed[levelId] = true;
-  if (nextLevelId) {
-    updated.unlocked[nextLevelId] = true;
+  if (result.completed) {
+    updated.completed[levelId] = true;
+    if (nextLevelId) {
+      updated.unlocked[nextLevelId] = true;
+    }
+
+    const prevStars = getBestStars(progress, levelId);
+    const earnedStars = Math.max(0, Math.min(3, Math.floor(Number(result.stars ?? 0))));
+    if (earnedStars >= prevStars) {
+      updated.stars[levelId] = Math.max(prevStars, earnedStars);
+      if (result.pidParameters) {
+        updated.bestPid[levelId] = { ...result.pidParameters };
+      }
+      if (result.metrics) {
+        updated.bestMetrics[levelId] = {
+          completionTime: result.metrics.completionTime,
+          pathFitScore: result.metrics.pathFitScore,
+          maxOvershoot: result.metrics.maxOvershoot
+        };
+      }
+    }
   }
 
   saveProgress(updated, customStorage);
   return updated;
+}
+
+export function getBestPidReference(progress, levelId) {
+  return progress?.bestPid?.[levelId] || null;
 }
 
 export function isFirstPlaythrough(progress) {

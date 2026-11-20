@@ -30,8 +30,8 @@
 | **M2** | Tutorial Village | 4 个交互式教学关卡（Take Off, Kp, Ki, Kd）及实时教学反馈 | **已完成** |
 | **M3** | Challenge Levels | 6 个正式挑战关卡、障碍物、检查点、圆环穿越、风扰与碰撞检测 | **已完成** |
 | **M3.1** | Challenge Physics & Pre-flight Tuning | 起飞前调参界面、关卡差异化动力学（质量/载荷/推力限幅/阵风）、Heavy Cargo 重构、重试参数保留与 M4 指标接口 | **已完成** |
-| **M3.2** | Progressive PID Tuning & Virtual Flight Instructor | 关卡教学递进重构、每关零初始调参、虚拟教练 PIP 实时诊断与组合建议、离线参数扫描标定、手感度强化 | **已完成（待人工试玩验收）** |
-| **M4** | Scoring and Progress | 1~3 星评分算法、结果界面、localStorage 进度与最高星级存档 | 待开始 |
+| **M3.2** | Progressive PID Tuning & Virtual Flight Instructor | 关卡教学递进重构、每关零初始调参、虚拟教练 PIP 实时诊断与组合建议、离线参数扫描标定、手感度强化 | **已完成** |
+| **M4** | Scoring and Progress | 1~3 星评分算法（含 REF 与实际路线拟合度指标）、Result Screen、localStorage 进度与最高星级存档 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
@@ -97,9 +97,10 @@
 - [x] 通过 M3.2 全部 15 项回归与手感差异自动化测试
 
 ### M4 — Scoring and Progress
-- [ ] 实现 `src/scoring.js`（1~3 星评价与各关卡阈值）
-- [ ] 完善 Result Screen（Mission Complete/Failed、指标展示、Retry/Next/Back）
-- [ ] 接入 `localStorage` 历史最高星级与进度保存
+- [x] 实现 `src/scoring.js`（1~3 星评价、各关卡阈值与 `REF` vs 实际路线拟合度 `computePathFit`）
+- [x] 扩展 `src/simulation.js` 记录 `refTrail`、`settlingTime`、`flightSmoothness`、`pathFitScore` 与 `pathDeviation`
+- [x] 完善 Result Screen（`#view-result`：Mission Complete/Failed、1~3 星展示、路线拟合对比小图、2★/3★ 明细、Retry/Pre-flight/Next/Back）
+- [x] 接入 `localStorage` 历史最高星级与最佳参考 PID 存档（不覆盖高星级、不自动填入挑战滑块）
 
 ### M5 — PID Diagnostics
 - [ ] 记录完整飞行遥测时间序列（参考位置、实际位置、速度、误差、P/I/D 分量、输出）
@@ -117,9 +118,9 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M3.2 — Progressive PID Tuning & Virtual Flight Instructor`（已完成开发，等待用户试玩反馈）
-- **已完成**：L1–L6 循序渐进教学重构、每关零初始 PID 策略、SVG 虚拟教练 PIP 六态动画与优先级规则引擎（含联合稳定性校验与防抖）、滑块区域视觉提示、`"What went wrong?"` 试飞解释与离线参数扫描标定脚本 `scripts/calibrate_levels.mjs`。
-- **尚未完成的功能**：M4（1~3 星评分公式、正式 Result Screen、localStorage 星级存档）、M5（时间序列 PID 诊断与前后轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
+- **当前里程碑**：`M4 — Scoring and Progress`（已完成，待确认后进入 M5）
+- **已完成**：1~3 星评价系统（含时间、过冲、稳定时间、平滑度与 **REF 路线 vs 实际路线几何拟合度**）、独立 Result Screen 与轨迹拟合对比小图、`localStorage` 最高星级持久化。
+- **尚未完成的功能**：M5（时间序列 PID 诊断分析与上次/本次试飞双轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
 
 ---
 
@@ -163,11 +164,12 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m3): implement drone challenge levels` — 完成 M3 六个正式挑战关卡、障碍物碰撞、高台着陆、顺序圆环穿越检测与越界判定。
 - `feat(m3.1): add level-specific physics and PID tuning challenges` — 完成 M3.1 Pre-flight Tuning 调参流程、关卡物理差异（载荷/推重比/饱和/阵风）、L3 Heavy Cargo 重构与 M4 指标接口。
 - `feat(m3.2): add progressive PID tuning and virtual coach` — 完成 M3.2 关卡教学递进、零初始 PID、虚拟教练 PIP、参数扫描标定与失败遥测解释。
+- `feat(m4): implement stars and game progress` — 完成 M4 三星评分系统（含 REF 路线与实际路线拟合度）、独立 Result Screen 与 localStorage 最高星级存档。
 
 ---
 
 ## 九、下一步开发任务
 
-等待用户试玩验收 **M3.2** 后，启动 **M4 — Scoring and Progress**：
-1. 实现 `src/scoring.js`（1~3 星评价指标与各关卡阈值）。
-2. 完善 Result Screen 并持久化历史最高星级。
+等待用户确认 **M4** 后，启动 **M5 — PID Diagnostics**：
+1. 记录完整时间序列遥测并实现过冲/振荡/滞后/稳态误差/抗饱和智能诊断（`src/feedback.js`）。
+2. 在 Canvas 飞行场景中叠加展示上次试飞轨迹与本次试飞轨迹对比。

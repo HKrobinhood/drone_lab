@@ -6,11 +6,12 @@ import {
   getBestStars,
   isFirstPlaythrough,
   getModeSummary,
-  recordLevelCompletion
+  recordLevelResult,
+  getBestPidReference
 } from './storage.js';
 import { InputController } from './input.js';
 import { FlightSimulation, DEFAULT_PID_GAINS } from './simulation.js';
-import { FlightRenderer } from './renderer.js';
+import { FlightRenderer, renderRouteFitPreview } from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
   PLAYGROUND_SCENE,
@@ -19,6 +20,7 @@ import {
   evaluateSceneOutcome
 } from './scenes.js';
 import { evaluatePidCoaching, evaluatePostFlightFeedback } from './coach.js';
+import { scoreFlightRun } from './scoring.js';
 
 const state = {
   currentView: 'start',
@@ -27,8 +29,7 @@ const state = {
   runFinished: false,
   progress: loadProgress(),
   tunedGainsByLevel: {},
-  lastAttempts: {},
-  bestPassingPid: {}
+  lastAttempts: {}
 };
 
 const els = {
@@ -46,7 +47,8 @@ const els = {
     modes: document.getElementById('view-modes'),
     levels: document.getElementById('view-levels'),
     preflight: document.getElementById('view-preflight'),
-    flight: document.getElementById('view-flight')
+    flight: document.getElementById('view-flight'),
+    result: document.getElementById('view-result')
   },
 
   firstPlayBanner: document.getElementById('first-play-banner'),
@@ -151,26 +153,31 @@ const els = {
   guideSuccess: document.getElementById('guide-success'),
   guideSuggestion: document.getElementById('guide-suggestion'),
 
-  // Outcome Modal
-  outcomeModal: document.getElementById('outcome-modal'),
-  outcomeBadge: document.getElementById('outcome-badge'),
-  outcomeTitle: document.getElementById('outcome-title'),
-  outcomeMessage: document.getElementById('outcome-message'),
-  outcomeTime: document.getElementById('outcome-time'),
-  outcomePid: document.getElementById('outcome-pid'),
-  outcomeOvershoot: document.getElementById('outcome-overshoot'),
-  outcomeAvgError: document.getElementById('outcome-avg-error'),
-  outcomeSaturation: document.getElementById('outcome-saturation'),
-  outcomeFinalSpeed: document.getElementById('outcome-final-speed'),
-  outcomeSuggestionBox: document.getElementById('outcome-suggestion-box'),
-  outcomePipTitle: document.getElementById('outcome-pip-title'),
-  outcomeSuggestion: document.getElementById('outcome-suggestion'),
-  outcomePipTip: document.getElementById('outcome-pip-tip'),
-  outcomeBestRef: document.getElementById('outcome-best-ref'),
-  btnOutcomeLevels: document.getElementById('btn-outcome-levels'),
-  btnOutcomePreflight: document.getElementById('btn-outcome-preflight'),
-  btnOutcomeRetry: document.getElementById('btn-outcome-retry'),
-  btnOutcomeNext: document.getElementById('btn-outcome-next'),
+  // Result Screen elements (M4)
+  resultBadge: document.getElementById('result-badge'),
+  resultTitle: document.getElementById('result-title'),
+  resultLevelSubtitle: document.getElementById('result-level-subtitle'),
+  resultStarsDisplay: document.getElementById('result-stars-display'),
+  resultStarLabel: document.getElementById('result-star-label'),
+  resultTime: document.getElementById('result-time'),
+  resultOvershoot: document.getElementById('result-overshoot'),
+  resultSettling: document.getElementById('result-settling'),
+  resultRouteFit: document.getElementById('result-route-fit'),
+  resultSmoothness: document.getElementById('result-smoothness'),
+  resultAvgError: document.getElementById('result-avg-error'),
+  resultSaturation: document.getElementById('result-saturation'),
+  resultPid: document.getElementById('result-pid'),
+  resultRouteCanvas: document.getElementById('result-route-canvas'),
+  resultChecks2Star: document.getElementById('result-checks-2star'),
+  resultChecks3Star: document.getElementById('result-checks-3star'),
+  resultPipTitle: document.getElementById('result-pip-title'),
+  resultPipExplanation: document.getElementById('result-pip-explanation'),
+  resultPipTip: document.getElementById('result-pip-tip'),
+  resultBestRef: document.getElementById('result-best-ref'),
+  btnResultLevels: document.getElementById('btn-result-levels'),
+  btnResultPreflight: document.getElementById('btn-result-preflight'),
+  btnResultRetry: document.getElementById('btn-result-retry'),
+  btnResultNext: document.getElementById('btn-result-next'),
 
   modal: document.getElementById('notice-modal'),
   modalEyebrow: document.getElementById('modal-eyebrow'),
@@ -186,7 +193,7 @@ let lastFrameTime = null;
 let pipDebounceTimer = null;
 
 function isAnyModalOpen() {
-  return !els.modal.classList.contains('hidden') || !els.outcomeModal.classList.contains('hidden');
+  return !els.modal.classList.contains('hidden');
 }
 
 const input = new InputController({
@@ -215,10 +222,6 @@ function showModal(eyebrow, title, body) {
 
 function hideModal() {
   els.modal.classList.add('hidden');
-}
-
-function hideOutcomeModal() {
-  els.outcomeModal.classList.add('hidden');
 }
 
 function formatGainsText(gains) {
@@ -269,44 +272,60 @@ function schedulePipUpdate(gains, scene) {
   }, 140);
 }
 
-function showOutcomeModal(outcome, metrics) {
+function renderCriteriaList(ulEl, checks) {
+  ulEl.innerHTML = '';
+  for (const c of checks) {
+    const li = document.createElement('li');
+    li.className = c.passed ? 'is-pass' : 'is-fail';
+    li.textContent = `${c.passed ? '✓' : '✗'} ${c.label}`;
+    ulEl.appendChild(li);
+  }
+}
+
+function showResultScreen(outcome, metrics, scoreResult) {
   const isSuccess = outcome.status === 'completed';
   const isChallenge = state.activeScene?.mode === 'challenge';
-  els.outcomeBadge.textContent = isSuccess
-    ? isChallenge
-      ? 'Mission Complete'
-      : 'Tutorial Complete'
-    : 'Mission Failed';
-  els.outcomeTitle.textContent = outcome.title;
-  els.outcomeMessage.textContent = outcome.message;
-  els.outcomeTime.textContent = `${metrics.completionTime.toFixed(1)} s`;
-  els.outcomePid.textContent = formatGainsText(metrics.pidParameters);
-  els.outcomeOvershoot.textContent = `${metrics.maxOvershoot.toFixed(2)} m`;
-  els.outcomeAvgError.textContent = `${metrics.averageTrackingError.toFixed(2)} m`;
-  els.outcomeSaturation.textContent = `${metrics.controlSaturationDuration.toFixed(2)} s`;
-  els.outcomeFinalSpeed.textContent = `${metrics.finalVelocity.toFixed(2)} m/s`;
+
+  els.resultBadge.textContent = isSuccess ? 'Mission Complete' : 'Mission Failed';
+  els.resultTitle.textContent = outcome.title;
+  els.resultLevelSubtitle.textContent = `${state.activeScene.name} — ${outcome.message}`;
+
+  els.resultStarsDisplay.textContent = renderStarsText(scoreResult.stars);
+  els.resultStarsDisplay.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
+  els.resultStarLabel.textContent = scoreResult.summaryLabel;
+
+  els.resultTime.textContent = `${metrics.completionTime.toFixed(1)} s`;
+  els.resultOvershoot.textContent = `${metrics.maxOvershoot.toFixed(2)} m`;
+  els.resultSettling.textContent = `${metrics.settlingTime.toFixed(1)} s`;
+  els.resultRouteFit.textContent = `${metrics.pathFitScore.toFixed(0)}% (${metrics.pathDeviation.toFixed(2)} m dev)`;
+  els.resultSmoothness.textContent = `${metrics.flightSmoothness.toFixed(0)}%`;
+  els.resultAvgError.textContent = `${metrics.averageTrackingError.toFixed(2)} m`;
+  els.resultSaturation.textContent = `${metrics.controlSaturationDuration.toFixed(2)} s`;
+  els.resultPid.textContent = formatGainsText(metrics.pidParameters);
+
+  renderCriteriaList(els.resultChecks2Star, scoreResult.checks2Star);
+  renderCriteriaList(els.resultChecks3Star, scoreResult.checks3Star);
 
   const debrief = evaluatePostFlightFeedback(outcome, metrics, state.activeScene);
-  els.outcomeSuggestionBox.classList.remove('hidden');
-  els.outcomePipTitle.textContent = debrief.title;
-  els.outcomeSuggestion.textContent = debrief.explanation;
-  els.outcomePipTip.textContent = debrief.tip;
+  els.resultPipTitle.textContent = debrief.title;
+  els.resultPipExplanation.textContent = debrief.explanation;
+  els.resultPipTip.textContent = debrief.tip;
 
-  const bestRef = state.bestPassingPid[state.activeScene?.id];
+  const bestRef = getBestPidReference(state.progress, state.activeScene?.id);
   if (isChallenge && bestRef) {
-    els.outcomeBestRef.classList.remove('hidden');
-    els.outcomeBestRef.textContent = `Previous Passing Reference (not auto-filled): Kp ${bestRef.kp.toFixed(1)} / Ki ${bestRef.ki.toFixed(2)} / Kd ${bestRef.kd.toFixed(1)}`;
+    els.resultBestRef.classList.remove('hidden');
+    els.resultBestRef.textContent = `Best Recorded PID (reference only): Kp ${bestRef.kp.toFixed(1)} / Ki ${bestRef.ki.toFixed(2)} / Kd ${bestRef.kd.toFixed(1)}`;
   } else {
-    els.outcomeBestRef.classList.add('hidden');
+    els.resultBestRef.classList.add('hidden');
   }
 
-  els.btnOutcomePreflight.classList.toggle('hidden', !isChallenge);
-
+  els.btnResultPreflight.classList.toggle('hidden', !isChallenge);
   const nextId = isSuccess ? state.activeScene?.nextLevelId : null;
-  els.btnOutcomeNext.classList.toggle('hidden', !nextId);
-  els.btnOutcomeNext.dataset.nextId = nextId || '';
+  els.btnResultNext.classList.toggle('hidden', !nextId);
+  els.btnResultNext.dataset.nextId = nextId || '';
 
-  els.outcomeModal.classList.remove('hidden');
+  navigateTo('result');
+  renderRouteFitPreview(els.resultRouteCanvas, sim);
 }
 
 function updateProgressSummaries() {
@@ -389,7 +408,6 @@ function renderLevelSelection(mode) {
       const scene = getSceneById(level.id);
       if (scene) {
         if (scene.mode === 'challenge') {
-          // Always initialize fresh entry/re-entry to a challenge level at Kp=0, Ki=0, Kd=0
           openPreflightTuning(scene, { resetToZero: true });
         } else {
           launchScene(scene);
@@ -421,7 +439,6 @@ function syncSlidersFromGains(gains) {
 }
 
 function openPreflightTuning(scene, options = {}) {
-  hideOutcomeModal();
   state.activeScene = scene;
 
   const droneMass = scene.droneMass ?? 1.2;
@@ -589,20 +606,27 @@ function handleSceneOutcomeIfNeeded() {
     syncFlightControlsUi();
 
     const metrics = sim.getFlightMetrics();
-    state.lastAttempts[state.activeScene.id] = { outcome, metrics };
+    const scoreResult = scoreFlightRun(outcome, metrics, state.activeScene.id);
+
+    state.lastAttempts[state.activeScene.id] = { outcome, metrics, scoreResult };
     state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
 
     if (outcome.status === 'completed') {
-      state.bestPassingPid[state.activeScene.id] = { ...sim.gains };
-      state.progress = recordLevelCompletion(
+      state.progress = recordLevelResult(
         state.progress,
         state.activeScene.id,
+        {
+          completed: true,
+          stars: scoreResult.stars,
+          pidParameters: metrics.pidParameters,
+          metrics
+        },
         state.activeScene.nextLevelId
       );
       updateProgressSummaries();
     }
 
-    showOutcomeModal(outcome, metrics);
+    showResultScreen(outcome, metrics, scoreResult);
   }
 }
 
@@ -623,10 +647,11 @@ function flightLoop(timestamp) {
     sim.stepFrame(rawDt, input.getAxes());
     handleSceneOutcomeIfNeeded();
   }
-  renderer.render(sim, rawDt);
-  updateFlightHud();
-
-  rafId = window.requestAnimationFrame(flightLoop);
+  if (state.currentView === 'flight') {
+    renderer.render(sim, rawDt);
+    updateFlightHud();
+    rafId = window.requestAnimationFrame(flightLoop);
+  }
 }
 
 function startFlightLoop() {
@@ -655,13 +680,16 @@ function startPlaygroundFlight() {
 }
 
 function restartFlight() {
-  hideOutcomeModal();
   state.runFinished = false;
   input.clearMovementKeys();
   // Preserve player's current tuned PID gains on Retry within the same level
   sim.reset(true);
   syncFlightControlsUi();
-  updateFlightHud();
+  if (state.currentView !== 'flight') {
+    navigateTo('flight');
+  } else {
+    updateFlightHud();
+  }
 }
 
 function togglePauseFlight() {
@@ -673,7 +701,6 @@ function togglePauseFlight() {
 }
 
 function launchScene(scene, options = {}) {
-  hideOutcomeModal();
   state.activeScene = scene;
   state.runFinished = false;
 
@@ -745,7 +772,6 @@ function bindEvents() {
   els.btnPreStartFlight.addEventListener('click', startFromPreflight);
   els.btnPreStartFlight2.addEventListener('click', startFromPreflight);
 
-  // Reset PID in Challenge mode resets all three gains to zero (0, 0, 0)
   els.btnPreResetPid.addEventListener('click', () => {
     const zeroGains = { kp: 0, ki: 0, kd: 0 };
     state.tunedGainsByLevel[state.activeScene.id] = zeroGains;
@@ -768,7 +794,6 @@ function bindEvents() {
   els.preSliderKd.addEventListener('input', handlePreflightSliderInput);
 
   els.btnFlightBack.addEventListener('click', () => {
-    hideOutcomeModal();
     if (state.activeScene?.mode === 'challenge') {
       state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
       openPreflightTuning(state.activeScene, { resetToZero: false });
@@ -780,7 +805,6 @@ function bindEvents() {
   });
 
   els.btnOpenPreflight.addEventListener('click', () => {
-    hideOutcomeModal();
     state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
     openPreflightTuning(state.activeScene, { resetToZero: false });
   });
@@ -810,22 +834,20 @@ function bindEvents() {
     sim.setWindMode(els.selectWind.value);
   });
 
-  els.btnOutcomeRetry.addEventListener('click', restartFlight);
-  els.btnOutcomePreflight.addEventListener('click', () => {
-    hideOutcomeModal();
+  // Result Screen actions
+  els.btnResultRetry.addEventListener('click', restartFlight);
+  els.btnResultPreflight.addEventListener('click', () => {
     openPreflightTuning(state.activeScene, { resetToZero: false });
   });
-  els.btnOutcomeLevels.addEventListener('click', () => {
-    hideOutcomeModal();
+  els.btnResultLevels.addEventListener('click', () => {
     const backMode = state.activeScene?.mode === 'challenge' ? 'challenge' : 'tutorial';
     navigateTo('levels', { mode: backMode });
   });
-  els.btnOutcomeNext.addEventListener('click', () => {
-    const nextId = els.btnOutcomeNext.dataset.nextId;
+  els.btnResultNext.addEventListener('click', () => {
+    const nextId = els.btnResultNext.dataset.nextId;
     const nextScene = getSceneById(nextId);
     if (nextScene) {
       if (nextScene.mode === 'challenge') {
-        // Fresh next challenge level starts at 0 / 0 / 0!
         openPreflightTuning(nextScene, { resetToZero: true });
       } else {
         launchScene(nextScene);

@@ -51,21 +51,21 @@ export const CHALLENGE_LEVELS = [
     id: 'level-1',
     mode: 'challenge',
     order: 1,
-    name: 'Level 1 — Stable Hover',
+    name: 'Level 1 — Basic Hover',
     difficulty: 'Easy',
-    learningFocus: 'Takeoff & 3s Hover Stability',
-    summary: 'Take off, enter the aerial target zone, and maintain a steady hover for 3 seconds.',
-    milestone: 'M3'
+    learningFocus: 'Proportional Gain (Kp)',
+    summary: 'Take off with WASD and tune Kp to hover steadily inside a wide aerial target zone.',
+    milestone: 'M3.2'
   },
   {
     id: 'level-2',
     mode: 'challenge',
     order: 2,
-    name: 'Level 2 — Precision Landing',
+    name: 'Level 2 — Smooth Braking',
     difficulty: 'Easy',
-    learningFocus: 'Controlled Descent & Soft Touchdown',
-    summary: 'Pilot the drone onto a compact landing pad without exceeding touchdown speed limits.',
-    milestone: 'M3'
+    learningFocus: 'Derivative Damping (Kd)',
+    summary: 'Coordinate Kp and Kd to brake smoothly and stop inside a tighter target zone.',
+    milestone: 'M3.2'
   },
   {
     id: 'level-3',
@@ -73,39 +73,39 @@ export const CHALLENGE_LEVELS = [
     order: 3,
     name: 'Level 3 — Heavy Cargo',
     difficulty: 'Intermediate',
-    learningFocus: 'Thrust-to-Weight Ratio & Saturation',
-    summary: 'Carry a heavy payload under fixed maximum thrust and manage control saturation.',
-    milestone: 'M3.1'
+    learningFocus: 'Mass, Thrust & Saturation',
+    summary: 'Carry a heavy cargo payload under fixed maximum thrust with increased inertia and saturation risk.',
+    milestone: 'M3.2'
   },
   {
     id: 'level-4',
     mode: 'challenge',
     order: 4,
-    name: 'Level 4 — Narrow Corridor',
+    name: 'Level 4 — Precision Corridor',
     difficulty: 'Intermediate',
-    learningFocus: 'Low-Overshoot Precision Maneuvering',
-    summary: 'Navigate a tight obstacle corridor where overshoot and oscillation risk collision.',
-    milestone: 'M3'
+    learningFocus: 'Precision vs. Stability Trade-off',
+    summary: 'Thread a tight obstacle corridor where overshoot and oscillation cause collisions.',
+    milestone: 'M3.2'
   },
   {
     id: 'level-5',
     mode: 'challenge',
     order: 5,
-    name: 'Level 5 — Wind Challenge',
+    name: 'Level 5 — Wind Disturbance',
     difficulty: 'Advanced',
-    learningFocus: 'Disturbance Rejection & Ki Tuning',
-    summary: 'Reach the target zone under sustained crosswinds and sudden gusts.',
-    milestone: 'M3'
+    learningFocus: 'Integral Control (Ki) & Gust Rejection',
+    summary: 'Reject sustained crosswind and repeatable gusts while avoiding integral windup.',
+    milestone: 'M3.2'
   },
   {
     id: 'level-6',
     mode: 'challenge',
     order: 6,
-    name: 'Level 6 — Final Rescue Mission',
+    name: 'Level 6 — Final Rescue',
     difficulty: 'Expert',
-    learningFocus: 'Full PID Mastery',
-    summary: 'Combine takeoff, obstacle avoidance, ring navigation, wind rejection, and precision landing.',
-    milestone: 'M3'
+    learningFocus: 'Comprehensive PID Synthesis',
+    summary: 'Combine heavy payload, narrow obstacles, crosswind, rings, and precision landing under time pressure.',
+    milestone: 'M3.2'
   }
 ];
 

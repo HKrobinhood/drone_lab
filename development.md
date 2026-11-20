@@ -29,7 +29,8 @@
 | **M1** | PID Physics and Flight Feel | 2D 无人机物理、PID-X/Z、WASD 手动控制、Flight Test Playground、自动化测试与**人工手感验收** | **已验收通过** |
 | **M2** | Tutorial Village | 4 个交互式教学关卡（Take Off, Kp, Ki, Kd）及实时教学反馈 | **已完成** |
 | **M3** | Challenge Levels | 6 个正式挑战关卡、障碍物、检查点、圆环穿越、风扰与碰撞检测 | **已完成** |
-| **M3.1** | Challenge Physics & Pre-flight Tuning | 起飞前调参界面、关卡差异化动力学（质量/载荷/推力限幅/阵风）、Heavy Cargo 重构、重试参数保留与 M4 指标接口 | **已完成（待人工试玩验收）** |
+| **M3.1** | Challenge Physics & Pre-flight Tuning | 起飞前调参界面、关卡差异化动力学（质量/载荷/推力限幅/阵风）、Heavy Cargo 重构、重试参数保留与 M4 指标接口 | **已完成** |
+| **M3.2** | Progressive PID Tuning & Virtual Flight Instructor | 关卡教学递进重构、每关零初始调参、虚拟教练 PIP 实时诊断与组合建议、离线参数扫描标定、手感度强化 | **已完成（待人工试玩验收）** |
 | **M4** | Scoring and Progress | 1~3 星评分算法、结果界面、localStorage 进度与最高星级存档 | 待开始 |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | 待开始 |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
@@ -85,6 +86,16 @@
 - [x] 为 M4 三星评分预留 8 项飞行指标接口（`getFlightMetrics()`）
 - [x] 完成 M3.1 全部 10 项物理、可玩性与可重复性自动化测试
 
+### M3.2 — Progressive PID Tuning & Virtual Flight Instructor
+- [x] 重构 L1–L6 递进教学关系（Basic Hover `Kp` → Smooth Braking `Kd` → Heavy Cargo 质量/饱和 → Precision Corridor 权衡 → Wind Disturbance `Ki` → Final Rescue 综合调参）
+- [x] 关卡介绍展示 `Previous Knowledge`、`New Challenge`、`Learning Objective`、`Flight Conditions`、`Mission Goal`
+- [x] 每次进入/重进正式关卡初始化 `Kp=0, Ki=0, Kd=0`；同关 `Retry` 保留参数；`Reset PID` 清零
+- [x] 新增独立纯逻辑教练模块 `src/coach.js` 与动画 SVG 机器人 **PIP — Your PID Flight Coach**（支持 Welcome / Teaching / Warning / Ready / Flight Feedback / Success 六态、单参数与组合异常检测、无风关不误报 `Ki=0`、非阻塞 `Start Flight`）
+- [x] 提供离线参数扫描标定脚本 `scripts/calibrate_levels.mjs` 并标定每关 `recommendedPID` 有效区间与联合耦合校验
+- [x] 滑块旁显示 `Low / Recommended / High` 区域提示而不直接暴露精确区间数字
+- [x] 失败弹窗接入 `"What went wrong?"` 遥测反馈与可选只读历史通关 PID 参考
+- [x] 通过 M3.2 全部 15 项回归与手感差异自动化测试
+
 ### M4 — Scoring and Progress
 - [ ] 实现 `src/scoring.js`（1~3 星评价与各关卡阈值）
 - [ ] 完善 Result Screen（Mission Complete/Failed、指标展示、Retry/Next/Back）
@@ -106,9 +117,9 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M3.1 — Challenge Physics & Pre-flight Tuning`（已完成开发，等待用户试玩验收）
-- **已完成**：每个正式关卡独立的 Pre-flight Tuning 调参流、载荷质量与固定推力限制下的真实推重比与控制饱和物理、可重复阵风模型、重构后的 L1–L6 正式挑战、失败/重试保留 PID 参数与对比，以及面向 M4 的 8 项指标采集接口。
-- **当前阻塞 / 注意事项**：1~3 星评分公式、本地星级持久化与完整 Result Screen 将在 M4 实现；等待用户确认 M3.1 试玩验收后进入 M4。
+- **当前里程碑**：`M3.2 — Progressive PID Tuning & Virtual Flight Instructor`（已完成开发，等待用户试玩反馈）
+- **已完成**：L1–L6 循序渐进教学重构、每关零初始 PID 策略、SVG 虚拟教练 PIP 六态动画与优先级规则引擎（含联合稳定性校验与防抖）、滑块区域视觉提示、`"What went wrong?"` 试飞解释与离线参数扫描标定脚本 `scripts/calibrate_levels.mjs`。
+- **尚未完成的功能**：M4（1~3 星评分公式、正式 Result Screen、localStorage 星级存档）、M5（时间序列 PID 诊断与前后轨迹对比）、M6（移动端布局打磨与 GitHub Pages 部署）。
 
 ---
 
@@ -151,11 +162,12 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m2): implement PID tutorial village` — 完成 M2 新手村 4 个交互式 PID 教学实验关卡、实时教学反馈与顺序解锁。
 - `feat(m3): implement drone challenge levels` — 完成 M3 六个正式挑战关卡、障碍物碰撞、高台着陆、顺序圆环穿越检测与越界判定。
 - `feat(m3.1): add level-specific physics and PID tuning challenges` — 完成 M3.1 Pre-flight Tuning 调参流程、关卡物理差异（载荷/推重比/饱和/阵风）、L3 Heavy Cargo 重构与 M4 指标接口。
+- `feat(m3.2): add progressive PID tuning and virtual coach` — 完成 M3.2 关卡教学递进、零初始 PID、虚拟教练 PIP、参数扫描标定与失败遥测解释。
 
 ---
 
 ## 九、下一步开发任务
 
-等待用户试玩并验收 **M3.1** 后，启动 **M4 — Scoring and Progress**：
+等待用户试玩验收 **M3.2** 后，启动 **M4 — Scoring and Progress**：
 1. 实现 `src/scoring.js`（1~3 星评价指标与各关卡阈值）。
 2. 完善 Result Screen 并持久化历史最高星级。

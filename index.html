@@ -283,8 +283,20 @@
         <div class="preflight-grid">
           <div class="preflight-left">
             <article class="info-card">
-              <span class="card-eyebrow">Mission Objective</span>
+              <span class="card-eyebrow">Mission Briefing</span>
               <p id="preflight-objective" class="preflight-objective-text"></p>
+              <div class="progression-cards">
+                <div class="progression-box">
+                  <span class="prog-label">Previous Knowledge</span>
+                  <p id="preflight-prev-knowledge"></p>
+                </div>
+                <div class="progression-box prog-new">
+                  <span class="prog-label">New Challenge</span>
+                  <p id="preflight-new-challenge"></p>
+                  <p id="preflight-learning-obj" class="prog-subobj"></p>
+                </div>
+              </div>
+              <span class="card-eyebrow" style="margin-top:14px;">Drone Specifications</span>
               <div class="specs-grid">
                 <div class="spec-box">
                   <span>Drone Mass</span>
@@ -320,7 +332,7 @@
               <div class="specs-grid">
                 <div class="spec-box">
                   <span>Previous PID</span>
-                  <strong id="preflight-prev-pid">6.5 / 0.60 / 3.8</strong>
+                  <strong id="preflight-prev-pid">0.0 / 0.00 / 0.0</strong>
                 </div>
                 <div class="spec-box">
                   <span>Flight Time</span>
@@ -346,44 +358,109 @@
             </article>
           </div>
 
-          <aside class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
-            <div class="pid-panel-header">
-              <h2>PID Tuning Panel</h2>
-              <span class="badge badge-stem">Pre-flight</span>
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="pre-slider-kp">Kp — Proportional</label>
-                <output id="pre-val-kp" for="pre-slider-kp">6.5</output>
+          <div class="preflight-right">
+            <!-- PIP Virtual Flight Coach Card -->
+            <aside id="pip-coach-card" class="pip-card pip-welcome" aria-live="polite" aria-label="PIP Virtual Flight Coach">
+              <div class="pip-avatar-wrap" aria-hidden="true">
+                <svg class="pip-robot-svg" viewBox="0 0 84 84">
+                  <g class="pip-float">
+                    <!-- Antenna -->
+                    <line x1="42" y1="10" x2="42" y2="20" class="pip-antenna-stem" />
+                    <circle cx="42" cy="8" r="5" class="pip-antenna-led" />
+                    <!-- Side Rotors / Ears -->
+                    <rect x="6" y="34" width="8" height="18" rx="4" class="pip-ear" />
+                    <rect x="70" y="34" width="8" height="18" rx="4" class="pip-ear" />
+                    <!-- Robot Head -->
+                    <rect x="14" y="20" width="56" height="44" rx="14" class="pip-head" />
+                    <!-- Visor -->
+                    <rect x="21" y="29" width="42" height="22" rx="8" class="pip-visor" />
+                    <!-- Eyes -->
+                    <g class="pip-eyes">
+                      <circle cx="33" cy="40" r="4" class="pip-eye" />
+                      <circle cx="51" cy="40" r="4" class="pip-eye" />
+                    </g>
+                    <!-- Mouth / Status Bar -->
+                    <rect x="33" y="55" width="18" height="4" rx="2" class="pip-mouth" />
+                    <!-- Base Hover Ring -->
+                    <ellipse cx="42" cy="72" rx="18" ry="4" class="pip-thruster" />
+                  </g>
+                </svg>
               </div>
-              <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="6.5" />
-              <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="pre-slider-ki">Ki — Integral</label>
-                <output id="pre-val-ki" for="pre-slider-ki">0.60</output>
+              <div class="pip-content">
+                <div class="pip-title-row">
+                  <span class="pip-name">PIP — Flight Coach</span>
+                  <span id="pip-state-badge" class="pip-state-pill">Welcome</span>
+                </div>
+                <strong id="pip-headline" class="pip-headline">Hi! I am PIP, your PID Flight Coach.</strong>
+                <ul id="pip-messages" class="pip-messages">
+                  <li>All three gains start at zero. Raise Kp first, then add Kd damping!</li>
+                </ul>
               </div>
-              <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0.6" />
-              <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
-            </div>
+            </aside>
 
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <label for="pre-slider-kd">Kd — Derivative</label>
-                <output id="pre-val-kd" for="pre-slider-kd">3.8</output>
+            <aside class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
+              <div class="pid-panel-header">
+                <h2>PID Tuning</h2>
+                <span class="badge badge-stem">Starts at Zero</span>
               </div>
-              <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="3.8" />
-              <p class="slider-help">Kd — How strongly motion is damped.</p>
-            </div>
 
-            <div class="pid-actions">
-              <button id="btn-pre-reset-pid" type="button" class="btn btn-outline">Reset Level Default</button>
-              <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight</button>
-            </div>
-          </aside>
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="pre-slider-kp">Kp — Proportional</label>
+                  <div class="slider-readout-group">
+                    <span id="pre-zone-kp" class="zone-pill zone-low">Low</span>
+                    <output id="pre-val-kp" for="pre-slider-kp">0.0</output>
+                  </div>
+                </div>
+                <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="0" />
+                <div id="pre-track-kp" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Kp — How strongly the drone responds to position error.</p>
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="pre-slider-ki">Ki — Integral</label>
+                  <div class="slider-readout-group">
+                    <span id="pre-zone-ki" class="zone-pill zone-low">Low</span>
+                    <output id="pre-val-ki" for="pre-slider-ki">0.00</output>
+                  </div>
+                </div>
+                <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0" />
+                <div id="pre-track-ki" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Ki — How strongly accumulated error is corrected.</p>
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <label for="pre-slider-kd">Kd — Derivative</label>
+                  <div class="slider-readout-group">
+                    <span id="pre-zone-kd" class="zone-pill zone-low">Low</span>
+                    <output id="pre-val-kd" for="pre-slider-kd">0.0</output>
+                  </div>
+                </div>
+                <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="0" />
+                <div id="pre-track-kd" class="zone-track" aria-hidden="true">
+                  <span data-zone="low">Low</span>
+                  <span data-zone="recommended">Recommended</span>
+                  <span data-zone="high">High</span>
+                </div>
+                <p class="slider-help">Kd — How strongly motion is damped.</p>
+              </div>
+
+              <div class="pid-actions">
+                <button id="btn-pre-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
+                <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight</button>
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
 
@@ -581,8 +658,13 @@
           <div><span>Final Speed</span><strong id="outcome-final-speed">0.00 m/s</strong></div>
         </div>
         <div id="outcome-suggestion-box" class="outcome-suggestion">
-          <strong>Suggested PID Adjustment:</strong>
+          <div class="outcome-pip-header">
+            <span class="pip-mini-badge">PIP</span>
+            <strong id="outcome-pip-title">What went wrong?</strong>
+          </div>
           <p id="outcome-suggestion"></p>
+          <p id="outcome-pip-tip" class="outcome-pip-tip"></p>
+          <p id="outcome-best-ref" class="outcome-best-ref hidden"></p>
         </div>
         <div class="modal-actions outcome-actions">
           <button id="btn-outcome-levels" type="button" class="btn btn-ghost">Back to Levels</button>

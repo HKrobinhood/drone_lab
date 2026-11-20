@@ -1375,8 +1375,321 @@ body {
   color: var(--accent-challenge);
 }
 
+/* ==================== M3.2 PROGRESSION, ZONE HINTS & PIP COACH ==================== */
+.progression-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progression-box {
+  background: var(--bg-page);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.progression-box.prog-new {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.prog-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-primary);
+  margin-bottom: 4px;
+}
+
+.progression-box p {
+  margin: 0 !important;
+  font-size: 0.85rem !important;
+  color: var(--text-secondary);
+}
+
+.prog-subobj {
+  margin-top: 6px !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.preflight-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 2px solid #38bdf8;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 180ms ease;
+}
+
+.pip-card.pip-warning {
+  border-color: #f97316;
+}
+
+.pip-card.pip-ready,
+.pip-card.pip-success {
+  border-color: #22c55e;
+}
+
+.pip-card.pip-teaching {
+  border-color: #38bdf8;
+}
+
+.pip-avatar-wrap {
+  flex: 0 0 68px;
+}
+
+.pip-robot-svg {
+  width: 68px;
+  height: 68px;
+  display: block;
+}
+
+.pip-float {
+  animation: pipHover 3.2s ease-in-out infinite;
+}
+
+@keyframes pipHover {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.pip-eyes {
+  transform-origin: 42px 40px;
+  animation: pipBlink 4.6s infinite;
+}
+
+@keyframes pipBlink {
+  0%, 92%, 100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.15);
+  }
+}
+
+.pip-antenna-stem {
+  stroke: #94a3b8;
+  stroke-width: 3;
+}
+
+.pip-antenna-led {
+  fill: #38bdf8;
+}
+
+.pip-card.pip-warning .pip-antenna-led {
+  fill: #fb923c;
+}
+
+.pip-card.pip-ready .pip-antenna-led,
+.pip-card.pip-success .pip-antenna-led {
+  fill: #4ade80;
+}
+
+.pip-ear {
+  fill: #475569;
+}
+
+.pip-head {
+  fill: #1e293b;
+  stroke: #64748b;
+  stroke-width: 2;
+}
+
+.pip-visor {
+  fill: #020617;
+}
+
+.pip-eye {
+  fill: #38bdf8;
+}
+
+.pip-card.pip-warning .pip-eye {
+  fill: #fb923c;
+}
+
+.pip-card.pip-ready .pip-eye,
+.pip-card.pip-success .pip-eye {
+  fill: #4ade80;
+}
+
+.pip-mouth {
+  fill: #64748b;
+}
+
+.pip-thruster {
+  fill: rgba(56, 189, 248, 0.35);
+}
+
+.pip-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.pip-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.pip-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7dd3fc;
+}
+
+.pip-state-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #bae6fd;
+}
+
+.pip-card.pip-warning .pip-state-pill {
+  background: rgba(249, 115, 22, 0.24);
+  color: #fdba74;
+}
+
+.pip-card.pip-ready .pip-state-pill {
+  background: rgba(34, 197, 94, 0.24);
+  color: #86efac;
+}
+
+.pip-headline {
+  display: block;
+  font-size: 0.94rem;
+  margin-bottom: 4px;
+}
+
+.pip-messages {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 0.83rem;
+  color: #cbd5e1;
+}
+
+.pip-messages li {
+  margin-bottom: 2px;
+}
+
+.slider-readout-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zone-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.zone-pill.zone-low {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.zone-pill.zone-recommended {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.zone-pill.zone-high {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.zone-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.zone-track span {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid transparent;
+}
+
+.zone-track span.is-active[data-zone="low"] {
+  background: #e2e8f0;
+  color: #334155;
+  border-color: #94a3b8;
+}
+
+.zone-track span.is-active[data-zone="recommended"] {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.zone-track span.is-active[data-zone="high"] {
+  background: #ffedd5;
+  color: #c2410c;
+  border-color: #fdba74;
+}
+
+.outcome-pip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pip-mini-badge {
+  background: #0f172a;
+  color: #38bdf8;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.outcome-pip-tip {
+  margin-top: 6px !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.outcome-best-ref {
+  margin-top: 6px !important;
+  font-size: 0.8rem !important;
+  color: var(--text-muted) !important;
+}
+
 @media (max-width: 900px) {
-  .preflight-grid {
+  .preflight-grid,
+  .progression-cards {
     grid-template-columns: 1fr;
   }
 

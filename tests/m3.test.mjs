@@ -177,13 +177,14 @@ describe('M3 / M3.1 — Challenge Level Physics & Configurations', () => {
 });
 
 describe('M3 / M3.1 — All 6 Redesigned Levels Completable & Failure Checks', () => {
-  it('Level 1 (Stable Hover): resets timer on exit and completes with baseline PID', () => {
+  it('Level 1 (Stable Hover): resets timer on exit and completes with tuned PID', () => {
     const scene = CHALLENGE_SCENES['level-1'];
     const sim = new FlightSimulation();
     sim.loadScene(scene, true);
+    sim.setGains({ kp: 6.5, ki: 0.4, kd: 3.8 });
 
     guideReferenceTo(sim, [{ x: 17.5, z: 7.5 }], 6.5);
-    assert.ok(sim.targetZone.holdTimer > 0 && sim.targetZone.holdTimer < 2.5);
+    assert.ok(sim.targetZone.holdTimer > 0 && sim.targetZone.holdTimer < 2.0);
 
     for (let i = 0; i < Math.round(1.2 / FIXED_DT); i++) {
       sim.stepFixed(FIXED_DT, { moveX: -1, moveZ: 0 });
@@ -194,11 +195,12 @@ describe('M3 / M3.1 — All 6 Redesigned Levels Completable & Failure Checks', (
     assert.equal(outcome.status, 'completed');
   });
 
-  it('Level 2 (Precision Landing): detects collision, hard landing, and completes with tuned Kd', () => {
+  it('Level 2 (Smooth Braking): detects wall collision and completes compact low-speed stop with tuned Kd', () => {
     const scene = CHALLENGE_SCENES['level-2'];
     const sim = new FlightSimulation();
 
     sim.loadScene(scene, true);
+    sim.setGains({ kp: 6.5, ki: 0.4, kd: 4.5 });
     const wallOutcome = guideReferenceTo(sim, [{ x: 15.0, z: 1.5 }], 8);
     assert.equal(wallOutcome.status, 'failed');
     assert.equal(wallOutcome.reason, 'collision');
@@ -207,13 +209,12 @@ describe('M3 / M3.1 — All 6 Redesigned Levels Completable & Failure Checks', (
     const winOutcome = guideReferenceTo(
       sim,
       [
-        { x: 6.5, z: 6.5, tol: 0.9 },
-        { x: 14.5, z: 6.5, tol: 0.9 },
-        { x: 19.0, z: 3.4, tol: 0.4, maxSpeed: 0.35 },
-        { x: 19.0, z: 1.55, tol: 0.35 }
+        { x: 6.5, z: 6.4, tol: 0.8 },
+        { x: 14.0, z: 6.4, tol: 0.8 },
+        { x: 18.5, z: 6.2, tol: 0.5 }
       ],
-      30,
-      { kp: 6.5, ki: 0.5, kd: 4.5 }
+      25,
+      { kp: 6.5, ki: 0.4, kd: 4.5 }
     );
     assert.equal(winOutcome.status, 'completed');
   });
@@ -322,6 +323,7 @@ describe('M3 / M3.1 — All 6 Redesigned Levels Completable & Failure Checks', (
     const scene = CHALLENGE_SCENES['level-1'];
     const sim = new FlightSimulation();
     sim.loadScene(scene, true);
+    sim.setGains({ kp: 6.5, ki: 0.4, kd: 3.8 });
 
     for (let i = 0; i < Math.round(5.0 / FIXED_DT); i++) {
       sim.stepFixed(FIXED_DT, { moveX: -1, moveZ: 1 });

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drone Lab — PID Flight Challenge</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Brand Bar (shown on sub-views) -->
+    <header id="global-topbar" class="topbar hidden" aria-label="Primary navigation">
+      <div class="topbar-brand">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-title">Drone Lab — PID Flight Challenge</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="topbar-stars" class="pill pill-stars" title="Total earned stars">0 / 30 Stars</span>
+        <button id="btn-home" type="button" class="btn btn-ghost btn-sm">Back to Home</button>
+      </div>
+    </header>
+
+    <main id="app-main">
+      <!-- ==================== VIEW 1: START SCREEN ==================== -->
+      <section id="view-start" class="view active" aria-labelledby="game-title">
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="badge badge-stem">STEM Interactive Simulation</span>
+            <h1 id="game-title">Drone Lab — PID Flight Challenge</h1>
+            <p class="hero-subtitle">
+              Master feedback control theory by tuning proportional, integral, and derivative gains
+              and piloting a simulated 2D quadrotor through real flight missions.
+            </p>
+            <div class="loop-strip" aria-label="PID Closed-Loop Control Pipeline">
+              <span>WASD Target</span>
+              <span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>PID (Kp, Ki, Kd)</span>
+              <span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Thrust &amp; Pitch</span>
+              <span class="arrow" aria-hidden="true">&rarr;</span>
+              <span>Drone Flight</span>
+            </div>
+            <div class="hero-cta">
+              <button id="btn-start-game" type="button" class="btn btn-primary btn-lg">
+                Start Game
+              </button>
+              <span class="cta-note">No automatic steering — pure PID feedback control.</span>
+            </div>
+          </div>
+
+          <div class="hero-visual" aria-hidden="true">
+            <div class="telemetry-grid">
+              <svg class="drone-svg" viewBox="0 0 260 190" role="img">
+                <!-- Target Reticle -->
+                <circle cx="195" cy="52" r="22" class="svg-target-ring" />
+                <circle cx="195" cy="52" r="4" class="svg-target-dot" />
+                <path d="M76 116 Q135 55 195 52" class="svg-flight-path" />
+                <!-- Drone Frame -->
+                <g class="drone-float">
+                  <!-- Left Rotor -->
+                  <ellipse cx="72" cy="84" rx="26" ry="5" class="svg-rotor" />
+                  <line x1="72" y1="84" x2="72" y2="98" class="svg-arm" />
+                  <!-- Right Rotor -->
+                  <ellipse cx="148" cy="84" rx="26" ry="5" class="svg-rotor" />
+                  <line x1="148" y1="84" x2="148" y2="98" class="svg-arm" />
+                  <!-- Thrust Plumes -->
+                  <polygon points="62,90 82,90 72,120" class="svg-thrust" />
+                  <polygon points="138,90 158,90 148,120" class="svg-thrust" />
+                  <!-- Main Body -->
+                  <line x1="68" y1="98" x2="152" y2="98" class="svg-chassis" />
+                  <rect x="92" y="92" width="36" height="16" rx="6" class="svg-hub" />
+                  <circle cx="110" cy="100" r="4" class="svg-sensor" />
+                  <!-- Landing Skids -->
+                  <path d="M92 108 L84 122 M128 108 L136 122 M78 122 L142 122" class="svg-skid" />
+                </g>
+              </svg>
+              <div class="mini-readout">
+                <div><span>Kp</span><strong>Proportional</strong></div>
+                <div><span>Ki</span><strong>Integral</strong></div>
+                <div><span>Kd</span><strong>Derivative</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEM Topic & STEM Activity -->
+        <div class="cards-grid two-col">
+          <article class="info-card">
+            <span class="card-eyebrow">STEM Topic</span>
+            <h2>PID Control in Drone Flight</h2>
+            <p>
+              Discover how a closed-loop PID controller translates position error into thrust and
+              tilt commands so a drone can achieve stable takeoff, hover, movement, and precise positioning.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <span class="card-eyebrow">STEM Activity</span>
+            <h2>Tune the PID Controller and Fly Your Drone</h2>
+            <p>
+              Adjust three controller gains and pilot manually with <strong>WASD</strong> to observe
+              real flight dynamics:
+            </p>
+            <ul class="gain-list">
+              <li><strong>Kp</strong> — Proportional Gain</li>
+              <li><strong>Ki</strong> — Integral Gain</li>
+              <li><strong>Kd</strong> — Derivative Gain</li>
+            </ul>
+            <div class="tag-cloud" aria-label="Key flight behaviors observed">
+              <span>Responsiveness</span>
+              <span>Overshoot</span>
+              <span>Oscillation</span>
+              <span>Steady-State Error</span>
+              <span>Stability</span>
+              <span>Settling Time</span>
+            </div>
+          </article>
+        </div>
+
+        <!-- Learning Objectives & How It Works -->
+        <div class="cards-grid two-col">
+          <article class="info-card">
+            <span class="card-eyebrow">Learning Objectives</span>
+            <h2>What You Will Master</h2>
+            <ol class="numbered-list">
+              <li>Explain the basic roles of P, I and D.</li>
+              <li>Observe how PID gains affect drone movement.</li>
+              <li>Identify overshoot, oscillation and slow response.</li>
+              <li>Improve stability through iterative tuning.</li>
+              <li>Apply feedback control to complete flight missions.</li>
+            </ol>
+          </article>
+
+          <article class="info-card">
+            <span class="card-eyebrow">How It Works</span>
+            <h2>Three Steps to Flight Mastery</h2>
+            <ol class="steps-list">
+              <li>
+                <span class="step-num">1</span>
+                <div>
+                  <strong>Learn the basics of PID control.</strong>
+                  <span>Explore gravity, thrust, and each PID term in Tutorial Village.</span>
+                </div>
+              </li>
+              <li>
+                <span class="step-num">2</span>
+                <div>
+                  <strong>Tune Kp, Ki and Kd.</strong>
+                  <span>Experiment with gain sliders and watch real physical responses.</span>
+                </div>
+              </li>
+              <li>
+                <span class="step-num">3</span>
+                <div>
+                  <strong>Fly with WASD and complete missions.</strong>
+                  <span>Guide your drone through hover, wind, rings, and precision landings.</span>
+                </div>
+              </li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <!-- ==================== VIEW 2: MODE SELECTION ==================== -->
+      <section id="view-modes" class="view" aria-labelledby="modes-heading">
+        <div class="section-header">
+          <div>
+            <span class="badge badge-neutral">Select Training Mode</span>
+            <h1 id="modes-heading">Choose Your Flight Path</h1>
+            <p class="section-subtitle">
+              Start in Tutorial Village to build intuition for Kp, Ki, and Kd, or jump into Challenge Levels.
+            </p>
+          </div>
+          <div id="first-play-banner" class="recommend-banner hidden">
+            First flight? We recommend starting with <strong>Tutorial Village</strong> first.
+          </div>
+        </div>
+
+        <div class="modes-grid">
+          <!-- Tutorial Village Card -->
+          <article class="mode-card mode-tutorial">
+            <div class="mode-top">
+              <span class="mode-badge">Guided STEM Academy</span>
+              <span id="tutorial-recommend-tag" class="recommend-pill hidden">Recommended First</span>
+            </div>
+            <h2>Tutorial Village</h2>
+            <p>
+              Learn PID fundamentals step by step through four hands-on flight experiments covering
+              thrust, proportional gain, integral windup, and derivative damping.
+            </p>
+            <div class="mode-stats">
+              <div class="stat-box">
+                <span class="stat-label">Unlocked</span>
+                <strong id="tutorial-unlock-stat">1 / 4</strong>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Best Stars</span>
+                <strong id="tutorial-star-stat">0 / 12 ★</strong>
+              </div>
+            </div>
+            <button id="btn-enter-tutorials" type="button" class="btn btn-tutorial btn-lg">
+              Enter Tutorial Village
+            </button>
+          </article>
+
+          <!-- Challenge Levels Card -->
+          <article class="mode-card mode-challenge">
+            <div class="mode-top">
+              <span class="mode-badge">Mission Control</span>
+              <span class="difficulty-pill">6 Missions</span>
+            </div>
+            <h2>Challenge Levels</h2>
+            <p>
+              Put your PID tuning to the test across hover zones, precision landing pads, ring courses,
+              narrow corridors, crosswinds, and the final rescue mission.
+            </p>
+            <div class="mode-stats">
+              <div class="stat-box">
+                <span class="stat-label">Unlocked</span>
+                <strong id="challenge-unlock-stat">1 / 6</strong>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Best Stars</span>
+                <strong id="challenge-star-stat">0 / 18 ★</strong>
+              </div>
+            </div>
+            <button id="btn-enter-challenges" type="button" class="btn btn-challenge btn-lg">
+              Enter Challenge Levels
+            </button>
+          </article>
+        </div>
+
+        <!-- M1 Flight Test Playground Roadmap Notice -->
+        <aside class="playground-strip">
+          <div>
+            <span class="card-eyebrow">Upcoming in Milestone 1</span>
+            <h3>Flight Test Playground</h3>
+            <p>
+              Interactive 2D Canvas PID physics simulation with WASD reference control and live Kp/Ki/Kd sliders
+              will unlock in Milestone 1.
+            </p>
+          </div>
+          <button id="btn-preview-playground" type="button" class="btn btn-outline">
+            View M1 Readiness
+          </button>
+        </aside>
+      </section>
+
+      <!-- ==================== VIEW 3: LEVEL SELECTION ==================== -->
+      <section id="view-levels" class="view" aria-labelledby="levels-heading">
+        <div id="levels-banner" class="levels-header-card">
+          <div class="levels-header-left">
+            <button id="btn-back-modes" type="button" class="btn btn-ghost btn-sm">&larr; Back to Modes</button>
+            <span id="levels-mode-badge" class="mode-badge">Mode</span>
+            <h1 id="levels-heading">Level Selection</h1>
+            <p id="levels-description" class="section-subtitle"></p>
+          </div>
+          <div class="levels-summary">
+            <span class="stat-label">Mode Progress</span>
+            <strong id="levels-star-summary">0 / 12 ★</strong>
+          </div>
+        </div>
+
+        <div id="levels-grid" class="levels-grid" aria-live="polite">
+          <!-- Rendered dynamically from src/levels.js -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Status / Milestone Preview Modal -->
+    <div id="notice-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <span id="modal-eyebrow" class="card-eyebrow">Milestone Notice</span>
+        <h2 id="modal-title">Flight Scene Pending</h2>
+        <p id="modal-body"></p>
+        <div class="modal-actions">
+          <button id="btn-close-modal" type="button" class="btn btn-primary">Got It</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

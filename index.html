@@ -382,13 +382,71 @@
               <strong id="flight-speed">0.0 m/s, 0.0 m/s</strong>
             </div>
             <div class="status-item">
+              <span>Thrust</span>
+              <strong id="flight-thrust">0.0 N</strong>
+            </div>
+            <div class="status-item">
               <span>Ref Target</span>
               <strong id="flight-ref">4.0 m, 0.0 m</strong>
             </div>
           </div>
         </div>
+
+        <!-- Tutorial Village Guided Experiment Card (hidden in Playground) -->
+        <aside id="tutorial-guide-panel" class="tutorial-guide-panel hidden" aria-label="Tutorial Lesson Guide">
+          <div class="tutorial-guide-header">
+            <div>
+              <span id="guide-stem-topic" class="card-eyebrow">STEM Topic</span>
+              <h2>Interactive PID Experiment</h2>
+            </div>
+            <div id="tutorial-coach-bar" class="coach-pill" aria-live="polite">
+              Press Start Flight or WASD to begin.
+            </div>
+          </div>
+          <div class="tutorial-guide-grid">
+            <div class="guide-box">
+              <h3>Learning Objective</h3>
+              <p id="guide-objective"></p>
+            </div>
+            <div class="guide-box">
+              <h3>Short Explanation</h3>
+              <p id="guide-explanation"></p>
+            </div>
+            <div class="guide-box">
+              <h3>Interactive Experiment</h3>
+              <p id="guide-experiment"></p>
+            </div>
+            <div class="guide-box">
+              <h3>Success Conditions &amp; Suggested PID</h3>
+              <p id="guide-success"></p>
+              <p id="guide-suggestion" class="guide-suggestion"></p>
+            </div>
+          </div>
+        </aside>
       </section>
     </main>
+
+    <!-- Tutorial Outcome Modal -->
+    <div id="outcome-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="outcome-title">
+      <div class="modal-card outcome-card">
+        <span id="outcome-badge" class="badge badge-stem">Mission Result</span>
+        <h2 id="outcome-title">Mission Complete!</h2>
+        <p id="outcome-message"></p>
+        <div class="outcome-meta">
+          <div><span>Elapsed Time</span><strong id="outcome-time">0.0 s</strong></div>
+          <div><span>Current PID</span><strong id="outcome-pid">6.5 / 0.60 / 3.8</strong></div>
+        </div>
+        <div id="outcome-suggestion-box" class="outcome-suggestion">
+          <strong>Suggested PID Adjustment:</strong>
+          <p id="outcome-suggestion"></p>
+        </div>
+        <div class="modal-actions outcome-actions">
+          <button id="btn-outcome-levels" type="button" class="btn btn-ghost">Back to Levels</button>
+          <button id="btn-outcome-retry" type="button" class="btn btn-outline">Retry</button>
+          <button id="btn-outcome-next" type="button" class="btn btn-primary">Next Level</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Status / Milestone Preview Modal -->
     <div id="notice-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">

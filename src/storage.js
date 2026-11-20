@@ -13,7 +13,8 @@ export function createDefaultProgress() {
     unlocked: {
       'tutorial-1': true,
       'level-1': true
-    }
+    },
+    completed: {}
   };
 }
 
@@ -45,7 +46,8 @@ export function loadProgress(customStorage) {
       unlocked: {
         ...defaults.unlocked,
         ...(typeof parsed.unlocked === 'object' && parsed.unlocked ? parsed.unlocked : {})
-      }
+      },
+      completed: typeof parsed.completed === 'object' && parsed.completed ? { ...parsed.completed } : {}
     };
   } catch {
     return defaults;
@@ -71,6 +73,33 @@ export function getBestStars(progress, levelId) {
   const value = Number(progress?.stars?.[levelId] ?? 0);
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(3, Math.floor(value)));
+}
+
+export function isLevelCompleted(progress, levelId) {
+  return Boolean(progress?.completed?.[levelId]) || getBestStars(progress, levelId) > 0;
+}
+
+/**
+ * Mark a level completed and unlock the next sequential level if provided.
+ * Note: Full 1-3 star performance scoring is introduced in M4; M2 records completion
+ * and unlocks progression cleanly without inflating star counts prematurely.
+ */
+export function recordLevelCompletion(progress, levelId, nextLevelId = null, customStorage) {
+  const updated = {
+    version: 1,
+    stars: { ...(progress?.stars || {}) },
+    unlocked: { ...(progress?.unlocked || {}) },
+    completed: { ...(progress?.completed || {}) }
+  };
+
+  updated.unlocked[levelId] = true;
+  updated.completed[levelId] = true;
+  if (nextLevelId) {
+    updated.unlocked[nextLevelId] = true;
+  }
+
+  saveProgress(updated, customStorage);
+  return updated;
 }
 
 export function isFirstPlaythrough(progress) {

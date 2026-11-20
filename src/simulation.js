@@ -46,6 +46,9 @@ export function computeWindForce(windMode, elapsedTime) {
   if (windMode === 'breeze') {
     return { x: 3.6, z: 0 };
   }
+  if (windMode === 'strong_breeze') {
+    return { x: 4.8, z: 0 };
+  }
   if (windMode === 'gust') {
     return {
       x: 3.0 + 2.4 * Math.sin(elapsedTime * 1.6),
@@ -91,7 +94,28 @@ export class FlightSimulation {
     this.trail = [];
     this.trailSampleTimer = 0;
     this.windMode = options.windMode || 'calm';
+    this.activeScene = null;
     this.reset(options.autoStart === true);
+  }
+
+  loadScene(scene, startRunning = false) {
+    this.activeScene = scene || null;
+    if (scene) {
+      this.startPos = {
+        x: scene.startPos?.x ?? 4.0,
+        z: scene.startPos?.z ?? 0.0
+      };
+      this.defaultTarget = {
+        x: scene.targetZone?.x ?? 18.0,
+        z: scene.targetZone?.z ?? 6.5,
+        radius: scene.targetZone?.radius ?? 1.35,
+        holdRequired: scene.targetZone?.holdRequired ?? 2.0,
+        maxSpeed: scene.targetZone?.maxSpeed ?? 0.45
+      };
+      this.windMode = scene.windMode || 'calm';
+      this.setGains(scene.initialGains || DEFAULT_PID_GAINS);
+    }
+    this.reset(startRunning);
   }
 
   reset(startRunning = false) {

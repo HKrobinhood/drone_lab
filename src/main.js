@@ -2,17 +2,27 @@ import { getLevelsByMode } from './levels.js';
 import {
   loadProgress,
   isLevelUnlocked,
+  isLevelCompleted,
   getBestStars,
   isFirstPlaythrough,
-  getModeSummary
+  getModeSummary,
+  recordLevelCompletion
 } from './storage.js';
 import { InputController } from './input.js';
 import { FlightSimulation, DEFAULT_PID_GAINS } from './simulation.js';
 import { FlightRenderer } from './renderer.js';
+import {
+  PLAYGROUND_SCENE,
+  getSceneById,
+  evaluateTutorialCoaching,
+  evaluateSceneOutcome
+} from './scenes.js';
 
 const state = {
   currentView: 'start',
   currentMode: 'tutorial',
+  activeScene: PLAYGROUND_SCENE,
+  runFinished: false,
   progress: loadProgress()
 };
 
@@ -48,6 +58,8 @@ const els = {
   levelsGrid: document.getElementById('levels-grid'),
 
   // Flight Screen elements
+  flightLevelName: document.getElementById('flight-level-name'),
+  flightObjective: document.getElementById('flight-objective'),
   flightCanvas: document.getElementById('flight-canvas'),
   flightTimer: document.getElementById('flight-timer'),
   btnFlightBack: document.getElementById('btn-flight-back'),
@@ -68,7 +80,31 @@ const els = {
   flightStatus: document.getElementById('flight-status'),
   flightPos: document.getElementById('flight-pos'),
   flightSpeed: document.getElementById('flight-speed'),
+  flightThrust: document.getElementById('flight-thrust'),
   flightRef: document.getElementById('flight-ref'),
+
+  // Tutorial Guide Panel
+  tutorialGuidePanel: document.getElementById('tutorial-guide-panel'),
+  tutorialCoachBar: document.getElementById('tutorial-coach-bar'),
+  guideStemTopic: document.getElementById('guide-stem-topic'),
+  guideObjective: document.getElementById('guide-objective'),
+  guideExplanation: document.getElementById('guide-explanation'),
+  guideExperiment: document.getElementById('guide-experiment'),
+  guideSuccess: document.getElementById('guide-success'),
+  guideSuggestion: document.getElementById('guide-suggestion'),
+
+  // Outcome Modal
+  outcomeModal: document.getElementById('outcome-modal'),
+  outcomeBadge: document.getElementById('outcome-badge'),
+  outcomeTitle: document.getElementById('outcome-title'),
+  outcomeMessage: document.getElementById('outcome-message'),
+  outcomeTime: document.getElementById('outcome-time'),
+  outcomePid: document.getElementById('outcome-pid'),
+  outcomeSuggestionBox: document.getElementById('outcome-suggestion-box'),
+  outcomeSuggestion: document.getElementById('outcome-suggestion'),
+  btnOutcomeLevels: document.getElementById('btn-outcome-levels'),
+  btnOutcomeRetry: document.getElementById('btn-outcome-retry'),
+  btnOutcomeNext: document.getElementById('btn-outcome-next'),
 
   modal: document.getElementById('notice-modal'),
   modalEyebrow: document.getElementById('modal-eyebrow'),
@@ -77,16 +113,19 @@ const els = {
   btnCloseModal: document.getElementById('btn-close-modal')
 };
 
-// M1 Flight Simulation, Input & Renderer
 const sim = new FlightSimulation();
 const renderer = new FlightRenderer(els.flightCanvas);
 let rafId = null;
 let lastFrameTime = null;
 
+function isAnyModalOpen() {
+  return !els.modal.classList.contains('hidden') || !els.outcomeModal.classList.contains('hidden');
+}
+
 const input = new InputController({
-  isActive: () => state.currentView === 'flight' && els.modal.classList.contains('hidden'),
+  isActive: () => state.currentView === 'flight' && !isAnyModalOpen() && !state.runFinished,
   onMovementPress: () => {
-    if (!sim.started) {
+    if (!sim.started && !state.runFinished) {
       sim.startFlight();
       syncFlightControlsUi();
     }
@@ -109,6 +148,32 @@ function showModal(eyebrow, title, body) {
 
 function hideModal() {
   els.modal.classList.add('hidden');
+}
+
+function hideOutcomeModal() {
+  els.outcomeModal.classList.add('hidden');
+}
+
+function showOutcomeModal(outcome) {
+  const isSuccess = outcome.status === 'completed';
+  els.outcomeBadge.textContent = isSuccess ? 'Tutorial Complete' : 'Try Again';
+  els.outcomeTitle.textContent = outcome.title;
+  els.outcomeMessage.textContent = outcome.message;
+  els.outcomeTime.textContent = `${sim.elapsedTime.toFixed(1)} s`;
+  els.outcomePid.textContent = `${sim.gains.kp.toFixed(1)} / ${sim.gains.ki.toFixed(2)} / ${sim.gains.kd.toFixed(1)}`;
+
+  if (outcome.suggestedAdjustment) {
+    els.outcomeSuggestionBox.classList.remove('hidden');
+    els.outcomeSuggestion.textContent = outcome.suggestedAdjustment;
+  } else {
+    els.outcomeSuggestionBox.classList.add('hidden');
+  }
+
+  const nextId = isSuccess ? state.activeScene?.nextLevelId : null;
+  els.btnOutcomeNext.classList.toggle('hidden', !nextId);
+  els.btnOutcomeNext.dataset.nextId = nextId || '';
+
+  els.outcomeModal.classList.remove('hidden');
 }
 
 function updateProgressSummaries() {
@@ -147,7 +212,16 @@ function renderLevelSelection(mode) {
 
   for (const level of levels) {
     const unlocked = isLevelUnlocked(state.progress, level.id);
+    const completed = isLevelCompleted(state.progress, level.id);
     const stars = getBestStars(state.progress, level.id);
+
+    const statusClass = !unlocked ? 'locked' : completed ? 'completed' : 'unlocked';
+    const statusText = !unlocked ? 'Locked' : completed ? 'Completed' : 'Unlocked';
+    const actionHint = !unlocked
+      ? 'Complete Previous'
+      : isTutorial
+        ? 'Start Lesson'
+        : 'Scheduled (M3)';
 
     const card = document.createElement('button');
     card.type = 'button';
@@ -158,16 +232,14 @@ function renderLevelSelection(mode) {
       <div>
         <div class="level-card-top">
           <span class="level-difficulty">${level.difficulty}</span>
-          <span class="lock-status ${unlocked ? 'unlocked' : 'locked'}">
-            ${unlocked ? 'Unlocked' : 'Locked'}
-          </span>
+          <span class="lock-status ${statusClass}">${statusText}</span>
         </div>
         <h3>${level.name}</h3>
         <p class="level-focus"><strong>Focus:</strong> ${level.learningFocus}</p>
       </div>
       <div class="level-card-footer">
         <span class="stars-display" aria-label="${stars} of 3 stars">${renderStarsText(stars)}</span>
-        <span class="level-action-hint">${unlocked ? 'Coming Next' : 'Complete Previous'}</span>
+        <span class="level-action-hint">${actionHint}</span>
       </div>
     `;
 
@@ -181,10 +253,16 @@ function renderLevelSelection(mode) {
         return;
       }
 
+      const scene = getSceneById(level.id);
+      if (scene) {
+        launchScene(scene);
+        return;
+      }
+
       showModal(
         `Scheduled for ${level.milestone}`,
         level.name,
-        `${level.summary} You can test the live 2D PID physics engine right now in the Flight Test Playground from Mode Selection.`
+        `${level.summary} Challenge Levels unlock in Milestone 3.`
       );
     });
 
@@ -203,7 +281,7 @@ function syncSlidersFromGains(gains) {
 
 function syncFlightControlsUi() {
   els.btnFlightPause.textContent = sim.paused ? 'Resume' : 'Pause';
-  els.btnFlightPause.disabled = !sim.started;
+  els.btnFlightPause.disabled = !sim.started || state.runFinished;
   if (!sim.started) {
     els.btnStartFlight.disabled = false;
     els.btnStartFlight.textContent = 'Start Flight';
@@ -216,11 +294,32 @@ function syncFlightControlsUi() {
   }
 }
 
+function renderTutorialGuide(scene) {
+  const guide = scene?.tutorialGuide;
+  if (!guide) {
+    els.tutorialGuidePanel.classList.add('hidden');
+    return;
+  }
+
+  els.tutorialGuidePanel.classList.remove('hidden');
+  els.guideStemTopic.textContent = `STEM Topic: ${scene.stemTopic}`;
+  els.guideObjective.textContent = guide.learningObjective;
+  els.guideExplanation.textContent = guide.shortExplanation;
+  els.guideExperiment.textContent = guide.interactiveExperiment;
+  els.guideSuccess.textContent = guide.successConditions;
+  els.guideSuggestion.textContent = `Tip: ${guide.suggestedAdjustment}`;
+}
+
 function updateFlightHud() {
   const snap = sim.getSnapshot();
-  els.flightTimer.textContent = `${snap.elapsedTime.toFixed(1)} s`;
+  const limit = state.activeScene?.timeLimit;
+  els.flightTimer.textContent = Number.isFinite(limit)
+    ? `${snap.elapsedTime.toFixed(1)} / ${limit} s`
+    : `${snap.elapsedTime.toFixed(1)} s`;
+
   els.flightPos.textContent = `${snap.drone.x.toFixed(2)} m, ${snap.drone.z.toFixed(2)} m`;
   els.flightSpeed.textContent = `${snap.drone.vx.toFixed(2)} m/s, ${snap.drone.vz.toFixed(2)} m/s`;
+  els.flightThrust.textContent = `${snap.drone.thrust.toFixed(1)} N`;
   els.flightRef.textContent = `${snap.reference.x.toFixed(2)} m, ${snap.reference.z.toFixed(2)} m`;
 
   els.telP.textContent = `${snap.pid.x.pTerm.toFixed(1)} / ${snap.pid.z.pTerm.toFixed(1)}`;
@@ -241,6 +340,36 @@ function updateFlightHud() {
     statusLabel = snap.drone.onGround ? 'Armed (On Ground)' : 'In Flight';
   }
   els.flightStatus.textContent = statusLabel;
+
+  if (state.activeScene?.mode === 'tutorial') {
+    const hint = evaluateTutorialCoaching(sim, state.activeScene);
+    if (hint) {
+      els.tutorialCoachBar.textContent = hint;
+    }
+  }
+}
+
+function handleSceneOutcomeIfNeeded() {
+  if (state.runFinished || state.activeScene?.mode !== 'tutorial') return;
+
+  const outcome = evaluateSceneOutcome(sim, state.activeScene);
+  if (outcome.status === 'completed' || outcome.status === 'failed') {
+    state.runFinished = true;
+    sim.setPaused(true);
+    input.clearMovementKeys();
+    syncFlightControlsUi();
+
+    if (outcome.status === 'completed') {
+      state.progress = recordLevelCompletion(
+        state.progress,
+        state.activeScene.id,
+        state.activeScene.nextLevelId
+      );
+      updateProgressSummaries();
+    }
+
+    showOutcomeModal(outcome);
+  }
 }
 
 function flightLoop(timestamp) {
@@ -256,7 +385,10 @@ function flightLoop(timestamp) {
   const rawDt = Math.max(0, (timestamp - lastFrameTime) / 1000);
   lastFrameTime = timestamp;
 
-  sim.stepFrame(rawDt, input.getAxes());
+  if (!state.runFinished) {
+    sim.stepFrame(rawDt, input.getAxes());
+    handleSceneOutcomeIfNeeded();
+  }
   renderer.render(sim, rawDt);
   updateFlightHud();
 
@@ -278,6 +410,7 @@ function stopFlightLoop() {
 }
 
 function startPlaygroundFlight() {
+  if (state.runFinished) return;
   if (!sim.started) {
     sim.startFlight();
   } else if (sim.paused) {
@@ -288,24 +421,38 @@ function startPlaygroundFlight() {
 }
 
 function restartFlight() {
+  hideOutcomeModal();
+  state.runFinished = false;
   input.clearMovementKeys();
+  // Preserve player's current tuned PID gains on Restart so iterative tuning works naturally
   sim.reset(true);
   syncFlightControlsUi();
   updateFlightHud();
 }
 
 function togglePauseFlight() {
-  if (!sim.started) return;
+  if (!sim.started || state.runFinished) return;
   sim.togglePause();
   input.clearMovementKeys();
   syncFlightControlsUi();
   updateFlightHud();
 }
 
-function enterFlightPlayground() {
-  sim.reset(false);
-  syncSlidersFromGains(sim.gains);
+function launchScene(scene) {
+  hideOutcomeModal();
+  state.activeScene = scene;
+  state.runFinished = false;
+  sim.loadScene(scene, false);
+
+  els.flightLevelName.textContent = scene.name;
+  els.flightObjective.textContent = scene.objective;
+  els.btnFlightBack.innerHTML = scene.mode === 'tutorial' ? '&larr; Tutorials' : '&larr; Modes';
+
   els.selectWind.value = sim.windMode;
+  els.selectWind.disabled = scene.allowWindSelect === false;
+
+  syncSlidersFromGains(sim.gains);
+  renderTutorialGuide(scene);
   syncFlightControlsUi();
   navigateTo('flight');
 }
@@ -341,9 +488,17 @@ function bindEvents() {
   els.btnEnterTutorials.addEventListener('click', () => navigateTo('levels', { mode: 'tutorial' }));
   els.btnEnterChallenges.addEventListener('click', () => navigateTo('levels', { mode: 'challenge' }));
   els.btnBackModes.addEventListener('click', () => navigateTo('modes'));
-  els.btnLaunchPlayground.addEventListener('click', enterFlightPlayground);
+  els.btnLaunchPlayground.addEventListener('click', () => launchScene(PLAYGROUND_SCENE));
 
-  els.btnFlightBack.addEventListener('click', () => navigateTo('modes'));
+  els.btnFlightBack.addEventListener('click', () => {
+    hideOutcomeModal();
+    if (state.activeScene?.mode === 'tutorial') {
+      navigateTo('levels', { mode: 'tutorial' });
+    } else {
+      navigateTo('modes');
+    }
+  });
+
   els.btnStartFlight.addEventListener('click', startPlaygroundFlight);
   els.btnFlightPause.addEventListener('click', togglePauseFlight);
   els.btnFlightRestart.addEventListener('click', restartFlight);
@@ -367,6 +522,19 @@ function bindEvents() {
 
   els.selectWind.addEventListener('change', () => {
     sim.setWindMode(els.selectWind.value);
+  });
+
+  els.btnOutcomeRetry.addEventListener('click', restartFlight);
+  els.btnOutcomeLevels.addEventListener('click', () => {
+    hideOutcomeModal();
+    navigateTo('levels', { mode: 'tutorial' });
+  });
+  els.btnOutcomeNext.addEventListener('click', () => {
+    const nextId = els.btnOutcomeNext.dataset.nextId;
+    const nextScene = getSceneById(nextId);
+    if (nextScene) {
+      launchScene(nextScene);
+    }
   });
 
   els.btnCloseModal.addEventListener('click', hideModal);

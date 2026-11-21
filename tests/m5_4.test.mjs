@@ -168,13 +168,22 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     assert.equal(engine.canSkipCurrentStep(), false);
     assert.equal(engine.isLaunchLocked(), true);
 
-    // Wrong gain (too low Kp) stays gated with clear feedback
-    engine.recordPidAdjustment({ kp: 2.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    // Step 3: must explore Low (0) -> High (>9.0) -> Recommended (4.5-9.0) before unlocking Next Step
+    engine.recordPidAdjustment({ kp: 11.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), false);
-    assert.ok(engine.getCurrentStep().statusFeedback.includes('7.5–9.0'));
+    assert.ok(engine.getCurrentStep().statusFeedback.includes('Low'));
 
-    // Correct tuning into 7.5-9.0 unlocks Next Step so player actively links to Test PID
-    engine.recordPidAdjustment({ kp: 7.8, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    engine.recordPidAdjustment({ kp: 0.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    assert.equal(engine.kpZoneDone.low, true);
+    assert.equal(engine.canGoNext(), false);
+    assert.ok(engine.getCurrentStep().statusFeedback.includes('High'));
+
+    engine.recordPidAdjustment({ kp: 11.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    assert.equal(engine.kpZoneDone.high, true);
+    assert.equal(engine.canGoNext(), false);
+    assert.ok(engine.getCurrentStep().statusFeedback.includes('Recommended'));
+
+    engine.recordPidAdjustment({ kp: 6.8, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), true);
     assert.equal(engine.canSkipCurrentStep(), false);
     assert.equal(engine.isLaunchLocked(), true);
@@ -184,7 +193,7 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     assert.equal(engine.isLaunchLocked(), true);
 
     // Clicking Test PID unlocks Next Step to read the waveform (Step 5)
-    engine.recordBenchTest({ gains: { kp: 7.8, ki: 0.6, kd: 3.8 } });
+    engine.recordBenchTest({ gains: { kp: 6.8, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.canGoNext(), true);
     engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');

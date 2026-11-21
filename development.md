@@ -208,7 +208,7 @@
   - PIP 优先依据真实 Test Bench 遥测生成单句指导或祝贺，不泄露唯一最优参数。
 - **新手村实验引导升级（`src/tutorial_guide.js`, `src/visual_aids.js`, `src/scenes.js`）**：
   - 将新手村 4 课统一重构为「**调 PID → 测曲线（Test PID）→ 观察与对比波形（Before/After）→ 起飞验证（Start Flight）**」递进方法论：
-    - **Tutorial 1**：紧凑 8 步闭环（Step 1 看任务 → Step 2 建立工作流 → **Step 3 脉冲高亮 Kp 旋钮调至 7.5–9.0** → Step 4 点 `Test PID` 画曲线 → Step 5 读波形 → **Step 6 脉冲高亮 `Start Flight` 解锁起飞** → Step 7 WASD 实操 → **Step 8 明确引导将无人机飞入蓝色目标圈悬停 1.5 s**，完成后自然收尾进入结算页，无多余 Step 9 遮罩）。
+    - **Tutorial 1**：紧凑 8 步闭环（Step 1 看任务 → Step 2 建立工作流 → **Step 3 脉冲高亮 Kp 旋钮，按 `Low (0) → High (>9) → Recommended (4.5–9.0)` 三阶段完整体验三档参考徽章** → Step 4 点 `Test PID` 画曲线 → Step 5 读波形 → **Step 6 脉冲高亮 `Start Flight` 解锁起飞** → Step 7 WASD 实操 → **Step 8 明确引导将无人机飞入蓝色目标圈悬停 1.5 s**，完成后自然收尾且任意通关即 3★）。
     - **Tutorial 2 / 3 / 4（Kp / Ki / Kd 单步单旋钮高亮 + 自由波形实验）**：每关仅设 1 个 Step，脉冲高亮当前需调节的参数旋钮（`#knob-card-kp` / `#knob-card-ki` / `#knob-card-kd`），提供针对性调参建议并明确提示“调节后先点 `Test PID` 观看波形，满意后随时点击 `Start Flight` 进入飞行”；点 `Got It` 或 `Hide Guide` 后即可自由反复调参测曲线，PIP 持续弹出基于真实波形的诊断建议，全程不锁起飞。
   - **分层门禁**：Tutorial 1 保持完整 8 步 Spotlight 手把手引导（不显示 `Hide Guide`、完成 Step 1–5 解锁起飞、完成即 3★）；Tutorial 2–4 进入无遮罩自由调参实验模式。
   - 同步更新 `pid-loop-steps` 矢量流程图为 `1. Tune PID → 2. Test Curve → 3. Read Wave → 4. Start Flight → 5. Fly & Review`。

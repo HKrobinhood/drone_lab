@@ -148,6 +148,19 @@ export class TutorialSpotlightOverlay {
       });
       this.hintEl.textContent = step.activeSubPrompt || step.actionHint;
       this.hintEl.classList.remove('is-ready');
+    } else if (step.requiredAction === 'tune_pid_valid' && step.zoneSubsteps) {
+      this.wasdChips.classList.remove('hidden');
+      this.wasdChips.innerHTML = '';
+      step.zoneSubsteps.forEach((sub, idx) => {
+        const chip = document.createElement('span');
+        const done = Boolean(step.zoneDone?.[sub.key]) && (sub.key !== 'recommended' || step.satisfied);
+        const current = !step.satisfied && idx === step.zoneSubIndex;
+        chip.className = `tut-chip ${done ? 'is-done' : current ? 'is-current' : ''}`;
+        chip.textContent = `${done ? '✓ ' : ''}${sub.label}`;
+        this.wasdChips.appendChild(chip);
+      });
+      this.hintEl.textContent = step.statusFeedback || step.activeSubPrompt || step.actionHint;
+      this.hintEl.classList.toggle('is-ready', Boolean(step.satisfied));
     } else {
       this.wasdChips.classList.add('hidden');
       this.hintEl.textContent = safetyWarning || step.statusFeedback || step.actionHint;

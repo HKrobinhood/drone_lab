@@ -926,6 +926,8 @@ function syncTutorialOverlay(force = false) {
     stepId: step?.stepId,
     sub: step?.wasdSubIndex,
     done: step?.wasdDone,
+    zSub: step?.zoneSubIndex,
+    zDone: step?.zoneDone,
     cur: prog.current,
     canNext: prog.canNext,
     canSkip: prog.canSkip,

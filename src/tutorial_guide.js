@@ -67,12 +67,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#knob-card-kp',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 3 — Tune the Kp Knob',
-      headline: 'Turn Kp Into 7.5–9.0',
-      instruction: 'Turn the highlighted Kp knob into 7.5–9.0.',
-      actionHint: 'Turn Kp up to 7.5–9.0 (keep Kd >= 3.0) to unlock Next Step.',
+      title: 'Step 3 — Explore Low, High & Recommended',
+      headline: 'Use the 3 Zone Badges as Your Guide',
+      instruction: 'Try Low (0), then High, then Recommended on Kp.',
+      actionHint: 'First turn Kp down to 0 (Low zone) to see how the zone badge changes.',
       learnMore:
-        'Kp starts at 6.5. Practice turning the Kp knob intentionally into 7.5–9.0 (keeping Kd >= 3.0). Once in position, Next Step unlocks so you can test the curve.',
+        'Each knob shows three reference badges: Low, Recommended, and High. Use them as a quick reference whenever tuning—practice moving Kp from 0 (Low) up to High (> 9.0), then back to Recommended (4.5–9.0).',
       requiredAction: 'tune_pid_valid'
     },
     {
@@ -213,6 +213,12 @@ const WASD_SUBSTEPS = [
   { key: 'release', label: 'Hold', prompt: 'Release all WASD keys to slow down and hold position.' }
 ];
 
+const KP_ZONE_SUBSTEPS = [
+  { key: 'low', label: '1. Low (0)', prompt: 'Step 3a: Turn Kp down to 0 (Low zone).' },
+  { key: 'high', label: '2. High (>9)', prompt: 'Step 3b: Now turn Kp up very high (> 9.0, High zone).' },
+  { key: 'recommended', label: '3. Recommended', prompt: 'Step 3c: Finally, return Kp into Recommended (4.5–9.0).' }
+];
+
 export class TutorialGuideEngine {
   constructor() {
     this.resetState();
@@ -228,6 +234,8 @@ export class TutorialGuideEngine {
     this.pidAdjusted = false;
     this.pidInTargetRange = false;
     this.pidFeedback = null;
+    this.kpZoneSubIndex = 0;
+    this.kpZoneDone = { low: false, high: false, recommended: false };
     this.benchTestCount = 0;
     this.tunedAfterFirstBench = false;
     this.retestSatisfied = false;
@@ -291,6 +299,18 @@ export class TutorialGuideEngine {
         activeSubPrompt: sub.prompt
       };
     }
+    if (base.requiredAction === 'tune_pid_valid') {
+      const sub = KP_ZONE_SUBSTEPS[Math.min(this.kpZoneSubIndex, KP_ZONE_SUBSTEPS.length - 1)];
+      return {
+        ...base,
+        satisfied,
+        statusFeedback: dynamicFeedback,
+        zoneSubIndex: this.kpZoneSubIndex,
+        zoneSubsteps: KP_ZONE_SUBSTEPS,
+        zoneDone: { ...this.kpZoneDone },
+        activeSubPrompt: satisfied ? dynamicFeedback : sub.prompt
+      };
+    }
     return {
       ...base,
       satisfied,
@@ -304,9 +324,15 @@ export class TutorialGuideEngine {
       case 'tune_pid_valid': {
         const kpVal = Number(this.currentGains?.kp ?? 6.5).toFixed(1);
         if (satisfied) {
-          return `✓ Kp = ${kpVal} is in position! Click Next Step to test the curve.`;
+          return `✓ All 3 zones explored (Kp = ${kpVal}, Recommended)! Use Low / Recommended / High as your reference — click Next Step!`;
         }
-        return this.pidFeedback || `Turn Kp into 7.5–9.0 (Current: ${kpVal}) to unlock Next Step.`;
+        if (!this.kpZoneDone.low) {
+          return `First turn Kp down to 0 (Low zone) — Current: ${kpVal}.`;
+        }
+        if (!this.kpZoneDone.high) {
+          return `✓ Low reached! Now turn Kp up high (> 9.0, High zone) — Current: ${kpVal}.`;
+        }
+        return this.pidFeedback || `✓ High reached! Now dial Kp back into Recommended (4.5–9.0) — Current: ${kpVal}.`;
       }
       case 'run_test_pid':
         return satisfied
@@ -380,7 +406,7 @@ export class TutorialGuideEngine {
       case 'adjust_pid':
         return this.pidAdjusted;
       case 'tune_pid_valid':
-        return this.pidAdjusted && this.pidInTargetRange;
+        return this.kpZoneDone.low && this.kpZoneDone.high && this.kpZoneDone.recommended && this.pidInTargetRange;
       case 'tune_kp_ready':
         return Number(this.currentGains?.kp ?? 0) >= 4.5;
       case 'tune_ki_ready':
@@ -477,19 +503,33 @@ export class TutorialGuideEngine {
       }
     }
 
-    // Validate intentional target position for Step 3 procedural tuning (Kp 7.5–9.0, Kd 3.0–6.5)
+    // Validate 3-stage Low (0) -> High (> 9.0) -> Recommended (4.5-9.0) exploration on Step 3
     const kp = Number(gains.kp ?? 0);
     const kd = Number(gains.kd ?? 0);
-    const inKp = kp >= 7.5 && kp <= 9.0;
+    const inKp = kp >= 4.5 && kp <= 9.0;
     const inKd = kd >= 3.0 && kd <= 6.5;
     this.pidInTargetRange = inKp && inKd;
 
-    if (kp < 7.5) {
-      this.pidFeedback = `Current Kp is ${kp.toFixed(1)}. Turn the highlighted Kp knob up into 7.5–9.0.`;
+    const currentStep = this.steps[this.stepIndex];
+    if (currentStep?.requiredAction === 'tune_pid_valid') {
+      if (!this.kpZoneDone.low && kp <= 0.5) {
+        this.kpZoneDone.low = true;
+        this.kpZoneSubIndex = 1;
+      } else if (this.kpZoneDone.low && !this.kpZoneDone.high && kp > 9.0) {
+        this.kpZoneDone.high = true;
+        this.kpZoneSubIndex = 2;
+      } else if (this.kpZoneDone.low && this.kpZoneDone.high && this.pidInTargetRange) {
+        this.kpZoneDone.recommended = true;
+        this.kpZoneSubIndex = 2;
+      }
+    }
+
+    if (kp < 4.5) {
+      this.pidFeedback = `Current Kp is ${kp.toFixed(1)} (Low). Raise Kp into Recommended (4.5–9.0).`;
     } else if (kp > 9.0) {
-      this.pidFeedback = `Kp is too high (${kp.toFixed(1)}). Turn Kp back down into 7.5–9.0.`;
+      this.pidFeedback = `Current Kp is ${kp.toFixed(1)} (High). Dial Kp back down into Recommended (4.5–9.0).`;
     } else if (kd < 3.0) {
-      this.pidFeedback = `Kd is too low (${kd.toFixed(1)}). Raise Kd to at least 3.0 for smooth braking.`;
+      this.pidFeedback = `Kd is too low (${kd.toFixed(1)}). Keep Kd >= 3.0 for smooth braking.`;
     } else if (kd > 6.5) {
       this.pidFeedback = `Kd is very high (${kd.toFixed(1)}). Keep Kd <= 6.5 so flight stays crisp.`;
     } else {
@@ -501,8 +541,7 @@ export class TutorialGuideEngine {
       return true;
     }
     if (step?.requiredAction === 'tune_pid_valid') {
-      // Unlock Next Step without auto-jumping away so player intentionally clicks Next Step to connect to Test PID
-      return this.pidAdjusted && this.pidInTargetRange;
+      return this.kpZoneDone.low && this.kpZoneDone.high && this.kpZoneDone.recommended && this.pidInTargetRange;
     }
     if (step?.requiredAction === 'tune_kp_ready') {
       return kp >= 4.5;

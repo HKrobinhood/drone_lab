@@ -86,9 +86,9 @@ describe('M4.1 — Unified Tutorial & Challenge Scene Contracts', () => {
 });
 
 describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide', () => {
-  it('covers all 10 onboarding steps in Tutorial 1 including UI, PID, Start Flight, WASD, Info, Target, and Results', () => {
+  it('covers all 9 onboarding steps in Tutorial 1 including Mission, Knobs, Tune, Test PID, Waveform, Start Flight, WASD, Target, and Results', () => {
     const flow = TUTORIAL_GUIDE_FLOWS['tutorial-1'];
-    assert.equal(flow.length, 10);
+    assert.equal(flow.length, 9);
 
     const stepIds = flow.map((s) => s.stepId);
     assert.deepEqual(stepIds, [
@@ -97,33 +97,36 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
       't1-adjust-knob',
       't1-test-pid',
       't1-observe-bench',
-      't1-retest-pid',
       't1-start-flight',
       't1-wasd',
       't1-reach-target',
       't1-results'
     ]);
 
-    // Step 1-2 -> acknowledge & back navigation works
+    // Step 1-2 -> acknowledge & back navigation works; launch is locked and skip disabled
     const engine = new TutorialGuideEngine();
     engine.start(TUTORIAL_SCENES['tutorial-1']);
     assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
     assert.equal(engine.canGoBack(), false);
+    assert.equal(engine.isLaunchLocked(), true);
+    assert.equal(engine.canSkipCurrentStep(), false);
 
     assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-knobs-intro');
     assert.equal(engine.canGoBack(), true);
+    assert.equal(engine.isLaunchLocked(), true);
 
     assert.equal(engine.goBack(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
 
     engine.goNext(); // knobs-intro
-    engine.goNext(); // adjust-knob
+    engine.goNext(); // adjust-knob (Step 3)
     assert.equal(engine.getCurrentStep().stepId, 't1-adjust-knob');
 
-    // Step 3 cannot skip or advance without real tuning into valid range
+    // Step 3 cannot advance without real tuning into valid range, and launch remains locked
     assert.equal(engine.canGoNext(), false);
     assert.equal(engine.canSkipCurrentStep(), false);
+    assert.equal(engine.isLaunchLocked(), true);
     assert.equal(engine.goNext(), false);
 
     // Same gain values or out-of-range Kp=2.0 do NOT unlock Next Step
@@ -131,29 +134,25 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     assert.equal(engine.recordPidAdjustment({ kp: 2.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
     assert.equal(engine.canGoNext(), false);
 
-    // Tuning into valid target range unlocks Next Step (procedural confirmation, no sudden jump)
+    // Tuning into valid target range unlocks Next Step (no sudden jump; launch still locked until Step 6)
     assert.equal(engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
     assert.equal(engine.canGoNext(), true);
-    assert.equal(engine.canSkipCurrentStep(), true);
+    assert.equal(engine.isLaunchLocked(), true);
     assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-test-pid');
 
     assert.equal(engine.canGoNext(), false);
-    assert.equal(engine.canSkipCurrentStep(), false);
+    assert.equal(engine.isLaunchLocked(), true);
     engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.canGoNext(), true);
     assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');
+    assert.equal(engine.isLaunchLocked(), true);
 
-    engine.goNext(); // t1-retest-pid
-    assert.equal(engine.getCurrentStep().stepId, 't1-retest-pid');
-    assert.equal(engine.canGoNext(), false);
-    assert.equal(engine.canSkipCurrentStep(), false);
-    engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 4.2 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
-    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 4.2 } });
-    assert.equal(engine.canGoNext(), true);
+    // Completing Step 5 unlocks Step 6 (Start Flight) where takeoff is finally unlocked!
     assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
+    assert.equal(engine.isLaunchLocked(), false);
     assert.equal(engine.canGoNext(), false);
 
     engine.recordFlightStarted();

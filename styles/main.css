@@ -5074,3 +5074,37 @@ body {
   color: #ffffff;
   box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.28);
 }
+
+/* Strict Procedural Highlight & Launch Lock */
+.tutorial-action-pulse {
+  position: relative;
+  z-index: 62;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.72), 0 0 24px rgba(56, 189, 248, 0.45) !important;
+  animation: tutActionPulse 1.35s ease-in-out infinite;
+}
+
+@keyframes tutActionPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.65), 0 0 18px rgba(56, 189, 248, 0.38);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(56, 189, 248, 0.92), 0 0 30px rgba(56, 189, 248, 0.65);
+  }
+}
+
+.btn.is-launch-locked,
+.btn.is-launch-locked:hover {
+  background: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
+  color: #475569 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 0.78;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-action-pulse {
+    animation: none !important;
+  }
+}

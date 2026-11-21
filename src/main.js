@@ -839,7 +839,20 @@ function getTutorialSafetyWarning(scene, gains) {
   return null;
 }
 
+function updatePreflightLaunchLock() {
+  const locked = state.activeScene?.mode === 'tutorial' && tutorialGuide.isLaunchLocked();
+  for (const btn of [els.btnPreStartFlight, els.btnPreStartFlight2]) {
+    if (!btn) continue;
+    btn.disabled = locked;
+    btn.classList.toggle('is-launch-locked', locked);
+    btn.title = locked
+      ? 'Finish the guided steps first before starting flight.'
+      : 'Launch your drone into the mission arena';
+  }
+}
+
 function syncTutorialOverlay(force = false) {
+  updatePreflightLaunchLock();
   if (!tutorialOverlay) return;
   if (state.activeScene?.mode !== 'tutorial' || !tutorialGuide.isRunningForView(state.currentView)) {
     tutorialOverlay.hide();
@@ -1839,6 +1852,9 @@ function bindEvents() {
   els.btnFlightReopenGuide.addEventListener('click', reopenGuideHandler);
 
   const startFromPreflight = () => {
+    if (state.activeScene?.mode === 'tutorial' && tutorialGuide.isLaunchLocked()) {
+      return;
+    }
     const gains = state.tunedGainsByLevel[state.activeScene.id] || getSceneInitialGains(state.activeScene);
     launchScene(state.activeScene, { gains, autoStart: true });
   };

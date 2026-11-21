@@ -157,44 +157,43 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     engine.start(t1);
 
     assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
+    assert.equal(engine.isLaunchLocked(), true);
+    assert.equal(engine.canSkipCurrentStep(), false);
     engine.goNext(); // t1-knobs-intro
-    engine.goNext(); // t1-adjust-knob
+    engine.goNext(); // t1-adjust-knob (Step 3)
     assert.equal(engine.getCurrentStep().stepId, 't1-adjust-knob');
+    assert.equal(engine.getCurrentStep().targetSelector, '#preflight-knobs-wrap');
     assert.equal(engine.canGoNext(), false);
     assert.equal(engine.canSkipCurrentStep(), false);
+    assert.equal(engine.isLaunchLocked(), true);
 
     // Wrong gain (too low Kp) stays gated with clear feedback
     engine.recordPidAdjustment({ kp: 2.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), false);
-    assert.equal(engine.canSkipCurrentStep(), false);
     assert.ok(engine.getCurrentStep().statusFeedback.includes('too low'));
 
     // Correct tuning unlocks Next Step so player actively links to Test PID
     engine.recordPidAdjustment({ kp: 7.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), true);
-    assert.equal(engine.canSkipCurrentStep(), true);
+    assert.equal(engine.canSkipCurrentStep(), false);
+    assert.equal(engine.isLaunchLocked(), true);
     engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-test-pid');
     assert.equal(engine.canGoNext(), false);
-    assert.equal(engine.canSkipCurrentStep(), false);
+    assert.equal(engine.isLaunchLocked(), true);
 
-    // Clicking Test PID unlocks Next Step to read the waveform
+    // Clicking Test PID unlocks Next Step to read the waveform (Step 5)
     engine.recordBenchTest({ gains: { kp: 7.0, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.canGoNext(), true);
     engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');
+    assert.equal(engine.isLaunchLocked(), true);
 
-    engine.goNext(); // t1-retest-pid
-    assert.equal(engine.getCurrentStep().stepId, 't1-retest-pid');
-    assert.equal(engine.canGoNext(), false);
-    assert.equal(engine.canSkipCurrentStep(), false);
-
-    // Must tweak a knob AND click Test PID again to compare Before/After waves
-    engine.recordPidAdjustment({ kp: 7.0, ki: 0.6, kd: 4.4 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
-    engine.recordBenchTest({ gains: { kp: 7.0, ki: 0.6, kd: 4.4 } });
-    assert.equal(engine.canGoNext(), true);
+    // Step 5 -> Step 6 (Start Flight) finally unlocks takeoff and highlights Start Flight!
     engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
+    assert.equal(engine.getCurrentStep().targetSelector, '#btn-pre-start-flight-2');
+    assert.equal(engine.isLaunchLocked(), false);
     engine.recordFlightStarted();
     assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
 

@@ -67,10 +67,10 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-knobs-wrap',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 3 — Tune PID to Target Range',
-      headline: 'Dial Kp & Kd Into Position',
-      instruction: 'Adjust Kp (5.0–9.0) and keep Kd >= 3.0.',
-      actionHint: 'Change a knob into the green target range to unlock Next Step.',
+      title: 'Step 3 — Tune Your PID Knobs',
+      headline: 'Adjust Kp & Kd Into Range',
+      instruction: 'Drag a knob or click + to tune Kp (5.0–9.0).',
+      actionHint: 'Tune Kp into 5.0–9.0 and keep Kd >= 3.0 to unlock Next Step.',
       learnMore:
         'Practice moving a knob intentionally into a safe flight range (Kp 5.0–9.0, Kd >= 3.0). Once in position, Next Step unlocks so you can test the curve.',
       requiredAction: 'tune_pid_valid'
@@ -84,7 +84,7 @@ export const TUTORIAL_GUIDE_FLOWS = {
       title: 'Step 4 — Run Test PID',
       headline: 'Plot Your Real Response Wave',
       instruction: 'Click Test PID, then press Next Step to inspect.',
-      actionHint: 'Click Test PID to generate the real 6.5 s curve.',
+      actionHint: 'Click Test PID to generate the real 6.5 s response curve.',
       learnMore:
         'Test PID runs the exact same 120 Hz physics and PID controller for 6.5 s so you can inspect the waveform safely before takeoff.',
       requiredAction: 'run_test_pid'
@@ -94,28 +94,14 @@ export const TUTORIAL_GUIDE_FLOWS = {
       view: 'preflight',
       targetSelector: '#test-bench-panel',
       pipMood: 'thinking',
-      visualId: null,
-      title: 'Step 5 — Read the Waveform',
-      headline: 'Target Line vs. Drone Wave',
-      instruction: 'Check how fast the cyan wave reaches yellow target.',
-      actionHint: 'Inspect Overshoot, Settling Time, and Steady Error, then click Next Step.',
-      learnMore:
-        'Read three things on every waveform: Rise speed (how fast it climbs), Overshoot (does it spike past yellow?), and Steady Error (does it settle on the line?).',
-      requiredAction: 'acknowledge'
-    },
-    {
-      stepId: 't1-retest-pid',
-      view: 'preflight',
-      targetSelector: '#preflight-pid-panel',
-      pipMood: 'explaining',
       visualId: 'kd-damping',
-      title: 'Step 6 — Refine & Compare Waves',
-      headline: 'Tweak a Knob, Then Re-Test',
-      instruction: 'Adjust a knob and click Test PID to compare.',
-      actionHint: '1) Adjust Kp or Kd cleanly  2) Click Test PID to compare Before vs. After.',
+      title: 'Step 5 — Read the Waveform',
+      headline: 'Inspect Target vs. Drone Wave',
+      instruction: 'Check the cyan wave against the yellow target line.',
+      actionHint: 'Review Overshoot, Settling Time, and Error, then click Next Step.',
       learnMore:
-        'Every re-test overlays your Previous wave (purple dashed) with your Current wave (cyan) under identical conditions so you can verify improvements before flying.',
-      requiredAction: 'retest_pid'
+        'Check rise speed, overshoot past the yellow target, and steady error. You can tweak a knob and click Test PID again anytime to compare Before vs. After waves.',
+      requiredAction: 'acknowledge'
     },
     {
       stepId: 't1-start-flight',
@@ -123,10 +109,10 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#btn-pre-start-flight-2',
       pipMood: 'celebrating',
       visualId: null,
-      title: 'Step 7 — Fly Your Tuned Drone',
-      headline: 'Waveform Ready — Launch!',
-      instruction: 'Happy with your curve? Press Start Flight now.',
-      actionHint: 'Click Start Flight to test your tuned controller in the arena.',
+      title: 'Step 6 — Start Flight!',
+      headline: 'All Preflight Steps Done — Launch!',
+      instruction: 'Click the highlighted Start Flight button to take off.',
+      actionHint: 'Takeoff is now unlocked! Click Start Flight to launch your drone.',
       learnMore:
         'Your exact Kp, Ki, and Kd settings from the Test Bench now drive live 120 Hz flight.',
       requiredAction: 'start_flight'
@@ -137,7 +123,7 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-wasd-bar',
       pipMood: 'greeting',
       visualId: 'wasd-controls',
-      title: 'Step 8 — Fly With WASD',
+      title: 'Step 7 — Fly With WASD',
       headline: 'Guide the Ghost Drone',
       instruction: 'Press W, S, A, D to steer Ghost REF.',
       actionHint: 'Tap W, S, A, D, then release to hold.',
@@ -151,7 +137,7 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-canvas',
       pipMood: 'explaining',
       visualId: 'gravity-thrust',
-      title: 'Step 9 — Complete the Climb',
+      title: 'Step 8 — Complete the Climb',
       headline: 'Hover in the Blue Target',
       instruction: 'Climb with W and hover in the blue zone.',
       actionHint: 'Hold REF at (4.0 m, 7.5 m) for 1.5 s.',
@@ -165,7 +151,7 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#result-overview-wrap',
       pipMood: 'celebrating',
       visualId: 'pid-loop-steps',
-      title: 'Step 10 — Review Flight Telemetry',
+      title: 'Step 9 — Review Flight Telemetry',
       headline: 'Close the Learning Loop',
       instruction: 'Compare your flight metrics and tune again anytime!',
       actionHint: 'Review your stars and curves below, then click Finish Guide.',
@@ -456,20 +442,25 @@ export class TutorialGuideEngine {
       total: this.steps.length,
       canBack: this.canGoBack(),
       canNext: this.canGoNext(),
-      canSkip: this.canSkipCurrentStep(),
+      canSkip: false,
+      launchLocked: this.isLaunchLocked(),
       finished: this.finished
     };
   }
 
-  canSkipCurrentStep() {
-    if (!this.active) return true;
+  /**
+   * Prevent takeoff until all pre-flight procedural learning steps are completed
+   * and the player reaches the dedicated Start Flight step.
+   */
+  isLaunchLocked() {
+    if (!this.active || this.finished) return false;
     const step = this.steps[this.stepIndex];
-    if (!step) return true;
-    // Enforce procedural learning: action steps require completing the right action before skipping/hiding
-    if (step.requiredAction === 'acknowledge' || step.requiredAction === 'start_flight' || step.requiredAction === 'reach_target') {
-      return true;
-    }
-    return this.isStepSatisfied(step);
+    if (!step || step.view !== 'preflight') return false;
+    return step.requiredAction !== 'start_flight';
+  }
+
+  canSkipCurrentStep() {
+    return false;
   }
 
   isStepSatisfied(step = this.getCurrentStep()) {

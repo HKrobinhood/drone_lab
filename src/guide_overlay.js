@@ -62,7 +62,7 @@ export class TutorialSpotlightOverlay {
     if (!this.root) return;
     this.root.classList.add('hidden');
     if (this.activeTarget) {
-      this.activeTarget.classList.remove('tutorial-target-active');
+      this.activeTarget.classList.remove('tutorial-target-active', 'tutorial-action-pulse');
       this.resizeObserver?.unobserve(this.activeTarget);
       this.activeTarget = null;
     }
@@ -82,12 +82,19 @@ export class TutorialSpotlightOverlay {
     }
 
     if (this.activeTarget && this.activeTarget !== targetEl) {
-      this.activeTarget.classList.remove('tutorial-target-active');
+      this.activeTarget.classList.remove('tutorial-target-active', 'tutorial-action-pulse');
       this.resizeObserver?.unobserve(this.activeTarget);
     }
 
     this.activeTarget = targetEl;
     this.activeTarget.classList.add('tutorial-target-active');
+    const shouldPulse =
+      step.requiredAction === 'tune_pid_valid' ||
+      step.requiredAction === 'run_test_pid' ||
+      step.requiredAction === 'tune_kp_and_retest' ||
+      step.requiredAction === 'tune_ki_and_retest' ||
+      step.requiredAction === 'start_flight';
+    this.activeTarget.classList.toggle('tutorial-action-pulse', shouldPulse);
     this.resizeObserver?.observe(this.activeTarget);
     this.root.classList.remove('hidden');
 
@@ -148,14 +155,10 @@ export class TutorialSpotlightOverlay {
 
     this.btnBack.disabled = !progressInfo.canBack;
 
-    // Procedural Learning Gate: Hide Guide is locked until the current required action is completed
-    const canSkip = progressInfo.canSkip !== false;
+    // Never display Hide Guide during procedural tutorial steps
     if (this.btnSkip) {
-      this.btnSkip.disabled = !canSkip;
-      this.btnSkip.classList.toggle('hidden', !canSkip);
-      this.btnSkip.title = canSkip
-        ? 'Hide the interactive guide (reopen anytime)'
-        : 'Complete this action first before skipping';
+      this.btnSkip.disabled = true;
+      this.btnSkip.classList.add('hidden');
     }
 
     // Always keep Next Step visible so players see continuous progression—locked until action is done, highlighted once unlocked!
@@ -164,15 +167,14 @@ export class TutorialSpotlightOverlay {
       this.btnNext.disabled = false;
       this.btnNext.classList.remove('is-locked-step', 'is-unlocked-ready');
       this.btnNext.textContent = progressInfo.current === progressInfo.total ? 'Finish Guide' : 'Next Step →';
-    } else if (step.requiredAction === 'start_flight' || step.requiredAction === 'reach_target') {
+    } else if (step.requiredAction === 'start_flight') {
+      this.btnNext.classList.add('hidden');
+      this.btnNext.disabled = true;
+    } else if (step.requiredAction === 'reach_target') {
       this.btnNext.disabled = !progressInfo.canNext;
       this.btnNext.classList.toggle('is-locked-step', !progressInfo.canNext);
       this.btnNext.classList.toggle('is-unlocked-ready', Boolean(progressInfo.canNext));
-      this.btnNext.textContent = progressInfo.canNext
-        ? 'Next Step →'
-        : step.requiredAction === 'start_flight'
-          ? 'Click Start Flight'
-          : 'Complete Target';
+      this.btnNext.textContent = progressInfo.canNext ? 'Next Step →' : 'Hover In Target';
     } else {
       this.btnNext.disabled = !progressInfo.canNext;
       this.btnNext.classList.toggle('is-locked-step', !progressInfo.canNext);

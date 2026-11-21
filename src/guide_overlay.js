@@ -60,7 +60,9 @@ export class TutorialSpotlightOverlay {
 
   hide() {
     if (!this.root) return;
-    this.root.classList.add('hidden');
+    if (!this.root.classList.contains('hidden')) {
+      this.root.classList.add('hidden');
+    }
     if (this.activeTarget) {
       this.activeTarget.classList.remove('tutorial-target-active', 'tutorial-action-pulse');
       this.resizeObserver?.unobserve(this.activeTarget);

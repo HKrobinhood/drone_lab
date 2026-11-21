@@ -373,6 +373,7 @@ let lastGuideRenderSig = '';
 let lastFlightPipSig = '';
 let lastFlightPipUpdateAt = 0;
 let lastControlBadgeSig = '';
+let lastControlBadgeUpdateAt = 0;
 let starAnimTimers = [];
 let starAnimTargetCount = 0;
 
@@ -1577,41 +1578,52 @@ function updateFlightHud() {
   els.telD.textContent = `${snap.pid.x.dTerm.toFixed(1)} / ${snap.pid.z.dTerm.toFixed(1)}`;
 
   let statusLabel = 'Ready (Press Start or WASD)';
-  els.flightStatus.className = 'status-pill';
+  let statusClass = 'status-pill';
   if (snap.paused) {
     statusLabel = 'Paused';
-    els.flightStatus.classList.add('is-paused');
+    statusClass = 'status-pill is-paused';
   } else if (snap.targetZone?.stabilized || snap.landingPad?.landedSafely) {
     statusLabel = 'Mission Complete!';
-    els.flightStatus.classList.add('is-stabilized');
+    statusClass = 'status-pill is-stabilized';
   } else if (snap.landingPad?.inside) {
     statusLabel = `On Helipad (${snap.landingPad.holdTimer.toFixed(1)}s)`;
   } else if (snap.targetZone?.inside) {
     statusLabel = `Inside Target (${snap.targetZone.holdTimer.toFixed(1)}s)`;
   } else if (satFlag) {
     statusLabel = 'Thrust Saturated!';
-    els.flightStatus.classList.add('is-saturated');
+    statusClass = 'status-pill is-saturated';
   } else if (snap.started) {
     statusLabel = snap.drone.onGround ? 'Armed (On Ground)' : 'In Flight';
   }
-  els.flightStatus.textContent = statusLabel;
+  if (els.flightStatus.className !== statusClass) {
+    els.flightStatus.className = statusClass;
+  }
+  if (els.flightStatus.textContent !== statusLabel) {
+    els.flightStatus.textContent = statusLabel;
+  }
 
   if (snap.rings.length > 0) {
-    els.challengeCheckpointPill.textContent = `Rings Cleared: ${snap.nextRingIndex} / ${snap.rings.length}`;
+    const ringText = `Rings Cleared: ${snap.nextRingIndex} / ${snap.rings.length}`;
+    if (els.challengeCheckpointPill.textContent !== ringText) {
+      els.challengeCheckpointPill.textContent = ringText;
+    }
   }
 
   updateFlightPipCard(false);
-  updateLiveControlBadges();
+  updateLiveControlBadges(false);
   const axisSpan = state.livePlotAxis === 'x' ? sim.config.worldWidth : sim.config.worldHeight;
   renderLivePidResponseChart(els.flightResponseCanvas, sim.telemetry, state.livePlotAxis, axisSpan);
 }
 
-function updateLiveControlBadges() {
+function updateLiveControlBadges(force = false) {
   if (!els.liveControlBadges) return;
+  const now = performance.now();
+  if (!force && now - lastControlBadgeUpdateAt < 240) return;
   const badges = evaluateLiveControlStatus(sim.telemetry, sim, state.activeScene);
   const sig = badges.map((b) => `${b.key}:${b.tone}`).join('|');
-  if (sig === lastControlBadgeSig) return;
+  if (!force && sig === lastControlBadgeSig) return;
   lastControlBadgeSig = sig;
+  lastControlBadgeUpdateAt = now;
   els.liveControlBadges.innerHTML = '';
   for (const badge of badges) {
     const span = document.createElement('span');
@@ -1687,7 +1699,7 @@ function flightLoop(timestamp) {
     const axes = input.getAxes();
     sim.stepFrame(rawDt, axes);
     const outcome = handleSceneOutcomeIfNeeded();
-    if (!state.runFinished && state.activeScene?.mode === 'tutorial') {
+    if (!state.runFinished && state.activeScene?.mode === 'tutorial' && tutorialGuide.active) {
       tutorialGuide.evaluateTelemetry(sim, axes, outcome, state.currentView);
       syncTutorialOverlay(false);
     }
@@ -1836,8 +1848,11 @@ export function navigateTo(viewName, options = {}) {
       showTrails: state.showFlightTrails
     });
     lastFlightPipSig = '';
+    lastFlightPipUpdateAt = 0;
     lastControlBadgeSig = '';
+    lastControlBadgeUpdateAt = 0;
     updateFlightHud();
+    updateLiveControlBadges(true);
     startFlightLoop();
   } else {
     stopFlightLoop();

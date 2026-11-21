@@ -166,16 +166,48 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     assert.equal(engine.getCurrentStep().stepId, 't1-test-pid');
     assert.equal(engine.canGoNext(), false);
 
-    engine.recordBenchTest();
+    engine.recordBenchTest({ gains: { kp: 7.0, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');
     engine.goNext(); // t1-retest-pid
-    engine.recordBenchTest(); // Second test auto-advances to Start Flight
+    assert.equal(engine.getCurrentStep().stepId, 't1-retest-pid');
+    assert.equal(engine.canGoNext(), false); // Must re-test to compare Before/After waves
+    engine.recordBenchTest({ gains: { kp: 7.0, ki: 0.6, kd: 4.2 } }); // Second test auto-advances to Start Flight
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
     engine.recordFlightStarted();
     assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
 
-    for (const step of TUTORIAL_GUIDE_FLOWS['tutorial-1']) {
-      assert.ok(step.instruction.trim().split(/\s+/).length <= 15);
+    // Tutorial 2 teaches: Baseline Test PID (slow wave) -> Raise Kp & Re-test -> Start Flight
+    const t2Engine = new TutorialGuideEngine();
+    t2Engine.start(TUTORIAL_SCENES['tutorial-2']);
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-baseline-test');
+    t2Engine.recordBenchTest({ gains: { kp: 1.2, ki: 0.0, kd: 3.5 } });
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-retest');
+    // Re-testing without raising Kp keeps player on Step 2
+    t2Engine.recordBenchTest({ gains: { kp: 2.0, ki: 0.0, kd: 3.5 } });
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-retest');
+    // Raising Kp >= 4.5 and re-testing advances to Start Flight
+    t2Engine.recordBenchTest({ gains: { kp: 6.2, ki: 0.0, kd: 3.5 } });
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-start-flight');
+
+    // Tutorial 3 teaches: Baseline Wind Test -> Raise Ki >= 0.8 & Re-test -> Start Flight
+    const t3Engine = new TutorialGuideEngine();
+    t3Engine.start(TUTORIAL_SCENES['tutorial-3']);
+    assert.equal(t3Engine.getCurrentStep().stepId, 't3-baseline-test');
+    t3Engine.recordBenchTest({ gains: { kp: 4.5, ki: 0.0, kd: 3.4 } });
+    assert.equal(t3Engine.getCurrentStep().stepId, 't3-tune-retest');
+    t3Engine.recordBenchTest({ gains: { kp: 4.5, ki: 1.5, kd: 3.4 } });
+    assert.equal(t3Engine.getCurrentStep().stepId, 't3-start-flight');
+
+    // Tutorial 4 leaves full Tune -> Test -> Compare -> Fly workflow autonomous (1 step)
+    assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-4'].length, 1);
+
+    for (const [sceneId, steps] of Object.entries(TUTORIAL_GUIDE_FLOWS)) {
+      for (const step of steps) {
+        assert.ok(
+          step.instruction.trim().split(/\s+/).length <= 15,
+          `${sceneId}/${step.stepId} exceeds 15 words: "${step.instruction}"`
+        );
+      }
     }
   });
 

@@ -681,7 +681,7 @@ function runCurrentBenchTest() {
   renderPipCard(els.prePipCard, pipData);
 
   if (scene.mode === 'tutorial' && tutorialGuide.active) {
-    tutorialGuide.recordBenchTest();
+    tutorialGuide.recordBenchTest(result);
     syncTutorialOverlay(true);
   }
   return result;

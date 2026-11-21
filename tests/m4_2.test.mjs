@@ -97,7 +97,7 @@ describe('M4.2 — Concise Visual-First Tutorial Curriculum & Diagrams', () => {
     assert.ok(kdSvg.includes('Overshoot') && kdSvg.includes('Damping') && kdSvg.includes('Smooth Stopping'));
 
     const loopSvg = STEM_VISUAL_AIDS['pid-loop-steps'].renderSvg();
-    for (const label of ['1. Adjust PID', '2. Start Flight', '3. Fly WASD', '4. Check Results', '5. Tune Again']) {
+    for (const label of ['1. Tune PID', '2. Test Curve', '3. Read Wave', '4. Start Flight', '5. Fly &amp; Review']) {
       assert.ok(loopSvg.includes(label), `Missing loop step ${label}`);
     }
   });

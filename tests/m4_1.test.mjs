@@ -132,7 +132,9 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
 
     engine.recordBenchTest(); // t1-observe-bench
     engine.goNext(); // t1-retest-pid
-    engine.goNext(); // t1-start-flight
+    assert.equal(engine.getCurrentStep().stepId, 't1-retest-pid');
+    assert.equal(engine.canGoNext(), false);
+    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 4.2 } }); // t1-start-flight
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
     assert.equal(engine.canGoNext(), false);
 

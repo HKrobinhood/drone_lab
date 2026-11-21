@@ -206,8 +206,13 @@
   - 折线图展示 `Target`（金虚线）、`Previous`（紫虚线）与 `Current`（青实线）真实采样轨迹，底部如实展示 `Overshoot`、`Settling Time`（未收敛显示 `Not Settled`）、`Steady Error`（不可测显示 `N/A`）。
   - 仅在相同 `experimentKey` 实验条件下生成 Before → After 对比胶囊（改善绿显、退化如实红显）；每关配备独立实验式 **Tuning Challenge**（严格按真实物理指标判定、不检查推荐区、可随时跳过直接 `Start Flight`）。
   - PIP 优先依据真实 Test Bench 遥测生成单句指导或祝贺，不泄露唯一最优参数。
-- **新手村实验引导升级（`src/tutorial_guide.js`）**：
-  - Tutorial 1 升级为覆盖“认识任务画面 → 认识三颗旋钮 → 调参 → 点击 Test PID → 读懂曲线 → 二次调参对比 → Start Flight → WASD 操控 → 进区悬停 → 复盘”的 10 步实操闭环，T2–T4 逐步减少强制步骤。
+- **新手村实验引导升级（`src/tutorial_guide.js`, `src/visual_aids.js`, `src/scenes.js`）**：
+  - 将新手村 4 课统一重构为「**调 PID → 测曲线（Test PID）→ 观察与对比波形（Before/After）→ 起飞验证（Start Flight）**」递进方法论：
+    - **Tutorial 1**：完整 10 步闭环（看任务 → 建立 Tune→Test→Read Wave→Fly 工作流 → 调旋钮 → 首次 Test PID → 读懂目标线/上升速度/过冲/稳态误差 → 再调一次并 Re-Test 对比紫/青波形 → 起飞 → WASD 操控 → 悬停目标 → 复盘）。
+    - **Tutorial 2（Kp）**：先测 `Kp=1.2` 慢响应基线波 → 调高 `Kp >= 4.5` 并 Re-Test 对比陡峭波形 → `Start Flight` 实战验证。
+    - **Tutorial 3（Ki）**：先测 `Ki=0` 横风稳态漂移波 → 调高 `Ki >= 0.80` 并 Re-Test 观察曲线拉回目标线 → `Start Flight` 抗风实战。
+    - **Tutorial 4（Kd）**：精简为 1 步自主提醒，由玩家独立运用“测振荡波 → 调 Kd → 对比平滑收敛波 → 起飞”毕业闭环。
+  - 同步更新 `pid-loop-steps` 矢量流程图为 `1. Tune PID → 2. Test Curve → 3. Read Wave → 4. Start Flight → 5. Fly & Review`。
 - **测试结果与已知问题**：
   - 全量语法检查与自动化测试 `node --test tests/*.test.mjs`：**35 套件、91 项测试全部通过（0 失败）**，包含新增 `tests/m5_4.test.mjs`。
   - Headless Chrome 实机交互与视觉截图验证（桌面 1440×900 与手机 390×844）：旋钮多方式同步、参数图解展开、Tutorial 4 真实物理 Before (`Kd=0.4`, Overshoot 86% / Not Settled) → After (`Kd=4.6`, Overshoot 3% / 1.8 s / `✓ Goal Met!`)、L3 去脚手架与跳过 Test PID 直接起飞全部通过，零控制台/运行报错、零横向溢出。

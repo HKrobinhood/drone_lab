@@ -68,8 +68,8 @@ export const TUTORIAL_SCENES = {
       maxSpeed: 0.45
     },
     timeLimit: 120,
-    briefing: 'Guided Lesson 1: Inspect the panels, try a PID slider, press Start Flight, practice WASD, and hold in the blue target.',
-    suggestedAdjustment: 'Keep Kp near 6.5, Ki around 0.60, and Kd near 3.8 for responsive and steady takeoff.',
+    briefing: 'Guided Lesson 1: Learn the core method — Tune a knob, click Test PID to read the waveform, compare Before/After, then Start Flight!',
+    suggestedAdjustment: 'Keep Kp near 6.5, Ki around 0.60, and Kd near 3.8 for a clean climb waveform before takeoff.',
     tutorialGuide: {
       learningObjective: 'Learn W/S vertical reference control and why thrust must exceed gravity (11.8 N) to lift off.',
       shortExplanation:
@@ -143,8 +143,8 @@ export const TUTORIAL_SCENES = {
       maxSpeed: 0.45
     },
     timeLimit: 75,
-    briefing: 'Medium Guidance: Start with Kp = 1.2 to see sluggish tracking error, then raise Kp into the Recommended zone.',
-    suggestedAdjustment: 'Increase Kp from 1.2 into the 5.5–7.5 range while keeping Kd around 3.5 for balanced horizontal tilt.',
+    briefing: 'Method Practice (Kp): First click Test PID at Kp = 1.2 to see the slow wave, raise Kp and re-test to compare curves, then Start Flight!',
+    suggestedAdjustment: 'Run Test PID first, then increase Kp from 1.2 into the 5.5–7.5 range and compare the sharper step curve before flying.',
     tutorialGuide: {
       learningObjective: 'Use A/D horizontal control and compare slow vs. responsive Proportional Gain (Kp).',
       shortExplanation:
@@ -218,8 +218,8 @@ export const TUTORIAL_SCENES = {
       maxSpeed: 0.4
     },
     timeLimit: 85,
-    briefing: 'Light Guidance: Fly with Ki = 0.00 to observe wind drift, then increase Ki to bring the drone onto REF.',
-    suggestedAdjustment: 'Increase Ki from 0.00 to 1.40–2.00 so the I term cancels the +4.8 N crosswind.',
+    briefing: 'Method Practice (Ki): First click Test PID at Ki = 0.00 to see wind drift on the graph, raise Ki and re-test until the wave meets Target, then Start Flight!',
+    suggestedAdjustment: 'Run Test PID to observe drift, then raise Ki to 1.40–2.00 and re-test to confirm steady-state error drops near zero.',
     tutorialGuide: {
       learningObjective: 'Observe steady-state error under constant crosswind, then tune Ki to eliminate it without severe windup.',
       shortExplanation:
@@ -293,8 +293,8 @@ export const TUTORIAL_SCENES = {
       maxSpeed: 0.42
     },
     timeLimit: 85,
-    briefing: 'Autonomous Practice: Tune PID yourself with PIP feedback, stabilize smoothly, and unlock readiness for Challenge Levels.',
-    suggestedAdjustment: 'Raise Kd from 0.4 up to 3.6–4.5 to damp oscillation without making the drone sluggish.',
+    briefing: 'Autonomous Method (Kd): Run Test PID to spot low-Kd oscillation waves, raise Kd and re-test until overshoot flattens out, then Start Flight!',
+    suggestedAdjustment: 'Test first at Kd = 0.4 to see oscillations, then raise Kd to 3.6–4.5 and verify the smooth braking wave before takeoff.',
     tutorialGuide: {
       learningObjective: 'Compare underdamped overshoot vs. well-damped braking by tuning Derivative Gain (Kd).',
       shortExplanation:

@@ -39,10 +39,10 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#mission-playground-panel',
       pipMood: 'greeting',
       visualId: 'gravity-thrust',
-      title: 'Step 1 — Meet Your Mission',
+      title: 'Step 1 — Inspect the Mission',
       headline: 'Spot the Blue Target',
-      instruction: 'Fly into the blue zone and hold steady.',
-      actionHint: 'Look at the drone and blue target, then click Next Step.',
+      instruction: 'Check the drone, blue target, and flight conditions.',
+      actionHint: 'See where the drone must climb, then click Next Step.',
       learnMore:
         'Your drone starts on the launch pad. Rotor thrust must beat downward gravity (m × 9.81 N) to climb into the blue zone.',
       requiredAction: 'acknowledge'
@@ -53,12 +53,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-knobs-wrap',
       pipMood: 'explaining',
       visualId: 'pid-loop-steps',
-      title: 'Step 2 — Three PID Knobs',
-      headline: 'Meet Kp, Ki and Kd',
-      instruction: 'Each knob shapes how your drone reacts.',
-      actionHint: 'Tap any knob icon to preview its role, then click Next Step.',
+      title: 'Step 2 — The PID Workflow',
+      headline: 'Tune → Test Curve → Fly!',
+      instruction: 'Always tune knobs, read the test wave, then fly.',
+      actionHint: 'Tap any knob icon to preview Kp, Ki, Kd, then click Next Step.',
       learnMore:
-        'Kp controls response strength, Ki corrects persistent drift, and Kd adds smooth braking damping. All three work together.',
+        'Professional engineers rarely guess in flight: Tune PID knobs → Click Test PID → Read the response wave → Refine & compare → Start Flight.',
       requiredAction: 'acknowledge'
     },
     {
@@ -67,12 +67,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-knobs-wrap',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 3 — Tune a Knob',
-      headline: 'Try Adjusting Kp',
-      instruction: 'Drag a knob or click + to change a gain.',
-      actionHint: 'Adjust Kp, Ki, or Kd using the knob, +/-, or number box.',
+      title: 'Step 3 — Tune a PID Knob',
+      headline: 'Adjust Kp First',
+      instruction: 'Drag the Kp knob or click + to tune.',
+      actionHint: 'Change Kp, Ki, or Kd using the knob, +/-, or number box.',
       learnMore:
-        'Changing Kp alters how strongly the controller pushes toward REF. Keep Kp >= 4.0 so the drone can lift off briskly.',
+        'Kp sets how strongly the controller reacts to position error. Keep Kp >= 4.0 so the drone can climb briskly.',
       requiredAction: 'adjust_pid'
     },
     {
@@ -82,11 +82,11 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'explaining',
       visualId: null,
       title: 'Step 4 — Run Test PID',
-      headline: 'Test Before Takeoff',
-      instruction: 'Click Test PID to run a real response test.',
+      headline: 'Generate Your First Curve',
+      instruction: 'Click Test PID to plot a real response wave.',
       actionHint: 'Click Test PID now.',
       learnMore:
-        'Test PID runs the exact same 120 Hz drone physics and PID loop for 6.5 seconds so you can inspect response safely before flying.',
+        'Test PID runs the exact same 120 Hz physics and PID controller for 6.5 s so you can inspect the waveform safely before takeoff.',
       requiredAction: 'run_test_pid'
     },
     {
@@ -95,12 +95,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#test-bench-panel',
       pipMood: 'thinking',
       visualId: null,
-      title: 'Step 5 — Read the Curve',
-      headline: 'Target vs. Actual Flight',
-      instruction: 'Compare the cyan drone line to the yellow target.',
-      actionHint: 'Check Overshoot, Settling, and Error, then click Next Step.',
+      title: 'Step 5 — Read the Waveform',
+      headline: 'Target Line vs. Drone Wave',
+      instruction: 'Check how fast the cyan wave reaches yellow target.',
+      actionHint: 'Inspect Overshoot, Settling Time, and Steady Error, then click Next Step.',
       learnMore:
-        'The dashed yellow line is your Target height, and the cyan curve is the actual drone position from real physics.',
+        'Read three things on every waveform: Rise speed (how fast it climbs), Overshoot (does it spike past yellow?), and Steady Error (does it settle on the line?).',
       requiredAction: 'acknowledge'
     },
     {
@@ -109,13 +109,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-knobs-wrap',
       pipMood: 'explaining',
       visualId: 'kd-damping',
-      title: 'Step 6 — Compare Before & After',
-      headline: 'Tweak & Test Again',
-      instruction: 'Change a knob and click Test PID to compare.',
-      actionHint: 'Change one knob and click Test PID (or click Next Step).',
+      title: 'Step 6 — Refine & Compare Waves',
+      headline: 'Adjust & Watch Before/After',
+      instruction: 'Tweak a knob and click Test PID to compare.',
+      actionHint: 'Adjust any knob and click Test PID to see purple vs. cyan waves.',
       learnMore:
-        'The Test Bench overlays your Previous curve (purple dashed) with your Current curve (cyan) under identical conditions.',
-      requiredAction: 'acknowledge'
+        'Every re-test overlays your Previous wave (purple dashed) with your Current wave (cyan) under identical conditions so you can verify improvements before flying.',
+      requiredAction: 'retest_pid'
     },
     {
       stepId: 't1-start-flight',
@@ -123,12 +123,12 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#btn-pre-start-flight-2',
       pipMood: 'celebrating',
       visualId: null,
-      title: 'Step 7 — Start Flight',
-      headline: 'Launch Your Drone',
-      instruction: 'Press Start Flight to enter the arena.',
-      actionHint: 'Click Start Flight now.',
+      title: 'Step 7 — Fly Your Tuned Drone',
+      headline: 'Waveform Ready — Launch!',
+      instruction: 'Happy with your curve? Press Start Flight now.',
+      actionHint: 'Click Start Flight to test your tuned controller in the arena.',
       learnMore:
-        'Once airborne, your exact Kp, Ki, and Kd settings drive live thrust and pitch at 120 Hz.',
+        'Your exact Kp, Ki, and Kd settings from the Test Bench now drive live 120 Hz flight.',
       requiredAction: 'start_flight'
     },
     {
@@ -151,7 +151,7 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-canvas',
       pipMood: 'explaining',
       visualId: 'gravity-thrust',
-      title: 'Step 9 — Reach the Target',
+      title: 'Step 9 — Complete the Climb',
       headline: 'Hover in the Blue Target',
       instruction: 'Climb with W and hover in the blue zone.',
       actionHint: 'Hold REF at (4.0 m, 7.5 m) for 1.5 s.',
@@ -165,44 +165,58 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#result-overview-wrap',
       pipMood: 'celebrating',
       visualId: 'pid-loop-steps',
-      title: 'Step 10 — Results and Retry',
-      headline: 'Review Your Flight',
-      instruction: 'Review your stars and telemetry, then tune again!',
-      actionHint: 'Check your metrics below, then click Finish Guide.',
+      title: 'Step 10 — Review Flight Telemetry',
+      headline: 'Close the Learning Loop',
+      instruction: 'Compare your flight metrics and tune again anytime!',
+      actionHint: 'Review your stars and curves below, then click Finish Guide.',
       learnMore:
-        'In later lessons, I will teach you every metric I grade: Tracking Lag, Steady-State Offset, Overshoot, Settling Time, and Stability.',
+        'In Tutorials 2–4, you will apply this exact Tune → Test Curve → Compare → Fly method to master Kp speed, Ki wind correction, and Kd damping.',
       requiredAction: 'acknowledge'
     }
   ],
 
   'tutorial-2': [
     {
-      stepId: 't2-briefing',
+      stepId: 't2-baseline-test',
       view: 'preflight',
-      targetSelector: '#preflight-pid-panel',
+      targetSelector: '#btn-test-pid',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Metric Focus: Tracking Lag & Route Fit',
+      title: 'Step 1 — Test Slow Kp Curve',
       headline: 'Pilot, Today I Measure Tracking Lag!',
-      instruction: 'Kp changes how strongly your drone reacts.',
-      actionHint: 'Try Test PID at low Kp, tune Kp up, then Start Flight.',
+      instruction: 'Click Test PID first to see slow Kp lag.',
+      actionHint: 'Click Test PID at Kp = 1.2 to observe the sluggish wave.',
       learnMore:
-        'I measure Average Tracking Error (lag behind REF) and Route Fit (% overlap with REF). Watch how raising Kp cuts lag.',
-      requiredAction: 'start_flight'
+        'Always inspect the baseline waveform first. With low Kp = 1.2, the cyan curve climbs very slowly toward the yellow target line.',
+      requiredAction: 'run_test_pid'
     },
     {
-      stepId: 't2-observe-lag',
-      view: 'flight',
-      targetSelector: '#flight-pid-panel',
+      stepId: 't2-tune-retest',
+      view: 'preflight',
+      targetSelector: '#preflight-knobs-wrap',
       pipMood: 'explaining',
       visualId: 'kp-response',
-      title: 'Spot Tracking Lag & Raise Kp',
-      headline: 'Feel Lag, Then Boost Kp',
-      instruction: 'Tap D to feel lag, then raise Kp.',
-      actionHint: 'Move Kp >= 4.5.',
+      title: 'Step 2 — Raise Kp & Compare Waves',
+      headline: 'Speed Up the Response Curve',
+      instruction: 'Raise Kp above 4.5, then click Test PID again.',
+      actionHint: 'Turn Kp >= 4.5 and click Test PID to compare Before vs. After.',
       learnMore:
-        'Watch Position lag behind Ref Target at Kp = 1.2—raising Kp boosts acceleration, shortening Completion Time and improving Route Fit.',
-      requiredAction: 'tune_kp_above_4_5'
+        'Compare the new steep cyan curve against the slow purple baseline—higher Kp cuts Tracking Lag and Settling Time.',
+      requiredAction: 'tune_kp_and_retest'
+    },
+    {
+      stepId: 't2-start-flight',
+      view: 'preflight',
+      targetSelector: '#btn-pre-start-flight-2',
+      pipMood: 'celebrating',
+      visualId: null,
+      title: 'Step 3 — Fly Your Tuned Kp',
+      headline: 'Validate Crisp Tracking In Flight',
+      instruction: 'Curve looks fast and clean? Press Start Flight!',
+      actionHint: 'Click Start Flight to fly with your improved Kp.',
+      learnMore:
+        'Now test how that sharper step curve feels during real WASD horizontal flight and Route Fit scoring.',
+      requiredAction: 'start_flight'
     },
     {
       stepId: 't2-complete',
@@ -210,43 +224,71 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-canvas',
       pipMood: 'celebrating',
       visualId: null,
-      title: 'Hold Inside Target',
+      title: 'Step 4 — Hold Inside Target',
       headline: 'Lock In Your Route Fit',
       instruction: 'Fly into the right zone and hold steady.',
       actionHint: 'Hold inside (18.0 m, 5.5 m) for 2.0 s.',
       learnMore:
-        'When we reach the Result Screen, I will show you your exact Average Tracking Error, Completion Time, and Route Fit score.',
+        'On the Result Screen, I will show your Average Tracking Error, Completion Time, and Route Fit score.',
       requiredAction: 'reach_target'
     }
   ],
 
   'tutorial-3': [
     {
-      stepId: 't3-wind',
+      stepId: 't3-baseline-test',
       view: 'preflight',
-      targetSelector: '#test-bench-panel',
+      targetSelector: '#btn-test-pid',
       pipMood: 'thinking',
       visualId: 'ki-integral',
-      title: 'Metric Focus: Steady-State Offset',
+      title: 'Step 1 — Test Wind Drift Curve',
       headline: 'Pilot, Today I Measure Steady-State Offset!',
-      instruction: 'Ki helps correct persistent wind drift.',
-      actionHint: 'Click Test PID to see wind drift, raise Ki, then Start Flight.',
+      instruction: 'Click Test PID to spot steady wind drift.',
+      actionHint: 'Click Test PID at Ki = 0.00 to see the wave stall off-target.',
       learnMore:
-        'I measure late-flight Steady-State Offset (remaining distance from REF) plus Saturation Time / Windup when Ki is pushed too high.',
+        'Under +4.8 N crosswind with Ki = 0, the cyan waveform stays stuck away from the yellow target line—this gap is Steady-State Error.',
+      requiredAction: 'run_test_pid'
+    },
+    {
+      stepId: 't3-tune-retest',
+      view: 'preflight',
+      targetSelector: '#preflight-knobs-wrap',
+      pipMood: 'explaining',
+      visualId: 'ki-integral',
+      title: 'Step 2 — Raise Ki & Compare Waves',
+      headline: 'Pull the Wave Back on Target',
+      instruction: 'Raise Ki above 0.80, then click Test PID again.',
+      actionHint: 'Turn Ki >= 0.80 and click Test PID to watch drift vanish.',
+      learnMore:
+        'Compare the purple drifted curve with your new cyan curve—Ki accumulates persistent error to pull the drone back onto Target.',
+      requiredAction: 'tune_ki_and_retest'
+    },
+    {
+      stepId: 't3-start-flight',
+      view: 'preflight',
+      targetSelector: '#btn-pre-start-flight-2',
+      pipMood: 'celebrating',
+      visualId: null,
+      title: 'Step 3 — Launch Into Crosswind',
+      headline: 'Fly Your Wind-Trimmed Setup',
+      instruction: 'Drift fixed on the graph? Press Start Flight!',
+      actionHint: 'Click Start Flight to fly into the crosswind arena.',
+      learnMore:
+        'Avoid pushing Ki too high—watch for overshoot or saturation spikes on the curve before takeoff.',
       requiredAction: 'start_flight'
     },
     {
-      stepId: 't3-tune-ki',
+      stepId: 't3-complete',
       view: 'flight',
-      targetSelector: '#flight-pid-panel',
+      targetSelector: '#flight-canvas',
       pipMood: 'explaining',
       visualId: 'ki-integral',
-      title: 'Cancel Drift With Ki',
-      headline: 'Shrink Offset With Ki',
-      instruction: 'Adjust Ki and observe the wind drift.',
-      actionHint: 'Raise Ki (>= 0.80) and hold inside (16.0 m, 5.5 m).',
+      title: 'Step 4 — Hold Center In Wind',
+      headline: 'Verify Zero Drift In Flight',
+      instruction: 'Fly into the target and hold steady.',
+      actionHint: 'Hold centered inside (16.0 m, 5.5 m) for 2.0 s.',
       learnMore:
-        'On the Result Screen, I will check whether your Steady-State Offset dropped near zero without causing integral windup overshoot.',
+        'On the Result Screen, check whether your Steady-State Offset stayed small without windup overshoot.',
       requiredAction: 'reach_target'
     }
   ],
@@ -255,15 +297,15 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't4-autonomous',
       view: 'preflight',
-      targetSelector: '#preflight-pid-panel',
+      targetSelector: '#test-bench-panel',
       pipMood: 'thinking',
       visualId: 'kd-damping',
-      title: 'Metric Focus: Overshoot & Stability',
+      title: 'Autonomous Method: Test → Tune Kd → Fly',
       headline: 'Pilot, Watch Overshoot, Settling & Stability!',
-      instruction: 'Kd helps your drone brake smoothly.',
-      actionHint: 'Experiment with Kd on Test PID, then press Start Flight.',
+      instruction: 'Test the bouncy wave, raise Kd, re-test, then fly.',
+      actionHint: 'Run Test PID, damp overshoot with Kd, compare curves, then Start Flight.',
       learnMore:
-        'In this final lesson, I grade every metric you will face in Challenge Levels: Max Overshoot, Oscillation Reversals, Settling Time, Stability %, and Route Fit!',
+        'You now know the full method! Run Test PID to see low-Kd oscillation, raise Kd and re-test until the wave brakes smoothly, then Start Flight.',
       requiredAction: 'start_flight'
     }
   ]
@@ -291,6 +333,8 @@ export class TutorialGuideEngine {
     this.stepIndex = 0;
     this.pidAdjusted = false;
     this.benchTestCount = 0;
+    this.retestSatisfied = false;
+    this.lastBenchGains = null;
     this.initialGainsAtStep = null;
     this.flightStarted = false;
     this.wasdSubIndex = 0;
@@ -366,6 +410,12 @@ export class TutorialGuideEngine {
         return this.pidAdjusted;
       case 'run_test_pid':
         return this.benchTestCount >= 1;
+      case 'retest_pid':
+        return this.benchTestCount >= 2;
+      case 'tune_kp_and_retest':
+        return this.retestSatisfied;
+      case 'tune_ki_and_retest':
+        return this.retestSatisfied;
       case 'start_flight':
         return this.flightStarted;
       case 'wasd_sequence':
@@ -444,15 +494,30 @@ export class TutorialGuideEngine {
     return false;
   }
 
-  recordBenchTest() {
+  recordBenchTest(result = null) {
     if (!this.active) return false;
     this.benchTestCount += 1;
+    const gains = result?.gains || null;
+    this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+
     const step = this.getCurrentStep();
     if (step?.requiredAction === 'run_test_pid') {
       return this.goNext();
     }
-    if (step?.stepId === 't1-retest-pid' && this.benchTestCount >= 2) {
+    if (step?.requiredAction === 'retest_pid' && this.benchTestCount >= 2) {
       return this.goNext();
+    }
+    if (step?.requiredAction === 'tune_kp_and_retest' && this.benchTestCount >= 2) {
+      if (!gains || Number(gains.kp) >= 4.5) {
+        this.retestSatisfied = true;
+        return this.goNext();
+      }
+    }
+    if (step?.requiredAction === 'tune_ki_and_retest' && this.benchTestCount >= 2) {
+      if (!gains || Number(gains.ki) >= 0.8) {
+        this.retestSatisfied = true;
+        return this.goNext();
+      }
     }
     return false;
   }

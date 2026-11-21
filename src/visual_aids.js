@@ -298,33 +298,33 @@ export const STEM_VISUAL_AIDS = Object.freeze({
     title: 'PID Tuning Workflow',
     defaultVariant: '1',
     controls: [
-      { id: '1', label: '1. Tune' },
-      { id: '2', label: '2. Fly' },
-      { id: '4', label: '3. Observe' },
-      { id: '5', label: '4. Retry' }
+      { id: '1', label: '1. Tune PID' },
+      { id: '2', label: '2. Test Curve' },
+      { id: '3', label: '3. Read Wave' },
+      { id: '4', label: '4. Fly & Review' }
     ],
     renderSvg: (variant = '1') => {
       const s = String(variant || '1');
       const sw = (n) => (s === String(n) ? '2.4' : '1.2');
       return `
-      <svg class="stem-diagram-svg" viewBox="0 0 280 120" role="img" aria-label="1 Adjust PID, 2 Start Flight, 3 Fly with WASD, 4 Check Results, 5 Tune Again">
+      <svg class="stem-diagram-svg" viewBox="0 0 280 120" role="img" aria-label="1 Tune PID, 2 Test Curve, 3 Read Wave, 4 Start Flight, 5 Fly and Review">
         <rect x="2" y="2" width="276" height="116" rx="10" fill="#0b1220" stroke="#1e293b" />
         <rect x="14" y="16" width="76" height="32" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="${sw(1)}" />
-        <text x="52" y="35" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="700">1. Adjust PID</text>
+        <text x="52" y="35" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="700">1. Tune PID</text>
         <text x="97" y="35" text-anchor="middle" fill="#38bdf8" font-size="12">&rarr;</text>
         <rect x="104" y="16" width="76" height="32" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="${sw(2)}" />
-        <text x="142" y="35" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="700">2. Start Flight</text>
+        <text x="142" y="35" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="700">2. Test Curve</text>
         <text x="187" y="35" text-anchor="middle" fill="#38bdf8" font-size="12">&rarr;</text>
-        <rect x="194" y="16" width="72" height="32" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="${sw(2)}" />
-        <text x="230" y="35" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="700">3. Fly WASD</text>
+        <rect x="194" y="16" width="72" height="32" rx="6" fill="#1e293b" stroke="#c084fc" stroke-width="${sw(3)}" />
+        <text x="230" y="35" text-anchor="middle" fill="#f3e8ff" font-size="9.5" font-weight="700">3. Read Wave</text>
 
-        <text x="230" y="63" text-anchor="middle" fill="#38bdf8" font-size="12">&darr;</text>
+        <text x="230" y="63" text-anchor="middle" fill="#c084fc" font-size="12">&darr;</text>
 
         <rect x="150" y="70" width="116" height="32" rx="6" fill="#1e293b" stroke="#4ade80" stroke-width="${sw(4)}" />
-        <text x="208" y="89" text-anchor="middle" fill="#bbf7d0" font-size="9.5" font-weight="700">4. Check Results</text>
+        <text x="208" y="89" text-anchor="middle" fill="#bbf7d0" font-size="9.5" font-weight="700">4. Start Flight</text>
         <text x="139" y="89" text-anchor="middle" fill="#4ade80" font-size="12">&larr;</text>
-        <rect x="14" y="70" width="114" height="32" rx="6" fill="#1e293b" stroke="#eab308" stroke-width="${sw(5)}" />
-        <text x="71" y="89" text-anchor="middle" fill="#fef08a" font-size="9.5" font-weight="700">5. Tune Again</text>
+        <rect x="14" y="70" width="114" height="32" rx="6" fill="#1e293b" stroke="#eab308" stroke-width="${sw(4)}" />
+        <text x="71" y="89" text-anchor="middle" fill="#fef08a" font-size="9.5" font-weight="700">5. Fly &amp; Review</text>
         <text x="52" y="63" text-anchor="middle" fill="#eab308" font-size="12">&uarr;</text>
       </svg>
     `;

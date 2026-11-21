@@ -282,6 +282,12 @@ const els = {
   btnResultChallenges: document.getElementById('btn-result-challenges'),
   btnResultNext: document.getElementById('btn-result-next'),
 
+  appShell: document.querySelector('.app-shell'),
+  btnOpenAbout: document.getElementById('btn-open-about'),
+  aboutModal: document.getElementById('about-modal'),
+  btnCloseAbout: document.getElementById('btn-close-about'),
+  btnCloseAboutX: document.getElementById('btn-close-about-x'),
+
   modal: document.getElementById('notice-modal'),
   modalEyebrow: document.getElementById('modal-eyebrow'),
   modalTitle: document.getElementById('modal-title'),
@@ -304,7 +310,21 @@ let starAnimTimers = [];
 let starAnimTargetCount = 0;
 
 function isAnyModalOpen() {
-  return !els.modal.classList.contains('hidden');
+  const noticeOpen = !els.modal.classList.contains('hidden');
+  const aboutOpen = Boolean(els.aboutModal && !els.aboutModal.classList.contains('hidden'));
+  return noticeOpen || aboutOpen;
+}
+
+function openAboutModal() {
+  if (!els.aboutModal) return;
+  els.aboutModal.classList.remove('hidden');
+  els.btnCloseAbout?.focus();
+}
+
+function closeAboutModal() {
+  if (!els.aboutModal) return;
+  els.aboutModal.classList.add('hidden');
+  els.btnOpenAbout?.focus();
 }
 
 const input = new InputController({
@@ -1345,6 +1365,7 @@ export function navigateTo(viewName, options = {}) {
   }
 
   els.topbar.classList.toggle('hidden', viewName === 'start' || viewName === 'flight');
+  els.appShell?.classList.toggle('is-home-view', viewName === 'start');
   updateProgressSummaries();
 
   if (viewName !== 'levels' && state.pipIntroOpen) {
@@ -1545,13 +1566,24 @@ function bindEvents() {
     }
   });
 
+  els.btnOpenAbout?.addEventListener('click', openAboutModal);
+  els.btnCloseAbout?.addEventListener('click', closeAboutModal);
+  els.btnCloseAboutX?.addEventListener('click', closeAboutModal);
+  els.aboutModal?.addEventListener('click', (event) => {
+    if (event.target === els.aboutModal) closeAboutModal();
+  });
+
   els.btnCloseModal.addEventListener('click', hideModal);
   els.modal.addEventListener('click', (event) => {
     if (event.target === els.modal) hideModal();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !els.modal.classList.contains('hidden')) {
-      hideModal();
+    if (event.key === 'Escape') {
+      if (els.aboutModal && !els.aboutModal.classList.contains('hidden')) {
+        closeAboutModal();
+      } else if (!els.modal.classList.contains('hidden')) {
+        hideModal();
+      }
     }
   });
 }

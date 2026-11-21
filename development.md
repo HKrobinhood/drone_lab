@@ -36,6 +36,7 @@
 | **M4.2** | PIP Introduction & Visual Tutorial Redesign | PIP 首次自我介绍、5 种表情动画、6 张内联 SVG 教学图解、精简短句文案与 Learn More 展开 | **已完成** |
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | **已完成** |
 | **M5.1** | Visual-First UI & Animated Star Results | 视觉优先教学与交互图解（<=15 词）、Ghost Drone + 实时 PID 曲线与状态标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据与下一星建议、精简失败页 | **已完成** |
+| **M5.2** | Homepage UI Redesign | 明亮卡通科技风游戏首页重设计：蓝天草地场景、左侧 PIP + 中央超大 `Start Game` + 右侧无人机、4 步图标玩法流程、4 张简洁课程信息卡与完整 `About` 课程弹窗 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -168,6 +169,16 @@
   - 无头 Chrome 端到端实测（1440×900 桌面与 390×844 移动端）：Tutorial 交互图解、Ghost Drone 与实时 PID 曲线、Challenge 真实失败无庆祝界面、居中三星动画与 `Skip Animation`、`prefers-reduced-motion`、`Retry` 重播及 `localStorage` 存档均通过，零控制台/运行时报错。
   - 已知问题：暂无阻塞问题；移动端触控操作与 GitHub Pages 自动发布将在 M6 推进。
 
+### M5.2 — Homepage UI Redesign
+- **旧版首页问题**：深色长段落卡片文字偏多、`Start Game` 按钮靠左不够突出、缺乏游戏氛围与角色视觉识别，课程分支（Engineering / Technology）和详细说明未分层。
+- **新版信息架构**：
+  - **Hero 主视觉区**：蓝天云朵草地背景（内联轻量 SVG，含飞行圆环、风旗、H 降落平台与三颗装饰星）+ 顶部 `STEM Game` 徽章与右上角 `About` 弹窗入口 + 左侧统一角色 **PIP** + 中央 `Drone Lab / PID Flight Challenge` 标题、短副标题（`Tune PID · Fly with WASD · Earn Stars`）与超大亮橙金发光 `Start Game` 按钮 + 右侧卡通四旋翼无人机。
+  - **How to Play 图标流程**：`Start Game` 下方用箭头连接 4 张图标卡片（`Tune PID` → `Fly` → `Complete` → `Earn`）。
+  - **About the Course 四卡区**：下方 4 张彩色页眉简洁信息卡（`STEM Topic`、`Branches of STEM`、`Game Overview`、`Learning Objectives`），保留全部 STEM 作业核心信息同时避免文字堆砌。
+  - **About 完整课程弹窗（`#about-modal`）**：右上角 `About` 按钮打开完整课程信息模态窗，包含完整 STEM Topic、STEM Activity、Branches of STEM（Technology 与 Engineering Primary Focus）、Game Description 与 4 条 Learning Objectives，支持键盘 `Escape` 关闭与焦点恢复。
+- **响应式与无障碍**：桌面端（1440×900）首屏完整展示 Hero、Start Game、4 步流程与 4 卡课程概览；平板端（834×1112）切换 2×2 卡片网格；手机端（390×844）标题与 `Start Game` 保持居中、角色缩放无遮挡、无横向溢出；所有动画支持 `prefers-reduced-motion` 且无外部 CDN 依赖。
+- **测试结果**：`node --test tests/*.test.mjs` 全量通过；无头 Chrome 桌面/平板/手机实测截图与交互（`Start Game` 跳转 Mode Selection、`About` 弹窗开关、零控制台报错）均通过。
+
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
 - [ ] 校准各关卡难度与评分阈值
@@ -178,8 +189,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.1 — Visual-First UI & Animated Star Results`（已完成，待人工确认后进入 M6）
-- **已完成**：视觉优先教学（<=15 词 + 交互式 STEM 图解）、Ghost Drone + 实时 PID 曲线与状态短标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据/下一星建议与精简失败界面。
+- **当前里程碑**：`M5.2 — Homepage UI Redesign`（已完成，待人工验收后进入 M6）
+- **已完成**：全新明亮卡通科技风 STEM 游戏首页（PIP + 中央大按钮 `Start Game` + 卡通无人机 + 4 步图标玩法 + 4 张课程信息卡 + 完整 `About` 课程弹窗），未影响既有 PID、WASD、Tutorial/Challenge、三星评分与存档功能。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -231,6 +242,8 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m5.1): add flight WASD intro and PIP metric coaching in tutorials` — 新手村第一课飞行界面开局增加 WASD 介绍，并通过 PIP 对话式讲解贯穿新手村四关的全部飞行衡量指标。
 - `refactor: remove flight test playground feature` — 删除独立的 Flight Test Playground 自由沙盒入口、场景定义及多余风扰下拉控件，统一通过 Tutorial Village 与 Challenge Levels 进行飞行训练与挑战。
 - `feat(m5.1): improve STEM visuals and animated star results` — 完成 M5.1 视觉优先教学与交互图解、Ghost Drone / 实时 PID 曲线与状态标签、PIP 精简优化、居中三星动画、真实 M4 评级依据与精简失败结果页。
+- `feat(m5.1): unify tutorial and challenge star result display` — 统一新手村与正式关卡的三星动画与评级依据展示。
+- `feat(ui): redesign STEM game homepage` — 完成 M5.2 明亮卡通科技风 STEM 首页重设计、4 步图标玩法、4 张课程信息卡与完整 `About` 课程弹窗。
 
 ---
 

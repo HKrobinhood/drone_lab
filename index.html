@@ -21,143 +21,433 @@
     </header>
 
     <main id="app-main">
-      <!-- ==================== VIEW 1: START SCREEN ==================== -->
+      <!-- ==================== VIEW 1: START SCREEN (REDESIGNED STEM GAME HOMEPAGE) ==================== -->
       <section id="view-start" class="view active" aria-labelledby="game-title">
-        <div class="hero-card">
-          <div class="hero-copy">
-            <span class="badge badge-stem">STEM Interactive Simulation</span>
-            <h1 id="game-title">Drone Lab — PID Flight Challenge</h1>
-            <p class="hero-subtitle">
-              Master feedback control theory by tuning proportional, integral, and derivative gains
-              and piloting a simulated 2D quadrotor through real flight missions.
-            </p>
-            <div class="loop-strip" aria-label="PID Closed-Loop Control Pipeline">
-              <span>WASD Target</span>
-              <span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>PID (Kp, Ki, Kd)</span>
-              <span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Thrust &amp; Pitch</span>
-              <span class="arrow" aria-hidden="true">&rarr;</span>
-              <span>Drone Flight</span>
-            </div>
-            <div class="hero-cta">
-              <button id="btn-start-game" type="button" class="btn btn-primary btn-lg">
-                Start Game
-              </button>
-              <span class="cta-note">No automatic steering — pure PID feedback control.</span>
-            </div>
+        <div class="home-stage">
+          <!-- Scenic Sky, Clouds, Meadow, Flight Ring & Helipad Backdrop -->
+          <div class="home-backdrop" aria-hidden="true">
+            <svg class="home-scene-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMax slice">
+              <defs>
+                <linearGradient id="home-sky-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#1e88e5" />
+                  <stop offset="46%" stop-color="#58b9ff" />
+                  <stop offset="100%" stop-color="#c9f0ff" />
+                </linearGradient>
+                <linearGradient id="home-hill-back" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#60b5e8" />
+                  <stop offset="100%" stop-color="#7ecbf2" />
+                </linearGradient>
+                <linearGradient id="home-meadow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#8be05c" />
+                  <stop offset="55%" stop-color="#5cc554" />
+                  <stop offset="100%" stop-color="#3da74a" />
+                </linearGradient>
+                <linearGradient id="home-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fde047" />
+                  <stop offset="50%" stop-color="#fb923c" />
+                  <stop offset="100%" stop-color="#f97316" />
+                </linearGradient>
+              </defs>
+
+              <!-- Sky -->
+              <rect width="1280" height="720" fill="url(#home-sky-grad)" />
+
+              <!-- Soft Cartoon Clouds -->
+              <g fill="rgba(255,255,255,0.68)">
+                <ellipse cx="290" cy="96" rx="76" ry="22" />
+                <circle cx="264" cy="86" r="24" />
+                <circle cx="308" cy="82" r="28" />
+                <ellipse cx="975" cy="106" rx="82" ry="23" />
+                <circle cx="944" cy="94" r="24" />
+                <circle cx="994" cy="90" r="28" />
+                <ellipse cx="420" cy="242" rx="68" ry="18" opacity="0.5" />
+                <ellipse cx="870" cy="252" rx="76" ry="20" opacity="0.48" />
+              </g>
+
+              <!-- Distant Mountains -->
+              <path d="M0 445 L110 315 L235 420 L360 355 L495 450 L0 460 Z" fill="url(#home-hill-back)" opacity="0.72" />
+              <path d="M845 450 L980 340 L1115 415 L1215 335 L1280 385 L1280 465 L845 465 Z" fill="url(#home-hill-back)" opacity="0.68" />
+
+              <!-- Rolling Green Meadow -->
+              <path d="M0 455 Q310 405 640 442 T1280 432 L1280 720 L0 720 Z" fill="#77d65b" opacity="0.92" />
+              <path d="M0 492 Q360 448 740 486 T1280 472 L1280 720 L0 720 Z" fill="url(#home-meadow-grad)" />
+
+              <!-- Decorative Left Trees -->
+              <g opacity="0.88">
+                <ellipse cx="52" cy="400" rx="40" ry="52" fill="#3ba55d" />
+                <ellipse cx="95" cy="422" rx="34" ry="42" fill="#4cc368" />
+                <ellipse cx="150" cy="442" rx="28" ry="30" fill="#63d16e" />
+              </g>
+
+              <!-- Flight Ring Arch (Right Meadow) -->
+              <g transform="translate(972, 345)">
+                <path d="M12 128 A54 68 0 0 1 120 128" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.92" />
+                <path d="M12 128 A54 68 0 0 1 120 128" fill="none" stroke="url(#home-ring-grad)" stroke-width="14" stroke-dasharray="22 14" stroke-linecap="round" />
+                <!-- 3 Golden Accent Stars Above Ring -->
+                <polygon points="36,22 39,29 47,30 41,35 43,43 36,39 29,43 31,35 25,30 33,29" fill="#fde047" stroke="#f59e0b" stroke-width="1.4" />
+                <polygon points="66,8 70,17 80,18 72,24 75,34 66,29 57,34 60,24 52,18 62,17" fill="#fde047" stroke="#f59e0b" stroke-width="1.5" />
+                <polygon points="96,22 99,29 107,30 101,35 103,43 96,39 89,43 91,35 85,30 93,29" fill="#fde047" stroke="#f59e0b" stroke-width="1.4" />
+              </g>
+
+              <!-- Wind Pennant Flags -->
+              <g>
+                <line x1="930" y1="418" x2="930" y2="478" stroke="#475569" stroke-width="3.5" stroke-linecap="round" />
+                <polygon points="932,420 960,429 932,438" fill="#ec4899" />
+                <line x1="1182" y1="398" x2="1182" y2="476" stroke="#475569" stroke-width="4" stroke-linecap="round" />
+                <polygon points="1184,400 1216,410 1184,420" fill="#f97316" />
+              </g>
+
+              <!-- Helipad H (Right Ground) -->
+              <g transform="translate(1082, 412)">
+                <ellipse cx="76" cy="28" rx="74" ry="23" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3" />
+                <ellipse cx="76" cy="25" rx="60" ry="18" fill="#4f6fb8" stroke="#ffffff" stroke-width="3" />
+                <text x="76" y="34" text-anchor="middle" fill="#ffffff" font-size="25" font-weight="900" font-family="sans-serif">H</text>
+              </g>
+            </svg>
           </div>
 
-          <div class="hero-visual" aria-hidden="true">
-            <div class="telemetry-grid">
-              <svg class="drone-svg" viewBox="0 0 260 190" role="img">
-                <!-- Target Reticle -->
-                <circle cx="195" cy="52" r="22" class="svg-target-ring" />
-                <circle cx="195" cy="52" r="4" class="svg-target-dot" />
-                <path d="M76 116 Q135 55 195 52" class="svg-flight-path" />
-                <!-- Drone Frame -->
-                <g class="drone-float">
-                  <!-- Left Rotor -->
-                  <ellipse cx="72" cy="84" rx="26" ry="5" class="svg-rotor" />
-                  <line x1="72" y1="84" x2="72" y2="98" class="svg-arm" />
-                  <!-- Right Rotor -->
-                  <ellipse cx="148" cy="84" rx="26" ry="5" class="svg-rotor" />
-                  <line x1="148" y1="84" x2="148" y2="98" class="svg-arm" />
-                  <!-- Thrust Plumes -->
-                  <polygon points="62,90 82,90 72,120" class="svg-thrust" />
-                  <polygon points="138,90 158,90 148,120" class="svg-thrust" />
-                  <!-- Main Body -->
-                  <line x1="68" y1="98" x2="152" y2="98" class="svg-chassis" />
-                  <rect x="92" y="92" width="36" height="16" rx="6" class="svg-hub" />
-                  <circle cx="110" cy="100" r="4" class="svg-sensor" />
-                  <!-- Landing Skids -->
-                  <path d="M92 108 L84 122 M128 108 L136 122 M78 122 L142 122" class="svg-skid" />
+          <!-- Top Utility Row -->
+          <header class="home-topbar">
+            <div class="home-topbar-spacer" aria-hidden="true"></div>
+            <div class="home-stem-pill">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <line x1="4" y1="12" x2="20" y2="12" stroke="#7dd3fc" stroke-width="2.4" stroke-linecap="round" />
+                <rect x="8.5" y="9" width="7" height="6" rx="2.5" fill="#ffffff" />
+                <ellipse cx="5.5" cy="8.5" rx="3.5" ry="1.4" fill="#38bdf8" />
+                <ellipse cx="18.5" cy="8.5" rx="3.5" ry="1.4" fill="#38bdf8" />
+              </svg>
+              <span>STEM Game</span>
+            </div>
+            <button id="btn-open-about" type="button" class="btn-about-pill" aria-haspopup="dialog" aria-controls="about-modal">
+              <span class="about-icon" aria-hidden="true">i</span>
+              <span>About</span>
+            </button>
+          </header>
+
+          <!-- Hero Centerpiece: Left PIP · Center Title + Start Game · Right Cartoon Drone -->
+          <div class="home-hero">
+            <!-- Left Character: Unified PIP Flight Coach -->
+            <div class="home-character home-character-pip">
+              <svg class="home-pip-svg" viewBox="0 0 210 230" role="img" aria-label="PIP Flight Coach smiling and waving">
+                <defs>
+                  <linearGradient id="pip-shell-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="100%" stop-color="#dbeafe" />
+                  </linearGradient>
+                  <linearGradient id="pip-visor-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0f172a" />
+                    <stop offset="100%" stop-color="#1e293b" />
+                  </linearGradient>
+                </defs>
+                <!-- Hover Shadow -->
+                <ellipse cx="105" cy="214" rx="44" ry="9" fill="rgba(14, 116, 144, 0.25)" />
+                <g class="pip-float">
+                  <!-- Sparkle Excitement Lines -->
+                  <line x1="166" y1="36" x2="177" y2="23" stroke="#fde047" stroke-width="5" stroke-linecap="round" />
+                  <line x1="176" y1="51" x2="191" y2="44" stroke="#fde047" stroke-width="5" stroke-linecap="round" />
+                  <line x1="178" y1="68" x2="193" y2="68" stroke="#fde047" stroke-width="4.5" stroke-linecap="round" />
+                  <!-- Antenna -->
+                  <line x1="102" y1="28" x2="94" y2="47" stroke="#0284c7" stroke-width="6" stroke-linecap="round" />
+                  <circle cx="91" cy="22" r="11" fill="#38bdf8" stroke="#ffffff" stroke-width="3" />
+                  <!-- Ears -->
+                  <rect x="27" y="79" width="16" height="34" rx="8" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5" />
+                  <rect x="163" y="79" width="16" height="34" rx="8" fill="#0284c7" stroke="#38bdf8" stroke-width="2.5" />
+                  <!-- Head -->
+                  <rect x="38" y="44" width="130" height="96" rx="34" fill="url(#pip-shell-grad)" stroke="#93c5fd" stroke-width="3" />
+                  <!-- Dark Visor -->
+                  <rect x="52" y="60" width="102" height="62" rx="22" fill="url(#pip-visor-grad)" stroke="#38bdf8" stroke-width="2.5" />
+                  <!-- Happy Glowing Eyes -->
+                  <path d="M72 91 Q84 74 96 91" fill="none" stroke="#38bdf8" stroke-width="7" stroke-linecap="round" />
+                  <path d="M112 91 Q124 74 136 91" fill="none" stroke="#38bdf8" stroke-width="7" stroke-linecap="round" />
+                  <path d="M95 104 Q104 111 113 104" fill="none" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round" />
+                  <!-- Torso -->
+                  <path d="M72 142 C72 138 134 138 134 142 L127 186 C125 196 81 196 79 186 Z" fill="url(#pip-shell-grad)" stroke="#93c5fd" stroke-width="2.5" />
+                  <rect x="81" y="150" width="44" height="24" rx="10" fill="#1d4ed8" />
+                  <text x="103" y="167" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="900" font-family="sans-serif">PIP</text>
+                  <!-- Left Arm -->
+                  <path d="M70 152 Q48 164 52 181" fill="none" stroke="#1e293b" stroke-width="11" stroke-linecap="round" />
+                  <circle cx="52" cy="183" r="10" fill="#ffffff" stroke="#93c5fd" stroke-width="2.5" />
+                  <!-- Right Waving / Thumbs-Up Arm -->
+                  <g class="pip-wave-arm" style="transform-origin: 136px 152px;">
+                    <path d="M136 152 Q160 144 166 122" fill="none" stroke="#1e293b" stroke-width="11" stroke-linecap="round" />
+                    <circle cx="169" cy="116" r="12" fill="#ffffff" stroke="#93c5fd" stroke-width="2.5" />
+                  </g>
+                  <!-- Thruster Glow -->
+                  <ellipse cx="103" cy="197" rx="22" ry="6" fill="#38bdf8" opacity="0.78" />
                 </g>
               </svg>
-              <div class="mini-readout">
-                <div><span>Kp</span><strong>Proportional</strong></div>
-                <div><span>Ki</span><strong>Integral</strong></div>
-                <div><span>Kd</span><strong>Derivative</strong></div>
+            </div>
+
+            <!-- Center Title, Subtitle & Primary Start Game CTA -->
+            <div class="home-hero-center">
+              <div class="home-title-lockup">
+                <span class="title-wings title-wings-left" aria-hidden="true"></span>
+                <h1 id="game-title" class="home-title">Drone Lab</h1>
+                <span class="title-wings title-wings-right" aria-hidden="true"></span>
+              </div>
+              <p class="home-title-banner">PID Flight Challenge</p>
+              <p class="home-subtitle">
+                <span aria-hidden="true">★</span>
+                Tune PID · Fly with WASD · Earn Stars
+                <span aria-hidden="true">★</span>
+              </p>
+
+              <div class="home-cta-wrap">
+                <button id="btn-start-game" type="button" class="btn-start-hero">
+                  <span class="start-play-icon" aria-hidden="true">▶</span>
+                  <span>Start Game</span>
+                </button>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- STEM Topic & STEM Activity -->
-        <div class="cards-grid two-col">
-          <article class="info-card">
-            <span class="card-eyebrow">STEM Topic</span>
-            <h2>PID Control in Drone Flight</h2>
-            <p>
-              Discover how a closed-loop PID controller translates position error into thrust and
-              tilt commands so a drone can achieve stable takeoff, hover, movement, and precise positioning.
-            </p>
-          </article>
+            <!-- Right Visual: Cartoon Quadrotor Drone -->
+            <div class="home-character home-character-drone">
+              <svg class="home-drone-svg" viewBox="0 0 240 190" role="img" aria-label="Cartoon quadrotor drone hovering in flight">
+                <defs>
+                  <linearGradient id="home-drone-body" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="100%" stop-color="#dbeafe" />
+                  </linearGradient>
+                  <linearGradient id="home-rotor-glow" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
+                    <stop offset="50%" stop-color="#7dd3fc" stop-opacity="0.95" />
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.25" />
+                  </linearGradient>
+                </defs>
+                <!-- Motion Streaks -->
+                <line x1="176" y1="118" x2="226" y2="112" stroke="rgba(255,255,255,0.75)" stroke-width="3.5" stroke-linecap="round" />
+                <line x1="184" y1="130" x2="220" y2="126" stroke="rgba(255,255,255,0.55)" stroke-width="2.5" stroke-linecap="round" />
 
-          <article class="info-card">
-            <span class="card-eyebrow">STEM Activity</span>
-            <h2>Tune the PID Controller and Fly Your Drone</h2>
-            <p>
-              Adjust three controller gains and pilot manually with <strong>WASD</strong> to observe
-              real flight dynamics:
-            </p>
-            <ul class="gain-list">
-              <li><strong>Kp</strong> — Proportional Gain</li>
-              <li><strong>Ki</strong> — Integral Gain</li>
-              <li><strong>Kd</strong> — Derivative Gain</li>
-            </ul>
-            <div class="tag-cloud" aria-label="Key flight behaviors observed">
-              <span>Responsiveness</span>
-              <span>Overshoot</span>
-              <span>Oscillation</span>
-              <span>Steady-State Error</span>
-              <span>Stability</span>
-              <span>Settling Time</span>
+                <g class="drone-float">
+                  <!-- Rear Arms -->
+                  <line x1="56" y1="74" x2="108" y2="92" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
+                  <line x1="182" y1="62" x2="132" y2="88" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
+                  <!-- Motor Pods -->
+                  <rect x="48" y="64" width="16" height="18" rx="5" fill="#1e293b" />
+                  <rect x="174" y="52" width="16" height="18" rx="5" fill="#1e293b" />
+                  <!-- Glowing Rotor Rings -->
+                  <ellipse cx="56" cy="60" rx="44" ry="12" fill="url(#home-rotor-glow)" stroke="#e0f2fe" stroke-width="2.5" />
+                  <ellipse cx="182" cy="48" rx="46" ry="13" fill="url(#home-rotor-glow)" stroke="#e0f2fe" stroke-width="2.5" />
+                  <!-- Landing Skids -->
+                  <path d="M98 116 L90 144 M142 114 L152 140" stroke="#1e293b" stroke-width="6" stroke-linecap="round" />
+                  <line x1="82" y1="145" x2="112" y2="141" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+                  <line x1="134" y1="142" x2="162" y2="138" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+                  <!-- Main White Cartoon Chassis -->
+                  <path d="M78 88 Q120 68 162 84 L154 116 Q118 126 84 116 Z" fill="url(#home-drone-body)" stroke="#93c5fd" stroke-width="2.8" />
+                  <!-- Front Blue-Black Camera Visor -->
+                  <rect x="86" y="88" width="46" height="24" rx="10" fill="#0f172a" stroke="#38bdf8" stroke-width="2.5" />
+                  <circle cx="101" cy="100" r="6" fill="#38bdf8" />
+                  <circle cx="119" cy="100" r="5" fill="#7dd3fc" />
+                  <circle cx="99" cy="98" r="2" fill="#ffffff" />
+                  <!-- Accent Stripe -->
+                  <path d="M138 92 L152 89 L149 101 L136 104 Z" fill="#0284c7" />
+                </g>
+              </svg>
             </div>
-          </article>
-        </div>
+          </div>
 
-        <!-- Learning Objectives & How It Works -->
-        <div class="cards-grid two-col">
-          <article class="info-card">
-            <span class="card-eyebrow">Learning Objectives</span>
-            <h2>What You Will Master</h2>
-            <ol class="numbered-list">
-              <li>Explain the basic roles of P, I and D.</li>
-              <li>Observe how PID gains affect drone movement.</li>
-              <li>Identify overshoot, oscillation and slow response.</li>
-              <li>Improve stability through iterative tuning.</li>
-              <li>Apply feedback control to complete flight missions.</li>
-            </ol>
-          </article>
+          <!-- How to Play: 4 Icon Steps Connected by Arrows -->
+          <div class="home-steps-strip" aria-label="How to play in four steps">
+            <div class="home-step-card">
+              <div class="home-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 36" width="48" height="36">
+                  <line x1="6" y1="11" x2="42" y2="11" stroke="#0284c7" stroke-width="4" stroke-linecap="round" />
+                  <circle cx="30" cy="11" r="6" fill="#38bdf8" stroke="#ffffff" stroke-width="2" />
+                  <line x1="6" y1="25" x2="42" y2="25" stroke="#0284c7" stroke-width="4" stroke-linecap="round" />
+                  <circle cx="18" cy="25" r="6" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+                </svg>
+              </div>
+              <strong>Tune PID</strong>
+              <span>Kp · Ki · Kd</span>
+            </div>
 
-          <article class="info-card">
-            <span class="card-eyebrow">How It Works</span>
-            <h2>Three Steps to Flight Mastery</h2>
-            <ol class="steps-list">
-              <li>
-                <span class="step-num">1</span>
-                <div>
-                  <strong>Learn the basics of PID control.</strong>
-                  <span>Explore gravity, thrust, and each PID term in Tutorial Village.</span>
+            <span class="home-step-arrow" aria-hidden="true">&rarr;</span>
+
+            <div class="home-step-card">
+              <div class="home-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 42" width="60" height="38">
+                  <rect x="23" y="2" width="18" height="17" rx="4" fill="#1d4ed8" />
+                  <text x="32" y="14" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800" font-family="sans-serif">W</text>
+                  <rect x="3" y="22" width="18" height="17" rx="4" fill="#2563eb" />
+                  <text x="12" y="34" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800" font-family="sans-serif">A</text>
+                  <rect x="23" y="22" width="18" height="17" rx="4" fill="#2563eb" />
+                  <text x="32" y="34" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800" font-family="sans-serif">S</text>
+                  <rect x="43" y="22" width="18" height="17" rx="4" fill="#2563eb" />
+                  <text x="52" y="34" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800" font-family="sans-serif">D</text>
+                </svg>
+              </div>
+              <strong>Fly</strong>
+              <span>WASD Controls</span>
+            </div>
+
+            <span class="home-step-arrow" aria-hidden="true">&rarr;</span>
+
+            <div class="home-step-card">
+              <div class="home-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 42 42" width="40" height="40">
+                  <circle cx="21" cy="21" r="14" fill="rgba(56,189,248,0.16)" stroke="#0284c7" stroke-width="3.5" />
+                  <circle cx="21" cy="21" r="6" fill="#38bdf8" />
+                  <line x1="21" y1="3" x2="21" y2="10" stroke="#0284c7" stroke-width="3" stroke-linecap="round" />
+                  <line x1="21" y1="32" x2="21" y2="39" stroke="#0284c7" stroke-width="3" stroke-linecap="round" />
+                  <line x1="3" y1="21" x2="10" y2="21" stroke="#0284c7" stroke-width="3" stroke-linecap="round" />
+                  <line x1="32" y1="21" x2="39" y2="21" stroke="#0284c7" stroke-width="3" stroke-linecap="round" />
+                </svg>
+              </div>
+              <strong>Complete</strong>
+              <span>Flight Challenges</span>
+            </div>
+
+            <span class="home-step-arrow" aria-hidden="true">&rarr;</span>
+
+            <div class="home-step-card">
+              <div class="home-step-icon" aria-hidden="true">
+                <svg viewBox="0 0 88 36" width="82" height="36">
+                  <polygon points="18,6 21.5,14 30,15 23.5,21 25.5,29 18,24.8 10.5,29 12.5,21 6,15 14.5,14" fill="#facc15" stroke="#d97706" stroke-width="1.8" stroke-linejoin="round" />
+                  <polygon points="44,3 48,12 58,13 50.5,19.8 52.8,29.5 44,24.5 35.2,29.5 37.5,19.8 30,13 40,12" fill="#fde047" stroke="#d97706" stroke-width="2" stroke-linejoin="round" />
+                  <polygon points="70,6 73.5,14 82,15 75.5,21 77.5,29 70,24.8 62.5,29 64.5,21 58,15 66.5,14" fill="#facc15" stroke="#d97706" stroke-width="1.8" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <strong>Earn</strong>
+              <span>Up to 3 Stars</span>
+            </div>
+          </div>
+
+          <!-- About the Course: 4 Visual Info Cards -->
+          <div class="home-course-grid" aria-label="About the STEM Course">
+            <!-- Card 1: STEM Topic -->
+            <article class="course-card course-card-topic">
+              <div class="course-card-head">
+                <svg class="course-head-icon" viewBox="0 0 28 28" aria-hidden="true">
+                  <polygon points="14,4 26,10 14,16 2,10" fill="#4f46e5" />
+                  <path d="M6 13 V19 C6 21 10 23 14 23 C18 23 22 21 22 19 V13" fill="none" stroke="#6366f1" stroke-width="2.4" />
+                </svg>
+                <h2>STEM Topic</h2>
+              </div>
+              <div class="course-card-body">
+                <strong class="course-topic-main">PID Control</strong>
+                <p class="course-topic-sub">Proportional · Integral · Derivative</p>
+                <div class="course-activity-box">
+                  <svg class="mini-drone-badge-svg" viewBox="0 0 46 30" aria-hidden="true">
+                    <ellipse cx="10" cy="8" rx="8" ry="2.6" fill="#38bdf8" />
+                    <ellipse cx="36" cy="8" rx="8" ry="2.6" fill="#38bdf8" />
+                    <line x1="10" y1="13" x2="36" y2="13" stroke="#1e293b" stroke-width="3" stroke-linecap="round" />
+                    <rect x="17" y="10" width="12" height="9" rx="3.5" fill="#0284c7" />
+                    <path d="M18 19 L15 26 M28 19 L31 26" stroke="#475569" stroke-width="2.2" stroke-linecap="round" />
+                  </svg>
+                  <div>
+                    <span class="activity-pill">STEM Activity</span>
+                    <p>Tune PID to control a drone.</p>
+                  </div>
                 </div>
-              </li>
-              <li>
-                <span class="step-num">2</span>
-                <div>
-                  <strong>Tune Kp, Ki and Kd.</strong>
-                  <span>Experiment with gain sliders and watch real physical responses.</span>
+              </div>
+            </article>
+
+            <!-- Card 2: Branches of STEM -->
+            <article class="course-card course-card-branches">
+              <div class="course-card-head">
+                <svg class="course-head-icon" viewBox="0 0 28 28" aria-hidden="true">
+                  <polygon points="14,3 25,9 14,15 3,9" fill="#0284c7" />
+                  <path d="M3 15 L14 21 L25 15" fill="none" stroke="#0ea5e9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M3 20 L14 26 L25 20" fill="none" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <h2>Branches of STEM</h2>
+              </div>
+              <div class="course-card-body course-branch-list">
+                <div class="branch-item">
+                  <div class="branch-icon-box" aria-hidden="true">
+                    <svg viewBox="0 0 28 28" width="24" height="24">
+                      <circle cx="14" cy="14" r="5" fill="none" stroke="#0284c7" stroke-width="3" />
+                      <path d="M14 3 V7 M14 21 V25 M3 14 H7 M21 14 H25 M6.2 6.2 L9 9 M19 19 L21.8 21.8 M21.8 6.2 L19 9 M9 19 L6.2 21.8" stroke="#0284c7" stroke-width="2.8" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <strong>Engineering (Primary)</strong>
+                    <p>PID controller design, tuning and optimisation.</p>
+                  </div>
                 </div>
-              </li>
-              <li>
-                <span class="step-num">3</span>
-                <div>
-                  <strong>Fly with WASD and complete missions.</strong>
-                  <span>Guide your drone through hover, wind, rings, and precision landings.</span>
+                <div class="branch-item">
+                  <div class="branch-icon-box" aria-hidden="true">
+                    <svg viewBox="0 0 28 28" width="24" height="24">
+                      <rect x="7" y="7" width="14" height="14" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.4" />
+                      <rect x="11" y="11" width="6" height="6" rx="1" fill="#0284c7" />
+                      <path d="M10 3 V7 M14 3 V7 M18 3 V7 M10 21 V25 M14 21 V25 M18 21 V25 M3 10 H7 M3 14 H7 M3 18 H7 M21 10 H25 M21 14 H25 M21 18 H25" stroke="#0284c7" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <strong>Technology</strong>
+                    <p>Drone flight control systems.</p>
+                  </div>
                 </div>
-              </li>
-            </ol>
-          </article>
+              </div>
+            </article>
+
+            <!-- Card 3: Game Overview -->
+            <article class="course-card course-card-overview">
+              <div class="course-card-head">
+                <svg class="course-head-icon" viewBox="0 0 28 28" aria-hidden="true">
+                  <rect x="3" y="8" width="22" height="13" rx="6" fill="#16a34a" />
+                  <path d="M9 12 V17 M6.5 14.5 H11.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" />
+                  <circle cx="18.5" cy="13" r="1.4" fill="#ffffff" />
+                  <circle cx="21" cy="15.5" r="1.4" fill="#ffffff" />
+                </svg>
+                <h2>Game Overview</h2>
+              </div>
+              <div class="course-card-body course-overview-layout">
+                <div class="overview-thumb" aria-hidden="true">
+                  <svg viewBox="0 0 240 88" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mini preview of drone flying through ring">
+                    <defs>
+                      <linearGradient id="thumb-sky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#2563eb" />
+                        <stop offset="55%" stop-color="#38bdf8" />
+                        <stop offset="100%" stop-color="#bae6fd" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="240" height="88" fill="url(#thumb-sky)" />
+                    <ellipse cx="44" cy="22" rx="22" ry="7" fill="rgba(255,255,255,0.7)" />
+                    <ellipse cx="192" cy="18" rx="26" ry="8" fill="rgba(255,255,255,0.65)" />
+                    <path d="M0 62 Q120 50 240 62 L240 88 L0 88 Z" fill="#4ade80" />
+                    <path d="M168 68 A24 32 0 0 1 212 68" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+                    <path d="M168 68 A24 32 0 0 1 212 68" fill="none" stroke="#f97316" stroke-width="6" stroke-dasharray="8 5" stroke-linecap="round" />
+                    <ellipse cx="218" cy="76" rx="18" ry="6" fill="#4f6fb8" stroke="#ffffff" stroke-width="1.4" />
+                    <path d="M36 48 Q112 20 190 44" fill="none" stroke="#fde047" stroke-width="2.4" stroke-dasharray="5 4" />
+                    <ellipse cx="94" cy="40" rx="16" ry="3.6" fill="#e0f2fe" />
+                    <ellipse cx="136" cy="40" rx="16" ry="3.6" fill="#e0f2fe" />
+                    <line x1="94" y1="47" x2="136" y2="47" stroke="#0f172a" stroke-width="4" stroke-linecap="round" />
+                    <rect x="103" y="42" width="24" height="14" rx="5" fill="#ffffff" stroke="#0284c7" stroke-width="1.8" />
+                    <rect x="108" y="45" width="14" height="8" rx="3" fill="#0f172a" />
+                    <circle cx="112" cy="49" r="2" fill="#38bdf8" />
+                    <circle cx="118" cy="49" r="2" fill="#7dd3fc" />
+                  </svg>
+                </div>
+                <ul class="overview-bullets">
+                  <li>Adjust Kp, Ki and Kd.</li>
+                  <li>Fly with WASD.</li>
+                  <li>Handle overshoot and oscillation.</li>
+                  <li>Complete missions and earn stars.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- Card 4: Learning Objectives -->
+            <article class="course-card course-card-objectives">
+              <div class="course-card-head">
+                <svg class="course-head-icon" viewBox="0 0 28 28" aria-hidden="true">
+                  <circle cx="14" cy="14" r="10" fill="none" stroke="#ea580c" stroke-width="2.6" />
+                  <circle cx="14" cy="14" r="5.5" fill="none" stroke="#f59e0b" stroke-width="2.4" />
+                  <circle cx="14" cy="14" r="2.2" fill="#ea580c" />
+                </svg>
+                <h2>Learning Objectives</h2>
+              </div>
+              <div class="course-card-body">
+                <ol class="objectives-check-list">
+                  <li>Understand PID control.</li>
+                  <li>Apply PID tuning.</li>
+                  <li>Analyse flight behaviour.</li>
+                  <li>Develop problem-solving skills.</li>
+                </ol>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -948,6 +1238,64 @@
           <button id="btn-tut-next" type="button" class="btn btn-primary btn-sm">Next Step &rarr;</button>
         </div>
       </aside>
+    </div>
+
+    <!-- Detailed About Course Modal -->
+    <div id="about-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+      <div class="modal-card about-modal-card">
+        <div class="about-modal-header">
+          <div>
+            <span class="card-eyebrow">About the Course</span>
+            <h2 id="about-modal-title">Drone Lab — PID Flight Challenge</h2>
+          </div>
+          <button id="btn-close-about-x" type="button" class="btn btn-ghost btn-sm" aria-label="Close About dialog">&times;</button>
+        </div>
+
+        <div class="about-modal-sections">
+          <div class="about-grid-two">
+            <div class="about-box">
+              <h3>STEM Topic</h3>
+              <p>Proportional–Integral–Derivative (PID) Control</p>
+            </div>
+            <div class="about-box">
+              <h3>STEM Activity</h3>
+              <p>Tuning a PID controller to control a drone.</p>
+            </div>
+          </div>
+
+          <div class="about-box">
+            <h3>Branches of STEM</h3>
+            <ul>
+              <li><strong>Technology:</strong> Drone flight control systems.</li>
+              <li><strong>Engineering (Primary Focus):</strong> PID controller design, tuning and optimisation.</li>
+            </ul>
+          </div>
+
+          <div class="about-box">
+            <h3>Game Description</h3>
+            <p>
+              Drone Lab — PID Flight Challenge is an interactive STEM game where players tune Kp, Ki and Kd,
+              then use WASD to fly a simulated drone through different challenges. Poor tuning can cause
+              overshoot, oscillation or slow responses. Players improve their settings through experimentation
+              and earn up to three stars.
+            </p>
+          </div>
+
+          <div class="about-box">
+            <h3>Learning Objectives</h3>
+            <ol>
+              <li>Explain how Kp, Ki and Kd affect drone stability and responsiveness.</li>
+              <li>Adjust PID parameters to improve flight control.</li>
+              <li>Identify overshoot, oscillation and slow response.</li>
+              <li>Apply experimentation and feedback to solve flight-control problems.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-close-about" type="button" class="btn btn-primary">Back to Home</button>
+        </div>
+      </div>
     </div>
 
     <!-- Status / Milestone Preview Modal -->

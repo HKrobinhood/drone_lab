@@ -39,6 +39,7 @@
 | **M5.2** | Homepage UI Redesign | 明亮卡通科技风游戏首页重设计：蓝天草地场景、左侧 PIP + 中央超大 `Start Game` + 右侧无人机、4 步图标玩法流程、4 张简洁课程信息卡与完整 `About` 课程弹窗 | **已完成** |
 | **M5.3** | Strategic Control Trade-offs & Energy Model | 真实非线性旋翼功耗与电池耗尽失败模型、L1–L6 差异化策略格局（极速/精密/重载节能/狭缝权衡/强风抗扰/四维终考）、L3–L6 淡出绿区改用实时四维权衡预测器与结算四维策略雷达对比 | **已完成** |
 | **M5.4** | Beginner-Friendly PID Tuning Redesign | 降噪三区布局（Mission Playground 场景预览 + PID Tuning Garage 圆形旋钮 + 紧凑 PIP 气泡）、可展开 Kp/Ki/Kd 图解卡、基于真实 120 Hz 仿真的 PID Test Bench（Step/Wind 实验、Tuning Challenge、Before/After 曲线与指标对比）及新手实验引导升级 | **已完成** |
+| **M5.5** | Minimal Results Screen Redesign | 统一精简全部结算页（新手村与挑战关、成功与失败、1–3 星）：保留原三星造型与动画、主操作按钮紧贴星星下方、PIP 精简为头像 + 单句真实诊断反馈（<=20 词）、完整评分/指标/图表/深度分析收纳至默认折叠的 `Detailed Flight Report` | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -217,6 +218,28 @@
   - Headless Chrome 实机交互与视觉截图验证（桌面 1440×900 与手机 390×844）：旋钮多方式同步、参数图解展开、Tutorial 4 真实物理 Before (`Kd=0.4`, Overshoot 86% / Not Settled) → After (`Kd=4.6`, Overshoot 3% / 1.8 s / `✓ Goal Met!`)、L3 去脚手架与跳过 Test PID 直接起飞全部通过，零控制台/运行报错、零横向溢出。
   - 已知问题：暂无阻塞缺陷。
 
+### M5.5 — Minimal Results Screen Redesign
+- **原结算页面存在的问题**：
+  - 结算首屏同时展开居中三星卡片、大段 PIP Telemetry Analysis、2★/3★ 评级依据、三张 Canvas 分析图表与 9 项性能指标卡片，信息密度过高，主操作按钮被挤到中下部。
+  - `Mission Complete`、任务名称、完成时间及相似诊断结论在头部、PIP 气泡与指标区多次重复展示。
+- **新版统一 UI 信息层级（覆盖 Tutorial / Challenge 的成功、失败与 1★ / 2★ / 3★ 全部场景）**：
+  1. **Mission Result**：仅展示标题（`Mission Complete!` 或 `Mission Failed`）+ 单行关卡名称（如 `Tutorial 2 — Proportional Control`），去除重复徽章与冗余文案。
+  2. **Star Animation**：100% 保留原有矢量金星设计、逐颗弹跳揭晓动画（`0.3s → 0.7s → 1.1s`）、三星庆祝光效与粒子、`Skip Animation` 及 `prefers-reduced-motion` 支持；失败页展示 0/3 暗灰星且不播放庆祝动画。
+  3. **Action Buttons（紧贴星星正下方）**：
+     - 成功且有下一关：主按钮 `Next Level →`，次按钮 `Retry`，辅助操作 `Pre-flight Tuning` / `Back to Levels`。
+     - 新手村最后一关（Tutorial 4）：主按钮 `Enter Challenge Levels →`，次按钮 `Retry`，辅助 `Pre-flight Tuning` / `Back to Levels`。
+     - 挑战最后一关（Level 6 无下一关）：主按钮 `Back to Levels`，次按钮 `Retry`，辅助 `Pre-flight Tuning`。
+     - 失败场景：主按钮 `Retry`，次按钮 `Pre-flight Tuning`，辅助 `Back to Levels`。
+     - 常见桌面视口首屏无需滚动即可看到完整按钮，移动端纵向全宽排布。
+  4. **PIP Short Feedback（`buildConcisePipResultFeedback`）**：精简为 1 个 PIP 头像 + 1 句 <= 20 词英文短评，严格基于 M5 真实遥测诊断与 M4 评分结果挑出最重要的一条建议（如过冲、振荡、滞后、稳态漂移、碰撞、硬着陆、电量耗尽或三星祝贺），无充分依据时使用中性鼓励语句。
+  5. **Detailed Flight Report（默认折叠手风琴）**：
+     - 整行可点击标题栏 + 右侧动态旋转 Chevron 箭头，具备 `aria-expanded` / `aria-controls` / `role="region"` 键盘与无障碍支持及 `prefers-reduced-motion` 兼容；每次进入新结算页自动重置为折叠状态。
+     - 展开后完整保留：Star Rating Breakdown（含下一星建议与 2★/3★ 细项）、Flight Performance Metrics（9 项真实指标，缺失项显示 `N/A`）、Strategy Trade-off Profile 雷达图、Route Fit Comparison 轨迹图、Telemetry Time-Series 时序图与完整 PIP Detailed Analysis。
+     - 仅在展开后（及窗口尺寸变化时）触发 Canvas 渲染并测量真实可见容器宽高，杜绝隐藏容器 `0×0` 绘图失真。
+- **测试结果**：
+  - 全量语法检查与自动化测试 `node --check src/*.js && node --test tests/*.test.mjs`：**37 套件、93 项测试全部通过（0 失败）**，包含新增 `tests/m5_5.test.mjs`。
+  - Headless Chrome 实机端到端与多端截图验收（桌面 `1280×820` 与手机 `390×844`）：验证 Tutorial 成功（3★）、展开 Detailed Flight Report（3 张 Canvas 全部真实绘制且无裁切）、点击 `Next Level →` 跳转、硬着陆失败页（自动重置折叠、`Retry` 为主按钮）、按钮导航与零控制台报错、零横向溢出。
+
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
 - [ ] 校准各关卡难度与评分阈值
@@ -227,8 +250,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.4 — Beginner-Friendly PID Tuning Redesign`（已完成，待人工验收后进入 M6）
-- **已完成**：三区视觉优先赛前界面（Mission Playground 场景预览 + PID Tuning Garage 游戏化圆形旋钮 + 紧凑 PIP 气泡）、Kp/Ki/Kd 可展开交互图解、真实 120 Hz PID Test Bench（Before/After 曲线与指标对比 + 实验式 Tuning Challenge）及新手村实验引导升级。
+- **当前里程碑**：`M5.5 — Minimal Results Screen Redesign`（已完成，待人工验收后进入 M6）
+- **已完成**：统一精简全部结算页（保留原三星动画与造型、操作按钮紧贴星星正下方、PIP 精简为单句真实诊断短评、完整评分/指标/图表/PIP 深度分析收纳至默认折叠的 `Detailed Flight Report`）。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -284,6 +307,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(ui): redesign STEM game homepage` — 完成 M5.2 明亮卡通科技风 STEM 首页重设计、4 步图标玩法、4 张课程信息卡与完整 `About` 课程弹窗。
 - `feat(m5.3): add strategic PID trade-offs, rotor energy model, and 4-axis radar` — 完成 M5.3 非线性旋翼功耗与电池模型、L1–L6 差异化策略格局、L3–L6 绿区淡出、实时四维权衡预测与结算策略雷达对比。
 - `feat(tuning): redesign beginner PID tuning experience` — 完成 M5.4 初学者友好型 PID 调参重设计（Mission Playground 实时预览、圆形旋钮、参数图解卡、真实仿真 PID Test Bench 与 Before/After 对比、新手实验引导）。
+- `feat(ui): simplify results screen and collapse flight reports` — 完成 M5.5 极简统一结算页重设计（保留三星动画、按钮紧贴星星下方、PIP 单句真实诊断反馈与默认折叠 `Detailed Flight Report`）。
 
 ---
 

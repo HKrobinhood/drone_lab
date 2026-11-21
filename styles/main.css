@@ -5473,3 +5473,330 @@ body {
     animation: none !important;
   }
 }
+
+/* ==================== M5.5 MINIMAL RESULTS SCREEN REDESIGN ==================== */
+.result-minimal-shell {
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.result-minimal-shell .result-hero-centered {
+  margin-bottom: 0;
+  padding: 26px 28px 24px;
+  gap: 14px;
+}
+
+.result-minimal-shell .result-hero-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+}
+
+.result-minimal-shell .result-hero-header .section-subtitle {
+  margin: 0;
+  font-size: 0.96rem;
+  color: #cbd5e1;
+}
+
+.result-minimal-shell .result-stars-showcase {
+  padding: 6px 12px 2px;
+  gap: 6px;
+}
+
+.result-minimal-shell .result-star-label {
+  font-size: 0.96rem;
+  letter-spacing: 0.02em;
+}
+
+.result-hero-centered.is-failed .result-star-label {
+  color: #fca5a5;
+}
+
+/* Prominent Action Buttons Directly Under Stars */
+.result-actions-hero {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.result-actions-primary-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.result-actions-primary-row .btn {
+  flex: 1 1 180px;
+  max-width: 240px;
+  padding: 12px 20px;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.btn-result-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border: 1.5px solid rgba(148, 163, 184, 0.45);
+}
+
+.btn-result-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: #cbd5e1;
+}
+
+.result-actions-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.result-actions-secondary-row .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.btn-result-subtle {
+  background: rgba(15, 23, 42, 0.42);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  padding: 7px 16px;
+  font-size: 0.84rem;
+}
+
+.btn-result-subtle:hover {
+  background: rgba(30, 41, 59, 0.85);
+  color: #ffffff;
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+/* Area 4: Compact PIP Quick Feedback Strip */
+.result-pip-short-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-surface);
+  border: 1.5px solid #bae6fd;
+  border-radius: 16px;
+  padding: 12px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.result-pip-short-card.is-three-star {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 70%);
+}
+
+.result-pip-short-card.is-failed {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 70%);
+}
+
+.result-pip-short-avatar {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-pip-short-avatar .pip-robot-svg {
+  width: 48px;
+  height: 46px;
+}
+
+.result-pip-short-copy {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.result-pip-short-text {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* Area 5: Collapsible Detailed Flight Report Accordion */
+.result-report-accordion {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.result-report-toggle {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.96rem;
+  font-weight: 700;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+
+.result-report-toggle:hover {
+  background: #f8fafc;
+}
+
+.result-report-toggle:focus-visible {
+  outline: 3px solid rgba(2, 132, 199, 0.35);
+  outline-offset: -3px;
+}
+
+.result-report-chevron {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.result-report-accordion.is-expanded .result-report-chevron {
+  transform: rotate(180deg);
+}
+
+.result-report-accordion.is-expanded .result-report-toggle {
+  border-bottom: 1px solid var(--border-color);
+  background: #f8fafc;
+}
+
+.result-report-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows 240ms ease, opacity 200ms ease, visibility 0s linear 240ms;
+}
+
+.result-report-accordion.is-expanded .result-report-body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition: grid-template-rows 240ms ease, opacity 220ms ease, visibility 0s linear 0s;
+}
+
+.result-report-body-inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 18px;
+  transition: padding 220ms ease;
+}
+
+.result-report-accordion.is-expanded .result-report-body-inner {
+  padding: 18px;
+}
+
+.result-next-star-inline {
+  margin: 0 0 12px;
+  display: inline-block;
+  color: #075985;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+  font-size: 0.85rem;
+}
+
+.result-failed-in-report {
+  max-width: none;
+  background: #1e293b;
+}
+
+.result-report-body-inner .result-telemetry-row-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.result-report-body-inner .result-telemetry-row-3 > article:last-child {
+  grid-column: 1 / -1;
+}
+
+.result-report-body-inner .result-metrics-grid-4 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .result-report-body-inner .result-telemetry-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .result-report-body-inner .result-telemetry-row-3 > article:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .result-minimal-shell .result-hero-centered {
+    padding: 20px 16px 18px;
+  }
+
+  .result-minimal-shell .result-hero-header h1 {
+    font-size: 1.55rem;
+  }
+
+  .result-actions-primary-row {
+    flex-direction: column;
+  }
+
+  .result-actions-primary-row .btn {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 100%;
+  }
+
+  .result-actions-secondary-row {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .result-actions-secondary-row .btn {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .result-pip-short-card {
+    padding: 11px 14px;
+    gap: 10px;
+  }
+
+  .result-pip-short-text {
+    font-size: 0.9rem;
+  }
+
+  .result-report-body-inner .result-metrics-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-report-chevron,
+  .result-report-body,
+  .result-report-body-inner {
+    transition: none !important;
+  }
+}

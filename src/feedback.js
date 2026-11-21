@@ -353,6 +353,153 @@ export function generatePipDiagnosticReport(
 }
 
 /**
+ * Build a concise, single-sentence PIP coaching line (<= 20 English words)
+ * strictly grounded in real M5 telemetry diagnostics, M4 star results, and outcome.
+ */
+export function buildConcisePipResultFeedback(report, scoreResult = null, outcome = { status: 'completed' }, scene = null) {
+  const isSuccess = outcome?.status === 'completed';
+  const diag = report?.diagnostics || {};
+  const stars = Number(scoreResult?.stars ?? 0);
+
+  if (!isSuccess) {
+    const reason = outcome?.reason || 'failed';
+    if (reason === 'collision') {
+      return {
+        mood: 'warning',
+        text: 'Your drone hit an obstacle. Try increasing Kd for tighter braking.'
+      };
+    }
+    if (reason === 'out_of_bounds') {
+      return {
+        mood: 'warning',
+        text: 'Your drone crossed the boundary. Lower Kp or add Kd damping.'
+      };
+    }
+    if (reason === 'off_pad') {
+      return {
+        mood: 'warning',
+        text: 'Missed the helipad. Center REF above the pad before descending.'
+      };
+    }
+    if (reason === 'hard_landing') {
+      return {
+        mood: 'warning',
+        text: 'Touchdown was too hard. Descend gently or raise Kd damping.'
+      };
+    }
+    if (reason === 'battery_depleted') {
+      return {
+        mood: 'warning',
+        text: 'Battery ran out. Smooth thrust spikes with balanced Kp and Kd.'
+      };
+    }
+    if (diag.oscillationDetected) {
+      return {
+        mood: 'warning',
+        text: 'Your drone oscillated around REF. Try balancing Kp and Kd.'
+      };
+    }
+    if (diag.steadyStateDetected) {
+      return {
+        mood: 'warning',
+        text: 'Steady drift held you back. Try raising Ki slightly.'
+      };
+    }
+    if (diag.lagDetected) {
+      return {
+        mood: 'warning',
+        text: 'Your drone responded slowly. Explore a higher Kp and retry.'
+      };
+    }
+    return {
+      mood: 'warning',
+      text: 'Your drone missed the target. Adjust PID and try again.'
+    };
+  }
+
+  // Success — 3 Stars
+  if (stars >= 3) {
+    if (diag.oscillationDetected) {
+      return {
+        mood: 'celebrating',
+        text: 'Three stars! Slightly higher Kd could make braking even calmer.'
+      };
+    }
+    if (diag.overshootSeverity === 'high') {
+      return {
+        mood: 'celebrating',
+        text: 'Three stars! A touch more Kd will trim that overshoot.'
+      };
+    }
+    return {
+      mood: 'celebrating',
+      text: 'Excellent flight! Your drone was fast, accurate, and stable.'
+    };
+  }
+
+  // Success — 1 or 2 Stars: pick the single most impactful real diagnostic issue
+  const nextChecks = stars >= 2 ? scoreResult?.checks3Star || [] : scoreResult?.checks2Star || [];
+  const failedKeys = new Set(nextChecks.filter((c) => !c.passed).map((c) => c.criterionKey));
+
+  if (diag.oscillationDetected) {
+    return {
+      mood: 'thinking',
+      text: 'Your drone oscillates. Try balancing Kp and Kd for calmer control.'
+    };
+  }
+  if (diag.steadyStateDetected) {
+    return {
+      mood: 'thinking',
+      text: 'Steady drift stayed near the target. Try raising Ki slightly.'
+    };
+  }
+  if (diag.windupRisk) {
+    return {
+      mood: 'thinking',
+      text: 'Motors hit max thrust often. Try smoother moves or lower Ki.'
+    };
+  }
+  if (diag.overshootSeverity === 'high' || (diag.overshootSeverity === 'mild' && failedKeys.has('overshoot'))) {
+    return {
+      mood: 'thinking',
+      text: 'Too much overshoot near the target. Try increasing Kd damping.'
+    };
+  }
+  if (diag.lagDetected) {
+    return {
+      mood: 'thinking',
+      text: 'Your drone responds slowly. Explore a higher Kp for faster tracking.'
+    };
+  }
+  if (failedKeys.has('energy')) {
+    return {
+      mood: 'explaining',
+      text: 'Battery drain was high. Smoother thrust saves power for the next star.'
+    };
+  }
+  if (failedKeys.has('time')) {
+    return {
+      mood: 'explaining',
+      text: 'Nice control! Fly a bit faster to earn the next star.'
+    };
+  }
+  if (failedKeys.has('settling') || failedKeys.has('smoothness') || failedKeys.has('pathFit')) {
+    return {
+      mood: 'explaining',
+      text: 'Nice work! Try smoother braking to earn the next star.'
+    };
+  }
+
+  return {
+    mood: stars >= 2 ? 'explaining' : 'thinking',
+    text:
+      stars >= 2
+        ? 'Nice work! Fine-tune your PID slightly to earn the final star.'
+        : 'Mission complete! Refine your PID for smoother, faster flight.'
+  };
+}
+
+/**
  * Evaluate live in-flight control status badges strictly from real simulation telemetry.
  * Avoids deterministic claims when insufficient telemetry samples exist.
  */

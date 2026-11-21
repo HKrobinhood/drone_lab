@@ -36,7 +36,7 @@ import {
   evaluateLiveFlightCoaching,
   predictStrategyTradeoffs
 } from './coach.js';
-import { generatePipDiagnosticReport, evaluateLiveControlStatus } from './feedback.js';
+import { generatePipDiagnosticReport, buildConcisePipResultFeedback, evaluateLiveControlStatus } from './feedback.js';
 import { scoreFlightRun, buildRatingBreakdown, buildNextStarAdvice, computeStrategyDimensions } from './scoring.js';
 import { TutorialGuideEngine, PIP_INTRO_SCRIPT } from './tutorial_guide.js';
 import { TutorialSpotlightOverlay } from './guide_overlay.js';
@@ -340,6 +340,13 @@ const els = {
   resultPipTip: document.getElementById('result-pip-tip'),
   resultPipAdviceList: document.getElementById('result-pip-advice-list'),
   resultBestRef: document.getElementById('result-best-ref'),
+  resultPipShortCard: document.getElementById('result-pip-short-card'),
+  resultPipShortAvatar: document.getElementById('result-pip-short-avatar'),
+  resultPipShortText: document.getElementById('result-pip-short-text'),
+  resultActionsBar: document.getElementById('result-actions-bar'),
+  resultReportAccordion: document.getElementById('result-report-accordion'),
+  btnResultReportToggle: document.getElementById('btn-result-report-toggle'),
+  resultReportBody: document.getElementById('result-report-body'),
   btnResultLevels: document.getElementById('btn-result-levels'),
   btnResultPreflight: document.getElementById('btn-result-preflight'),
   btnResultRetry: document.getElementById('btn-result-retry'),
@@ -376,6 +383,8 @@ let lastControlBadgeSig = '';
 let lastControlBadgeUpdateAt = 0;
 let starAnimTimers = [];
 let starAnimTargetCount = 0;
+let resultReportExpanded = false;
+let resultChartPayload = null;
 
 function isAnyModalOpen() {
   const noticeOpen = !els.modal.classList.contains('hidden');
@@ -1081,18 +1090,86 @@ function renderCriteriaList(ulEl, checks) {
   }
 }
 
+function renderResultReportCharts() {
+  if (!resultReportExpanded || !resultChartPayload || state.currentView !== 'result') return;
+  const { strategyProfile, prevStrat, priorities, prevTrail, telemetry, maxThrust } = resultChartPayload;
+  renderStrategyRadar(els.resultStrategyCanvas, strategyProfile, prevStrat, priorities);
+  renderRouteFitPreview(els.resultRouteCanvas, sim, prevTrail);
+  renderTelemetryTimeSeriesPlot(els.resultTelemetryCanvas, telemetry, maxThrust);
+}
+
+function setResultReportExpanded(expanded) {
+  resultReportExpanded = Boolean(expanded);
+  els.resultReportAccordion?.classList.toggle('is-expanded', resultReportExpanded);
+  els.btnResultReportToggle?.setAttribute('aria-expanded', String(resultReportExpanded));
+  els.resultReportBody?.setAttribute('aria-hidden', String(!resultReportExpanded));
+
+  if (resultReportExpanded) {
+    // Render charts once visible so Canvas measures real layout dimensions cleanly
+    window.requestAnimationFrame(() => {
+      renderResultReportCharts();
+      window.setTimeout(() => renderResultReportCharts(), 240);
+    });
+  }
+}
+
+function configureResultActions({ isSuccess, nextId, showChallengeShortcut }) {
+  const primaryRow = els.resultActionsBar?.querySelector('.result-actions-primary-row');
+  const secondaryRow = els.resultActionsBar?.querySelector('.result-actions-secondary-row');
+  if (!primaryRow || !secondaryRow) return;
+
+  const setBtn = (btn, row, className, visible) => {
+    if (!btn) return;
+    btn.className = className;
+    btn.classList.toggle('hidden', !visible);
+    if (visible && btn.parentElement !== row) {
+      row.appendChild(btn);
+    }
+  };
+
+  if (isSuccess) {
+    if (nextId) {
+      setBtn(els.btnResultNext, primaryRow, 'btn btn-primary btn-lg', true);
+      setBtn(els.btnResultChallenges, primaryRow, 'btn btn-challenge btn-lg', false);
+      setBtn(els.btnResultRetry, primaryRow, 'btn btn-result-secondary btn-lg', true);
+      setBtn(els.btnResultPreflight, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+      setBtn(els.btnResultLevels, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+    } else if (showChallengeShortcut) {
+      setBtn(els.btnResultNext, primaryRow, 'btn btn-primary btn-lg', false);
+      setBtn(els.btnResultChallenges, primaryRow, 'btn btn-challenge btn-lg', true);
+      setBtn(els.btnResultRetry, primaryRow, 'btn btn-result-secondary btn-lg', true);
+      setBtn(els.btnResultPreflight, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+      setBtn(els.btnResultLevels, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+    } else {
+      // Last challenge mission (no next level): Back to Levels becomes primary
+      setBtn(els.btnResultNext, primaryRow, 'btn btn-primary btn-lg', false);
+      setBtn(els.btnResultChallenges, primaryRow, 'btn btn-challenge btn-lg', false);
+      setBtn(els.btnResultLevels, primaryRow, 'btn btn-primary btn-lg', true);
+      setBtn(els.btnResultRetry, primaryRow, 'btn btn-result-secondary btn-lg', true);
+      setBtn(els.btnResultPreflight, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+    }
+  } else {
+    // Failure: Retry primary, Pre-flight Tuning secondary, Back to Levels subtle
+    setBtn(els.btnResultNext, primaryRow, 'btn btn-primary btn-lg', false);
+    setBtn(els.btnResultChallenges, primaryRow, 'btn btn-challenge btn-lg', false);
+    setBtn(els.btnResultRetry, primaryRow, 'btn btn-primary btn-lg', true);
+    setBtn(els.btnResultPreflight, primaryRow, 'btn btn-result-secondary btn-lg', true);
+    setBtn(els.btnResultLevels, secondaryRow, 'btn btn-result-subtle btn-sm', true);
+  }
+}
+
 function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null) {
   const isSuccess = outcome.status === 'completed';
-  const isChallenge = state.activeScene?.mode === 'challenge';
   const isTutorial = state.activeScene?.mode === 'tutorial';
 
   clearStarAnimationTimers();
+  setResultReportExpanded(false);
   els.resultHeroCard?.classList.toggle('is-failed', !isSuccess);
   els.resultHeroCard?.classList.remove('is-three-star-celebration');
 
   els.resultBadge.textContent = isSuccess ? 'Mission Complete' : 'Mission Failed';
   els.resultTitle.textContent = isSuccess ? 'Mission Complete!' : 'Mission Failed';
-  els.resultLevelSubtitle.textContent = `${state.activeScene.name} — ${outcome.message}`;
+  els.resultLevelSubtitle.textContent = state.activeScene?.name || '';
 
   // M5: Unified conversational PIP Flight Coach Telemetry Report (both Tutorial & Challenge)
   const telemetry = sim.getTelemetrySeries();
@@ -1104,8 +1181,8 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     previousAttempt
   );
 
-  // Unified Result Showcase & Star Rating Breakdown (Shared across Tutorial & Challenge)
-  els.resultStarsBox.classList.toggle('hidden', !isSuccess);
+  // Unified Minimal Showcase: Stars + Actions always centered; Failure details tucked into Detailed Report
+  els.resultStarsBox.classList.remove('hidden');
   els.resultTutorialOutcomeBox.classList.add('hidden');
   els.resultFailedHero.classList.toggle('hidden', isSuccess);
   els.resultRatingCard.classList.remove('hidden');
@@ -1120,8 +1197,9 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     els.resultStarsDisplay.textContent = renderStarsText(0);
     els.resultStarsDisplay.setAttribute('aria-label', '0 of 3 stars');
     els.resultStarRow?.setAttribute('aria-label', '0 of 3 stars');
-    els.resultDetailsStage?.classList.remove('is-pending-reveal');
-    els.btnResultSkipAnim?.classList.add('hidden');
+    els.resultStarLabel.textContent = '0 / 3 Stars';
+    els.resultNextStarTip.classList.add('hidden');
+    setResultStarSlotsInstant(0);
     els.resultFailedPipAvatar.innerHTML = renderPipRobotSvg('warning', 'pip-avatar-mini');
     els.resultFailedReason.textContent = outcome.message || 'Mission failed before reaching the target.';
     els.resultFailedPipTip.textContent = `PIP Tip: ${report.primaryTip}`;
@@ -1135,7 +1213,7 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     els.resultStarsDisplay.textContent = renderStarsText(scoreResult.stars);
     els.resultStarsDisplay.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
     els.resultStarRow?.setAttribute('aria-label', `${scoreResult.stars} of 3 stars`);
-    els.resultStarLabel.textContent = `${scoreResult.stars} / 3 Stars — ${scoreResult.summaryLabel}`;
+    els.resultStarLabel.textContent = `${scoreResult.stars} / 3 Stars`;
     const nextStarTip = buildNextStarAdvice(scoreResult, metrics, report.diagnostics, state.activeScene);
     if (nextStarTip) {
       els.resultNextStarTip.textContent = nextStarTip;
@@ -1146,19 +1224,38 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     playStarRevealAnimation(scoreResult.stars);
   }
 
-  els.resultTime.textContent = `${metrics.completionTime.toFixed(1)} s`;
-  els.resultOvershoot.textContent = `${metrics.maxOvershoot.toFixed(2)} m`;
-  els.resultSettling.textContent = `${metrics.settlingTime.toFixed(1)} s`;
-  els.resultRouteFit.textContent = `${metrics.pathFitScore.toFixed(0)}% (${metrics.pathDeviation.toFixed(2)} m dev)`;
-  els.resultSmoothness.textContent = `${metrics.flightSmoothness.toFixed(0)}%`;
+  // Concise single-sentence PIP quick feedback directly grounded in real telemetry & scoring
+  const concisePip = buildConcisePipResultFeedback(report, scoreResult, outcome, state.activeScene);
+  if (els.resultPipShortAvatar) {
+    els.resultPipShortAvatar.innerHTML = renderPipRobotSvg(concisePip.mood, 'pip-avatar-mini');
+  }
+  if (els.resultPipShortText) {
+    els.resultPipShortText.textContent = concisePip.text;
+  }
+  if (els.resultPipShortCard) {
+    els.resultPipShortCard.classList.toggle('is-failed', !isSuccess);
+    els.resultPipShortCard.classList.toggle('is-three-star', isSuccess && scoreResult.stars === 3);
+  }
+
+  const fmtMetric = (val, fmt) => (Number.isFinite(val) ? fmt(val) : 'N/A');
+  els.resultTime.textContent = fmtMetric(metrics.completionTime, (v) => `${v.toFixed(1)} s`);
+  els.resultOvershoot.textContent = fmtMetric(metrics.maxOvershoot, (v) => `${v.toFixed(2)} m`);
+  els.resultSettling.textContent = fmtMetric(metrics.settlingTime, (v) => `${v.toFixed(1)} s`);
+  els.resultRouteFit.textContent =
+    Number.isFinite(metrics.pathFitScore) && Number.isFinite(metrics.pathDeviation)
+      ? `${metrics.pathFitScore.toFixed(0)}% (${metrics.pathDeviation.toFixed(2)} m dev)`
+      : 'N/A';
+  els.resultSmoothness.textContent = fmtMetric(metrics.flightSmoothness, (v) => `${v.toFixed(0)}%`);
   if (els.resultEnergy) {
     els.resultEnergy.textContent = Number.isFinite(metrics.energyRemainingPct)
-      ? `${metrics.energyRemainingPct.toFixed(0)}% left (${Math.round(metrics.energyUsed)} J)`
-      : `${Math.round(metrics.energyUsed ?? 0)} J (${Math.round(metrics.peakPower ?? 0)} W pk)`;
+      ? `${metrics.energyRemainingPct.toFixed(0)}% left (${Math.round(metrics.energyUsed ?? 0)} J)`
+      : Number.isFinite(metrics.energyUsed)
+        ? `${Math.round(metrics.energyUsed)} J (${Math.round(metrics.peakPower ?? 0)} W pk)`
+        : 'N/A';
   }
-  els.resultAvgError.textContent = `${metrics.averageTrackingError.toFixed(2)} m`;
-  els.resultSaturation.textContent = `${metrics.controlSaturationDuration.toFixed(2)} s`;
-  els.resultPid.textContent = formatGainsText(metrics.pidParameters);
+  els.resultAvgError.textContent = fmtMetric(metrics.averageTrackingError, (v) => `${v.toFixed(2)} m`);
+  els.resultSaturation.textContent = fmtMetric(metrics.controlSaturationDuration, (v) => `${v.toFixed(2)} s`);
+  els.resultPid.textContent = metrics.pidParameters ? formatGainsText(metrics.pidParameters) : 'N/A';
 
   els.resultPipAvatar.innerHTML = renderPipRobotSvg(report.mood);
   els.resultPipTitle.textContent = report.title;
@@ -1213,14 +1310,10 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
     els.resultBestRef.classList.add('hidden');
   }
 
-  // Both Tutorial and Challenge support returning to Pre-flight Briefing & Tuning
-  els.btnResultPreflight.classList.remove('hidden');
   const nextId = isSuccess ? state.activeScene?.nextLevelId : null;
-  els.btnResultNext.classList.toggle('hidden', !nextId);
   els.btnResultNext.dataset.nextId = nextId || '';
-
   const showChallengeShortcut = isTutorial && isSuccess && !nextId;
-  els.btnResultChallenges.classList.toggle('hidden', !showChallengeShortcut);
+  configureResultActions({ isSuccess, nextId, showChallengeShortcut });
 
   if (isTutorial && tutorialGuide.active) {
     tutorialGuide.jumpToView('result');
@@ -1231,15 +1324,16 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   els.resultPrevLegend.classList.toggle('hidden', !(prevTrail?.length > 1));
   els.resultStrategyPrevLegend?.classList.toggle('hidden', !prevStrat);
 
-  navigateTo('result');
-  renderStrategyRadar(
-    els.resultStrategyCanvas,
-    report.strategyProfile,
+  resultChartPayload = {
+    strategyProfile: report.strategyProfile,
     prevStrat,
-    state.activeScene?.strategyProfile?.priorities || null
-  );
-  renderRouteFitPreview(els.resultRouteCanvas, sim, prevTrail);
-  renderTelemetryTimeSeriesPlot(els.resultTelemetryCanvas, telemetry, sim.config.maxThrust);
+    priorities: state.activeScene?.strategyProfile?.priorities || null,
+    prevTrail,
+    telemetry,
+    maxThrust: sim.config.maxThrust
+  };
+
+  navigateTo('result');
 }
 
 function updateProgressSummaries() {
@@ -1981,6 +2075,8 @@ function bindEvents() {
     if (state.currentView === 'preflight') {
       renderPreflightArenaPreview();
       renderBenchPanel(state.activeScene);
+    } else if (state.currentView === 'result' && resultReportExpanded) {
+      renderResultReportCharts();
     }
   });
 
@@ -2055,6 +2151,9 @@ function bindEvents() {
     renderLivePidResponseChart(els.flightResponseCanvas, sim.telemetry, state.livePlotAxis, axisSpan);
   });
   els.btnResultSkipAnim?.addEventListener('click', skipStarAnimation);
+  els.btnResultReportToggle?.addEventListener('click', () => {
+    setResultReportExpanded(!resultReportExpanded);
+  });
 
   // Result Screen actions (shared by Tutorial & Challenge)
   els.btnResultRetry.addEventListener('click', restartFlight);

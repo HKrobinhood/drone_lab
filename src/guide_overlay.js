@@ -216,9 +216,9 @@ export class TutorialSpotlightOverlay {
 
     this.frame.style.cssText = `top:${rawTop}px;left:${rawLeft}px;width:${rawWidth}px;height:${rawHeight}px;`;
 
-    // Position the floating guide card cleanly without obscuring the highlighted element
+    // Position the floating guide card cleanly without obscuring the highlighted element or clipping viewport edges
     const cardRect = this.card.getBoundingClientRect();
-    const cardW = Math.min(370, vw - 24);
+    const cardW = Math.min(Math.max(cardRect.width || 380, 380), vw - 24);
     const cardH = cardRect.height || 200;
     const gap = 14;
 

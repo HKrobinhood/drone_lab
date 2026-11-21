@@ -845,8 +845,9 @@ function updatePreflightLaunchLock() {
     if (!btn) continue;
     btn.disabled = locked;
     btn.classList.toggle('is-launch-locked', locked);
+    btn.textContent = locked ? 'Finish Steps to Fly' : 'Start Flight →';
     btn.title = locked
-      ? 'Finish the guided steps first before starting flight.'
+      ? 'Complete all guided steps before takeoff.'
       : 'Launch your drone into the mission arena';
   }
 }
@@ -1408,6 +1409,7 @@ function openPreflightTuning(scene, options = {}) {
     tutorialGuide.resetState();
   }
 
+  updatePreflightLaunchLock();
   navigateTo('preflight');
 }
 

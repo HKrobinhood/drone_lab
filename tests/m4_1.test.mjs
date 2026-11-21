@@ -129,13 +129,14 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     assert.equal(engine.isLaunchLocked(), true);
     assert.equal(engine.goNext(), false);
 
-    // Same gain values or out-of-range Kp=2.0 do NOT unlock Next Step
+    // Same gain values (6.5) or out-of-range Kp=2.0/7.0 do NOT unlock Next Step
     assert.equal(engine.recordPidAdjustment({ kp: 6.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
     assert.equal(engine.recordPidAdjustment({ kp: 2.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
+    assert.equal(engine.recordPidAdjustment({ kp: 7.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
     assert.equal(engine.canGoNext(), false);
 
-    // Tuning into valid target range unlocks Next Step (no sudden jump; launch still locked until Step 6)
-    assert.equal(engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
+    // Tuning Kp into valid target range (7.5-9.0) unlocks Next Step (no sudden jump; launch still locked until Step 6)
+    assert.equal(engine.recordPidAdjustment({ kp: 7.8, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
     assert.equal(engine.canGoNext(), true);
     assert.equal(engine.isLaunchLocked(), true);
     assert.equal(engine.goNext(), true);
@@ -143,7 +144,7 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
 
     assert.equal(engine.canGoNext(), false);
     assert.equal(engine.isLaunchLocked(), true);
-    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 3.8 } });
+    engine.recordBenchTest({ gains: { kp: 7.8, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.canGoNext(), true);
     assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');

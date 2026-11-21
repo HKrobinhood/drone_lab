@@ -64,15 +64,15 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't1-adjust-knob',
       view: 'preflight',
-      targetSelector: '#preflight-knobs-wrap',
+      targetSelector: '#knob-card-kp',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 3 — Tune Your PID Knobs',
-      headline: 'Adjust Kp & Kd Into Range',
-      instruction: 'Drag a knob or click + to tune Kp (5.0–9.0).',
-      actionHint: 'Tune Kp into 5.0–9.0 and keep Kd >= 3.0 to unlock Next Step.',
+      title: 'Step 3 — Tune the Kp Knob',
+      headline: 'Turn Kp Into 7.5–9.0',
+      instruction: 'Turn the highlighted Kp knob into 7.5–9.0.',
+      actionHint: 'Turn Kp up to 7.5–9.0 (keep Kd >= 3.0) to unlock Next Step.',
       learnMore:
-        'Practice moving a knob intentionally into a safe flight range (Kp 5.0–9.0, Kd >= 3.0). Once in position, Next Step unlocks so you can test the curve.',
+        'Kp starts at 6.5. Practice turning the Kp knob intentionally into 7.5–9.0 (keeping Kd >= 3.0). Once in position, Next Step unlocks so you can test the curve.',
       requiredAction: 'tune_pid_valid'
     },
     {
@@ -394,10 +394,11 @@ export class TutorialGuideEngine {
     if (!step) return null;
     switch (step.requiredAction) {
       case 'tune_pid_valid': {
+        const kpVal = Number(this.currentGains?.kp ?? 6.5).toFixed(1);
         if (satisfied) {
-          return '✓ Great! Gains are in the target range — click Next Step to test the curve.';
+          return `✓ Kp = ${kpVal} is in position! Click Next Step to test the curve.`;
         }
-        return this.pidFeedback || 'Adjust Kp into 5.0–9.0 and keep Kd >= 3.0 to unlock Next Step.';
+        return this.pidFeedback || `Turn Kp into 7.5–9.0 (Current: ${kpVal}) to unlock Next Step.`;
       }
       case 'run_test_pid':
         return satisfied
@@ -564,19 +565,17 @@ export class TutorialGuideEngine {
       }
     }
 
-    // Validate safe, meaningful target range for Step 3 procedural tuning
+    // Validate intentional target position for Step 3 procedural tuning (Kp 7.5–9.0, Kd 3.0–6.5)
     const kp = Number(gains.kp ?? 0);
     const kd = Number(gains.kd ?? 0);
-    const inKp = kp >= 5.0 && kp <= 9.0;
+    const inKp = kp >= 7.5 && kp <= 9.0;
     const inKd = kd >= 3.0 && kd <= 6.5;
     this.pidInTargetRange = inKp && inKd;
 
-    if (!this.pidAdjusted) {
-      this.pidFeedback = 'Turn Kp or Kd slightly (keep Kp 5.0–9.0, Kd >= 3.0) to unlock Next Step.';
-    } else if (kp < 5.0) {
-      this.pidFeedback = `Kp is too low (${kp.toFixed(1)}). Raise Kp into 5.0–9.0 so the drone climbs well.`;
+    if (kp < 7.5) {
+      this.pidFeedback = `Current Kp is ${kp.toFixed(1)}. Turn the highlighted Kp knob up into 7.5–9.0.`;
     } else if (kp > 9.0) {
-      this.pidFeedback = `Kp is too high (${kp.toFixed(1)}). Trim Kp back into 5.0–9.0 to avoid overshoot.`;
+      this.pidFeedback = `Kp is too high (${kp.toFixed(1)}). Turn Kp back down into 7.5–9.0.`;
     } else if (kd < 3.0) {
       this.pidFeedback = `Kd is too low (${kd.toFixed(1)}). Raise Kd to at least 3.0 for smooth braking.`;
     } else if (kd > 6.5) {

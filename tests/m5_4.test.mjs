@@ -162,7 +162,7 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     engine.goNext(); // t1-knobs-intro
     engine.goNext(); // t1-adjust-knob (Step 3)
     assert.equal(engine.getCurrentStep().stepId, 't1-adjust-knob');
-    assert.equal(engine.getCurrentStep().targetSelector, '#preflight-knobs-wrap');
+    assert.equal(engine.getCurrentStep().targetSelector, '#knob-card-kp');
     assert.equal(engine.canGoNext(), false);
     assert.equal(engine.canSkipCurrentStep(), false);
     assert.equal(engine.isLaunchLocked(), true);
@@ -170,10 +170,10 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     // Wrong gain (too low Kp) stays gated with clear feedback
     engine.recordPidAdjustment({ kp: 2.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), false);
-    assert.ok(engine.getCurrentStep().statusFeedback.includes('too low'));
+    assert.ok(engine.getCurrentStep().statusFeedback.includes('7.5–9.0'));
 
-    // Correct tuning unlocks Next Step so player actively links to Test PID
-    engine.recordPidAdjustment({ kp: 7.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    // Correct tuning into 7.5-9.0 unlocks Next Step so player actively links to Test PID
+    engine.recordPidAdjustment({ kp: 7.8, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
     assert.equal(engine.canGoNext(), true);
     assert.equal(engine.canSkipCurrentStep(), false);
     assert.equal(engine.isLaunchLocked(), true);
@@ -183,7 +183,7 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     assert.equal(engine.isLaunchLocked(), true);
 
     // Clicking Test PID unlocks Next Step to read the waveform (Step 5)
-    engine.recordBenchTest({ gains: { kp: 7.0, ki: 0.6, kd: 3.8 } });
+    engine.recordBenchTest({ gains: { kp: 7.8, ki: 0.6, kd: 3.8 } });
     assert.equal(engine.canGoNext(), true);
     engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');

@@ -151,18 +151,18 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't2-tune-kp',
       view: 'preflight',
-      targetSelector: null,
-      spotlight: false,
+      targetSelector: '#knob-card-kp',
+      spotlight: true,
       focusParam: 'kp',
-      pipMood: 'thinking',
+      pipMood: 'explaining',
       visualId: 'kp-response',
-      title: 'Tune Kp & Inspect the Curve',
+      title: 'Lesson Focus — Tune the Kp Knob',
       headline: 'Pilot, Today I Measure Tracking Lag!',
-      instruction: 'Adjust Kp, run Test PID, and fly when ready.',
-      actionHint: 'Tune Kp, click Test PID to observe the curve, then Start Flight whenever it looks good.',
+      instruction: 'Raise Kp for faster response, check the wave, then fly.',
+      actionHint: 'After adjusting Kp, click Test PID to inspect the waveform first, then Start Flight when ready.',
       learnMore:
-        'Try Test PID at low Kp = 1.2 first, then raise Kp and test again as many times as you like to compare Tracking Lag and Settling Time.',
-      requiredAction: 'start_flight'
+        'Kp starts low (1.2). Raise Kp and click Test PID multiple times to watch Tracking Lag shrink on the curve—click Start Flight whenever it looks good.',
+      requiredAction: 'acknowledge'
     }
   ],
 
@@ -170,18 +170,18 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't3-tune-ki',
       view: 'preflight',
-      targetSelector: null,
-      spotlight: false,
+      targetSelector: '#knob-card-ki',
+      spotlight: true,
       focusParam: 'ki',
-      pipMood: 'thinking',
+      pipMood: 'explaining',
       visualId: 'ki-integral',
-      title: 'Tune Ki & Inspect Wind Drift',
+      title: 'Lesson Focus — Tune the Ki Knob',
       headline: 'Pilot, Today I Measure Steady-State Offset!',
-      instruction: 'Adjust Ki, run Test PID, and fly when ready.',
-      actionHint: 'Tune Ki, click Test PID to watch wind drift on the curve, then Start Flight whenever ready.',
+      instruction: 'Raise Ki to cancel wind drift, check the wave, then fly.',
+      actionHint: 'After adjusting Ki, click Test PID to inspect the wind waveform first, then Start Flight when ready.',
       learnMore:
-        'Try Test PID at Ki = 0.00 to see wind drift, then raise Ki and re-test as many times as you like until the wave pulls back onto Target.',
-      requiredAction: 'start_flight'
+        'Ki starts at 0.00 under +4.8 N wind. Raise Ki and click Test PID to verify drift pulls back to Target before starting flight.',
+      requiredAction: 'acknowledge'
     }
   ],
 
@@ -189,18 +189,18 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't4-autonomous',
       view: 'preflight',
-      targetSelector: null,
-      spotlight: false,
+      targetSelector: '#knob-card-kd',
+      spotlight: true,
       focusParam: 'kd',
-      pipMood: 'thinking',
+      pipMood: 'explaining',
       visualId: 'kd-damping',
-      title: 'Tune Kd & Inspect Overshoot',
+      title: 'Lesson Focus — Tune the Kd Knob',
       headline: 'Pilot, Watch Overshoot, Settling & Stability!',
-      instruction: 'Adjust Kd, run Test PID, and fly when ready.',
-      actionHint: 'Tune Kd, click Test PID to inspect overshoot on the curve, then Start Flight whenever ready.',
+      instruction: 'Raise Kd to damp overshoot, check the wave, then fly.',
+      actionHint: 'After adjusting Kd, click Test PID to inspect the braking waveform first, then Start Flight when ready.',
       learnMore:
-        'Run Test PID at low Kd = 0.4 to see oscillations, adjust Kd and re-test multiple times until braking is smooth, then fly directly.',
-      requiredAction: 'start_flight'
+        'Kd starts low (0.4). Raise Kd and click Test PID to confirm oscillations flatten smoothly on the waveform before entering flight.',
+      requiredAction: 'acknowledge'
     }
   ]
 };
@@ -359,6 +359,8 @@ export class TutorialGuideEngine {
    */
   isLaunchLocked() {
     if (!this.active || this.finished || this.dismissed) return false;
+    // Only Tutorial 1 locks takeoff before preflight steps complete; T2-T4 allow flying whenever ready
+    if (this.sceneId !== 'tutorial-1') return false;
     const step = this.steps[this.stepIndex];
     if (!step || step.view !== 'preflight' || step.spotlight === false) return false;
     return step.requiredAction !== 'start_flight';

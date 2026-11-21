@@ -198,19 +198,22 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     engine.recordFlightStarted();
     assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
 
-    // Tutorials 2, 3, 4: no blocking spotlight highlight, launch always unlocked, PIP guides Tune -> Test PID -> Fly when ready
-    for (const [id, focusParam] of [
-      ['tutorial-2', 'kp'],
-      ['tutorial-3', 'ki'],
-      ['tutorial-4', 'kd']
+    // Tutorials 2, 3, 4: exactly 1 step highlighting ONLY the target knob (Kp/Ki/Kd), advising Test PID waveform before flight, launch unlocked
+    for (const [id, focusParam, selector] of [
+      ['tutorial-2', 'kp', '#knob-card-kp'],
+      ['tutorial-3', 'ki', '#knob-card-ki'],
+      ['tutorial-4', 'kd', '#knob-card-kd']
     ]) {
       const flow = TUTORIAL_GUIDE_FLOWS[id];
       assert.equal(flow.length, 1);
-      assert.equal(flow[0].spotlight, false);
+      assert.equal(flow[0].spotlight, true);
       assert.equal(flow[0].focusParam, focusParam);
+      assert.equal(flow[0].targetSelector, selector);
+      assert.ok(flow[0].actionHint.includes('Test PID') && flow[0].actionHint.includes('Start Flight'));
       const eng = new TutorialGuideEngine();
       eng.start(TUTORIAL_SCENES[id]);
       assert.equal(eng.isLaunchLocked(), false);
+      assert.equal(eng.canSkipCurrentStep(), true);
     }
 
     // PIP Test Bench coaching on T2-T4 always informs player they can Start Flight whenever ready

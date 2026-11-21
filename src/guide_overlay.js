@@ -89,6 +89,7 @@ export class TutorialSpotlightOverlay {
     this.activeTarget = targetEl;
     this.activeTarget.classList.add('tutorial-target-active');
     const shouldPulse =
+      Boolean(step.focusParam) ||
       step.requiredAction === 'tune_pid_valid' ||
       step.requiredAction === 'tune_kp_ready' ||
       step.requiredAction === 'tune_ki_ready' ||
@@ -168,7 +169,12 @@ export class TutorialSpotlightOverlay {
     if (step.requiredAction === 'acknowledge') {
       this.btnNext.disabled = false;
       this.btnNext.classList.remove('is-locked-step', 'is-unlocked-ready');
-      this.btnNext.textContent = progressInfo.current === progressInfo.total ? 'Finish Guide' : 'Next Step →';
+      this.btnNext.textContent =
+        progressInfo.total === 1
+          ? 'Got It'
+          : progressInfo.current === progressInfo.total
+            ? 'Finish Guide'
+            : 'Next Step →';
     } else if (step.requiredAction === 'start_flight') {
       this.btnNext.classList.add('hidden');
       this.btnNext.disabled = true;

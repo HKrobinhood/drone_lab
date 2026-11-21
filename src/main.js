@@ -858,6 +858,8 @@ function syncTutorialOverlay(force = false) {
     done: step?.wasdDone,
     cur: prog.current,
     canNext: prog.canNext,
+    canSkip: prog.canSkip,
+    feedback: step?.statusFeedback,
     warn
   });
 
@@ -1793,6 +1795,7 @@ function bindEvents() {
       }
     },
     onDismiss: () => {
+      if (!tutorialGuide.canSkipCurrentStep()) return;
       tutorialGuide.dismiss();
       tutorialOverlay?.hide();
       updateGuideReopenButtons();

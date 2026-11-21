@@ -212,6 +212,7 @@
     - **Tutorial 2（Kp）**：先测 `Kp=1.2` 慢响应基线波 → 调高 `Kp >= 4.5` 并 Re-Test 对比陡峭波形 → `Start Flight` 实战验证。
     - **Tutorial 3（Ki）**：先测 `Ki=0` 横风稳态漂移波 → 调高 `Ki >= 0.80` 并 Re-Test 观察曲线拉回目标线 → `Start Flight` 抗风实战。
     - **Tutorial 4（Kd）**：精简为 1 步自主提醒，由玩家独立运用“测振荡波 → 调 Kd → 对比平滑收敛波 → 起飞”毕业闭环。
+  - **程序性学习（Procedural Learning）连续门禁**：在所有实操步骤中始终保留可见的 `Next Step →` 按钮（未完成正确操作前呈锁定禁用态，同时锁定/隐藏 `Hide Guide` 防止误跳过）；当玩家把 PID 调进合理目标区间、点击 `Test PID` 生成曲线或完成二次调参对比后，实时亮起绿色完成反馈并解锁 `Next Step →`，由玩家主动衔接下一步，确保全程连续不断层。
   - 同步更新 `pid-loop-steps` 矢量流程图为 `1. Tune PID → 2. Test Curve → 3. Read Wave → 4. Start Flight → 5. Fly & Review`。
 - **测试结果与已知问题**：
   - 全量语法检查与自动化测试 `node --test tests/*.test.mjs`：**35 套件、91 项测试全部通过（0 失败）**，包含新增 `tests/m5_4.test.mjs`。

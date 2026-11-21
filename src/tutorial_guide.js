@@ -67,13 +67,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#preflight-knobs-wrap',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 3 — Tune a PID Knob',
-      headline: 'Adjust Kp First',
-      instruction: 'Drag the Kp knob or click + to tune.',
-      actionHint: 'Change Kp, Ki, or Kd using the knob, +/-, or number box.',
+      title: 'Step 3 — Tune PID to Target Range',
+      headline: 'Dial Kp & Kd Into Position',
+      instruction: 'Adjust Kp (5.0–9.0) and keep Kd >= 3.0.',
+      actionHint: 'Change a knob into the green target range to unlock Next Step.',
       learnMore:
-        'Kp sets how strongly the controller reacts to position error. Keep Kp >= 4.0 so the drone can climb briskly.',
-      requiredAction: 'adjust_pid'
+        'Practice moving a knob intentionally into a safe flight range (Kp 5.0–9.0, Kd >= 3.0). Once in position, Next Step unlocks so you can test the curve.',
+      requiredAction: 'tune_pid_valid'
     },
     {
       stepId: 't1-test-pid',
@@ -82,9 +82,9 @@ export const TUTORIAL_GUIDE_FLOWS = {
       pipMood: 'explaining',
       visualId: null,
       title: 'Step 4 — Run Test PID',
-      headline: 'Generate Your First Curve',
-      instruction: 'Click Test PID to plot a real response wave.',
-      actionHint: 'Click Test PID now.',
+      headline: 'Plot Your Real Response Wave',
+      instruction: 'Click Test PID, then press Next Step to inspect.',
+      actionHint: 'Click Test PID to generate the real 6.5 s curve.',
       learnMore:
         'Test PID runs the exact same 120 Hz physics and PID controller for 6.5 s so you can inspect the waveform safely before takeoff.',
       requiredAction: 'run_test_pid'
@@ -106,13 +106,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't1-retest-pid',
       view: 'preflight',
-      targetSelector: '#preflight-knobs-wrap',
+      targetSelector: '#preflight-pid-panel',
       pipMood: 'explaining',
       visualId: 'kd-damping',
       title: 'Step 6 — Refine & Compare Waves',
-      headline: 'Adjust & Watch Before/After',
-      instruction: 'Tweak a knob and click Test PID to compare.',
-      actionHint: 'Adjust any knob and click Test PID to see purple vs. cyan waves.',
+      headline: 'Tweak a Knob, Then Re-Test',
+      instruction: 'Adjust a knob and click Test PID to compare.',
+      actionHint: '1) Adjust Kp or Kd cleanly  2) Click Test PID to compare Before vs. After.',
       learnMore:
         'Every re-test overlays your Previous wave (purple dashed) with your Current wave (cyan) under identical conditions so you can verify improvements before flying.',
       requiredAction: 'retest_pid'
@@ -193,13 +193,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't2-tune-retest',
       view: 'preflight',
-      targetSelector: '#preflight-knobs-wrap',
+      targetSelector: '#preflight-pid-panel',
       pipMood: 'explaining',
       visualId: 'kp-response',
       title: 'Step 2 — Raise Kp & Compare Waves',
       headline: 'Speed Up the Response Curve',
       instruction: 'Raise Kp above 4.5, then click Test PID again.',
-      actionHint: 'Turn Kp >= 4.5 and click Test PID to compare Before vs. After.',
+      actionHint: '1) Raise Kp >= 4.5  2) Click Test PID to compare Before vs. After.',
       learnMore:
         'Compare the new steep cyan curve against the slow purple baseline—higher Kp cuts Tracking Lag and Settling Time.',
       requiredAction: 'tune_kp_and_retest'
@@ -252,13 +252,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't3-tune-retest',
       view: 'preflight',
-      targetSelector: '#preflight-knobs-wrap',
+      targetSelector: '#preflight-pid-panel',
       pipMood: 'explaining',
       visualId: 'ki-integral',
       title: 'Step 2 — Raise Ki & Compare Waves',
       headline: 'Pull the Wave Back on Target',
       instruction: 'Raise Ki above 0.80, then click Test PID again.',
-      actionHint: 'Turn Ki >= 0.80 and click Test PID to watch drift vanish.',
+      actionHint: '1) Raise Ki >= 0.80  2) Click Test PID to watch drift vanish.',
       learnMore:
         'Compare the purple drifted curve with your new cyan curve—Ki accumulates persistent error to pull the drone back onto Target.',
       requiredAction: 'tune_ki_and_retest'
@@ -332,9 +332,13 @@ export class TutorialGuideEngine {
     this.steps = [];
     this.stepIndex = 0;
     this.pidAdjusted = false;
+    this.pidInTargetRange = false;
+    this.pidFeedback = null;
     this.benchTestCount = 0;
+    this.tunedAfterFirstBench = false;
     this.retestSatisfied = false;
     this.lastBenchGains = null;
+    this.currentGains = null;
     this.initialGainsAtStep = null;
     this.flightStarted = false;
     this.wasdSubIndex = 0;
@@ -378,17 +382,72 @@ export class TutorialGuideEngine {
       return null;
     }
     const base = this.steps[this.stepIndex];
+    const satisfied = this.isStepSatisfied(base);
+    const dynamicFeedback = this.getStepStatusFeedback(base, satisfied);
+
     if (base.requiredAction === 'wasd_sequence') {
       const sub = WASD_SUBSTEPS[Math.min(this.wasdSubIndex, WASD_SUBSTEPS.length - 1)];
       return {
         ...base,
+        satisfied,
+        statusFeedback: dynamicFeedback,
         wasdSubIndex: this.wasdSubIndex,
         wasdSubsteps: WASD_SUBSTEPS,
         wasdDone: { ...this.wasdDone },
         activeSubPrompt: sub.prompt
       };
     }
-    return base;
+    return {
+      ...base,
+      satisfied,
+      statusFeedback: dynamicFeedback
+    };
+  }
+
+  getStepStatusFeedback(step, satisfied) {
+    if (!step) return null;
+    switch (step.requiredAction) {
+      case 'tune_pid_valid': {
+        if (satisfied) {
+          return '✓ Great! Gains are in the target range — click Next Step to test the curve.';
+        }
+        return this.pidFeedback || 'Adjust Kp into 5.0–9.0 and keep Kd >= 3.0 to unlock Next Step.';
+      }
+      case 'run_test_pid':
+        return satisfied
+          ? '✓ Response wave plotted! Click Next Step to read the curve.'
+          : 'Click the blue Test PID button to plot your real response wave.';
+      case 'retest_pid': {
+        if (satisfied) {
+          return '✓ Before vs. After waves compared! Click Next Step to launch flight.';
+        }
+        const t1 = this.tunedAfterFirstBench ? '✓ 1. Knob adjusted' : '○ 1. Adjust Kp or Kd';
+        const t2 = this.benchTestCount >= 2 ? '✓ 2. Re-tested' : '○ 2. Click Test PID again';
+        return `${t1}  ·  ${t2}`;
+      }
+      case 'tune_kp_and_retest': {
+        if (satisfied) {
+          return '✓ Faster Kp curve verified! Click Next Step to fly.';
+        }
+        const kpOk = Number(this.currentGains?.kp ?? 0) >= 4.5;
+        const t1 = kpOk ? '✓ 1. Kp >= 4.5' : '○ 1. Raise Kp >= 4.5';
+        const t2 = this.retestSatisfied ? '✓ 2. Re-tested' : '○ 2. Click Test PID again';
+        return `${t1}  ·  ${t2}`;
+      }
+      case 'tune_ki_and_retest': {
+        if (satisfied) {
+          return '✓ Wind drift corrected on curve! Click Next Step to fly.';
+        }
+        const kiOk = Number(this.currentGains?.ki ?? 0) >= 0.8;
+        const t1 = kiOk ? '✓ 1. Ki >= 0.80' : '○ 1. Raise Ki >= 0.80';
+        const t2 = this.retestSatisfied ? '✓ 2. Re-tested' : '○ 2. Click Test PID again';
+        return `${t1}  ·  ${t2}`;
+      }
+      case 'start_flight':
+        return 'Click Start Flight to launch your tuned drone into the arena.';
+      default:
+        return null;
+    }
   }
 
   getProgressInfo() {
@@ -397,8 +456,20 @@ export class TutorialGuideEngine {
       total: this.steps.length,
       canBack: this.canGoBack(),
       canNext: this.canGoNext(),
+      canSkip: this.canSkipCurrentStep(),
       finished: this.finished
     };
+  }
+
+  canSkipCurrentStep() {
+    if (!this.active) return true;
+    const step = this.steps[this.stepIndex];
+    if (!step) return true;
+    // Enforce procedural learning: action steps require completing the right action before skipping/hiding
+    if (step.requiredAction === 'acknowledge' || step.requiredAction === 'start_flight' || step.requiredAction === 'reach_target') {
+      return true;
+    }
+    return this.isStepSatisfied(step);
   }
 
   isStepSatisfied(step = this.getCurrentStep()) {
@@ -408,10 +479,12 @@ export class TutorialGuideEngine {
         return true;
       case 'adjust_pid':
         return this.pidAdjusted;
+      case 'tune_pid_valid':
+        return this.pidAdjusted && this.pidInTargetRange;
       case 'run_test_pid':
         return this.benchTestCount >= 1;
       case 'retest_pid':
-        return this.benchTestCount >= 2;
+        return this.retestSatisfied;
       case 'tune_kp_and_retest':
         return this.retestSatisfied;
       case 'tune_ki_and_retest':
@@ -475,20 +548,61 @@ export class TutorialGuideEngine {
   }
 
   recordPidAdjustment(gains, baselineGains = null) {
-    if (!this.active) return false;
-    if (baselineGains && gains) {
-      const changed =
+    if (!this.active || !gains) return false;
+    this.currentGains = { ...gains };
+
+    let changedFromBase = true;
+    if (baselineGains) {
+      changedFromBase =
         Math.abs(gains.kp - baselineGains.kp) >= 0.05 ||
         Math.abs(gains.ki - baselineGains.ki) >= 0.02 ||
         Math.abs(gains.kd - baselineGains.kd) >= 0.05;
-      if (!changed) return false;
     }
-    this.pidAdjusted = true;
+    if (changedFromBase) {
+      this.pidAdjusted = true;
+    }
+
+    // Track whether player tweaked a knob after their first bench test (for Step 6 re-test comparison)
+    if (this.benchTestCount >= 1 && this.lastBenchGains) {
+      const changedSinceBench =
+        Math.abs(gains.kp - this.lastBenchGains.kp) >= 0.1 ||
+        Math.abs(gains.ki - this.lastBenchGains.ki) >= 0.05 ||
+        Math.abs(gains.kd - this.lastBenchGains.kd) >= 0.1;
+      if (changedSinceBench) {
+        this.tunedAfterFirstBench = true;
+      }
+    }
+
+    // Validate safe, meaningful target range for Step 3 procedural tuning
+    const kp = Number(gains.kp ?? 0);
+    const kd = Number(gains.kd ?? 0);
+    const inKp = kp >= 5.0 && kp <= 9.0;
+    const inKd = kd >= 3.0 && kd <= 6.5;
+    this.pidInTargetRange = inKp && inKd;
+
+    if (!this.pidAdjusted) {
+      this.pidFeedback = 'Turn Kp or Kd slightly (keep Kp 5.0–9.0, Kd >= 3.0) to unlock Next Step.';
+    } else if (kp < 5.0) {
+      this.pidFeedback = `Kp is too low (${kp.toFixed(1)}). Raise Kp into 5.0–9.0 so the drone climbs well.`;
+    } else if (kp > 9.0) {
+      this.pidFeedback = `Kp is too high (${kp.toFixed(1)}). Trim Kp back into 5.0–9.0 to avoid overshoot.`;
+    } else if (kd < 3.0) {
+      this.pidFeedback = `Kd is too low (${kd.toFixed(1)}). Raise Kd to at least 3.0 for smooth braking.`;
+    } else if (kd > 6.5) {
+      this.pidFeedback = `Kd is very high (${kd.toFixed(1)}). Keep Kd <= 6.5 so flight stays crisp.`;
+    } else {
+      this.pidFeedback = null;
+    }
+
     const step = this.getCurrentStep();
-    if (step?.requiredAction === 'adjust_pid') {
-      return this.goNext();
+    if (step?.requiredAction === 'adjust_pid' && this.pidAdjusted) {
+      return true;
     }
-    if (step?.requiredAction === 'tune_kp_above_4_5' && Number(gains?.kp) >= 4.5) {
+    if (step?.requiredAction === 'tune_pid_valid') {
+      // Unlock Next Step without auto-jumping away so player intentionally clicks Next Step to connect to Test PID
+      return this.pidAdjusted && this.pidInTargetRange;
+    }
+    if (step?.requiredAction === 'tune_kp_above_4_5' && kp >= 4.5) {
       return this.goNext();
     }
     return false;
@@ -497,28 +611,48 @@ export class TutorialGuideEngine {
   recordBenchTest(result = null) {
     if (!this.active) return false;
     this.benchTestCount += 1;
-    const gains = result?.gains || null;
-    this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+    const gains = result?.gains || this.currentGains || null;
+    if (gains) {
+      this.currentGains = { ...gains };
+    }
 
     const step = this.getCurrentStep();
     if (step?.requiredAction === 'run_test_pid') {
-      return this.goNext();
+      this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+      // Unlock Next Step so player actively clicks Next Step -> Step 5 (Read the Waveform)
+      return true;
     }
     if (step?.requiredAction === 'retest_pid' && this.benchTestCount >= 2) {
-      return this.goNext();
+      const changed =
+        this.tunedAfterFirstBench ||
+        !this.lastBenchGains ||
+        !gains ||
+        Math.abs(gains.kp - this.lastBenchGains.kp) >= 0.1 ||
+        Math.abs(gains.ki - this.lastBenchGains.ki) >= 0.05 ||
+        Math.abs(gains.kd - this.lastBenchGains.kd) >= 0.1;
+      const safe = !gains || (Number(gains.kp) >= 4.5 && Number(gains.kd) >= 2.5);
+      if (changed && safe) {
+        this.tunedAfterFirstBench = true;
+        this.retestSatisfied = true;
+      }
+      this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+      return this.retestSatisfied;
     }
     if (step?.requiredAction === 'tune_kp_and_retest' && this.benchTestCount >= 2) {
       if (!gains || Number(gains.kp) >= 4.5) {
         this.retestSatisfied = true;
-        return this.goNext();
       }
+      this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+      return this.retestSatisfied;
     }
     if (step?.requiredAction === 'tune_ki_and_retest' && this.benchTestCount >= 2) {
       if (!gains || Number(gains.ki) >= 0.8) {
         this.retestSatisfied = true;
-        return this.goNext();
       }
+      this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
+      return this.retestSatisfied;
     }
+    this.lastBenchGains = gains ? { ...gains } : this.lastBenchGains;
     return false;
   }
 

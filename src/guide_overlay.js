@@ -139,20 +139,45 @@ export class TutorialSpotlightOverlay {
         this.wasdChips.appendChild(chip);
       });
       this.hintEl.textContent = step.activeSubPrompt || step.actionHint;
+      this.hintEl.classList.remove('is-ready');
     } else {
       this.wasdChips.classList.add('hidden');
-      this.hintEl.textContent = safetyWarning || step.actionHint;
+      this.hintEl.textContent = safetyWarning || step.statusFeedback || step.actionHint;
+      this.hintEl.classList.toggle('is-ready', Boolean(step.satisfied && step.requiredAction !== 'acknowledge'));
     }
 
     this.btnBack.disabled = !progressInfo.canBack;
+
+    // Procedural Learning Gate: Hide Guide is locked until the current required action is completed
+    const canSkip = progressInfo.canSkip !== false;
+    if (this.btnSkip) {
+      this.btnSkip.disabled = !canSkip;
+      this.btnSkip.classList.toggle('hidden', !canSkip);
+      this.btnSkip.title = canSkip
+        ? 'Hide the interactive guide (reopen anytime)'
+        : 'Complete this action first before skipping';
+    }
+
+    // Always keep Next Step visible so players see continuous progression—locked until action is done, highlighted once unlocked!
+    this.btnNext.classList.remove('hidden');
     if (step.requiredAction === 'acknowledge') {
-      this.btnNext.classList.remove('hidden');
       this.btnNext.disabled = false;
+      this.btnNext.classList.remove('is-locked-step', 'is-unlocked-ready');
       this.btnNext.textContent = progressInfo.current === progressInfo.total ? 'Finish Guide' : 'Next Step →';
-    } else {
-      this.btnNext.classList.toggle('hidden', !progressInfo.canNext);
+    } else if (step.requiredAction === 'start_flight' || step.requiredAction === 'reach_target') {
       this.btnNext.disabled = !progressInfo.canNext;
-      this.btnNext.textContent = 'Continue →';
+      this.btnNext.classList.toggle('is-locked-step', !progressInfo.canNext);
+      this.btnNext.classList.toggle('is-unlocked-ready', Boolean(progressInfo.canNext));
+      this.btnNext.textContent = progressInfo.canNext
+        ? 'Next Step →'
+        : step.requiredAction === 'start_flight'
+          ? 'Click Start Flight'
+          : 'Complete Target';
+    } else {
+      this.btnNext.disabled = !progressInfo.canNext;
+      this.btnNext.classList.toggle('is-locked-step', !progressInfo.canNext);
+      this.btnNext.classList.toggle('is-unlocked-ready', Boolean(progressInfo.canNext));
+      this.btnNext.textContent = progressInfo.canNext ? 'Next Step →' : 'Complete Action';
     }
 
     if (stepChanged && typeof targetEl.scrollIntoView === 'function') {

@@ -121,20 +121,38 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     engine.goNext(); // adjust-knob
     assert.equal(engine.getCurrentStep().stepId, 't1-adjust-knob');
 
-    // Step 3 cannot skip without real knob/slider adjustment
+    // Step 3 cannot skip or advance without real tuning into valid range
     assert.equal(engine.canGoNext(), false);
+    assert.equal(engine.canSkipCurrentStep(), false);
     assert.equal(engine.goNext(), false);
 
-    // Same gain values do not count as adjustment; real gain change advances to Test PID
+    // Same gain values or out-of-range Kp=2.0 do NOT unlock Next Step
     assert.equal(engine.recordPidAdjustment({ kp: 6.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
+    assert.equal(engine.recordPidAdjustment({ kp: 2.0, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
+    assert.equal(engine.canGoNext(), false);
+
+    // Tuning into valid target range unlocks Next Step (procedural confirmation, no sudden jump)
     assert.equal(engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
+    assert.equal(engine.canGoNext(), true);
+    assert.equal(engine.canSkipCurrentStep(), true);
+    assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-test-pid');
 
-    engine.recordBenchTest(); // t1-observe-bench
+    assert.equal(engine.canGoNext(), false);
+    assert.equal(engine.canSkipCurrentStep(), false);
+    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 3.8 } });
+    assert.equal(engine.canGoNext(), true);
+    assert.equal(engine.goNext(), true);
+    assert.equal(engine.getCurrentStep().stepId, 't1-observe-bench');
+
     engine.goNext(); // t1-retest-pid
     assert.equal(engine.getCurrentStep().stepId, 't1-retest-pid');
     assert.equal(engine.canGoNext(), false);
-    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 4.2 } }); // t1-start-flight
+    assert.equal(engine.canSkipCurrentStep(), false);
+    engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 4.2 }, { kp: 6.5, ki: 0.6, kd: 3.8 });
+    engine.recordBenchTest({ gains: { kp: 7.2, ki: 0.6, kd: 4.2 } });
+    assert.equal(engine.canGoNext(), true);
+    assert.equal(engine.goNext(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
     assert.equal(engine.canGoNext(), false);
 

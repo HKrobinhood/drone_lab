@@ -90,9 +90,9 @@ export class TutorialSpotlightOverlay {
     this.activeTarget.classList.add('tutorial-target-active');
     const shouldPulse =
       step.requiredAction === 'tune_pid_valid' ||
+      step.requiredAction === 'tune_kp_ready' ||
+      step.requiredAction === 'tune_ki_ready' ||
       step.requiredAction === 'run_test_pid' ||
-      step.requiredAction === 'tune_kp_and_retest' ||
-      step.requiredAction === 'tune_ki_and_retest' ||
       step.requiredAction === 'start_flight';
     this.activeTarget.classList.toggle('tutorial-action-pulse', shouldPulse);
     this.resizeObserver?.observe(this.activeTarget);
@@ -155,10 +155,12 @@ export class TutorialSpotlightOverlay {
 
     this.btnBack.disabled = !progressInfo.canBack;
 
-    // Never display Hide Guide during procedural tutorial steps
+    // Tutorial 1 never displays Hide Guide; Tutorial 2+ allow hiding the guide anytime
+    const canSkip = Boolean(progressInfo.canSkip);
     if (this.btnSkip) {
-      this.btnSkip.disabled = true;
-      this.btnSkip.classList.add('hidden');
+      this.btnSkip.disabled = !canSkip;
+      this.btnSkip.classList.toggle('hidden', !canSkip);
+      this.btnSkip.setAttribute('aria-hidden', String(!canSkip));
     }
 
     // Always keep Next Step visible so players see continuous progression—locked until action is done, highlighted once unlocked!

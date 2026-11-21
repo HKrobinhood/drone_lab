@@ -198,40 +198,46 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
     engine.recordFlightStarted();
     assert.equal(engine.getCurrentStep().stepId, 't1-wasd');
 
-    // Tutorial 2 teaches: Baseline Test PID (slow wave) -> Next -> Raise Kp & Re-test -> Next -> Start Flight
+    // Tutorial 2: only 2 pre-flight steps (no flight-screen Step 4), highlights ONLY Kp knob, allows Hide Guide & repeated Test PID
+    assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-2'].length, 2);
     const t2Engine = new TutorialGuideEngine();
     t2Engine.start(TUTORIAL_SCENES['tutorial-2']);
-    assert.equal(t2Engine.getCurrentStep().stepId, 't2-baseline-test');
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-kp');
+    assert.equal(t2Engine.getCurrentStep().targetSelector, '#knob-card-kp');
+    assert.equal(t2Engine.canSkipCurrentStep(), true);
+    // Repeated Test PID runs at low Kp stay on Step 1 cleanly without blocking
     t2Engine.recordBenchTest({ gains: { kp: 1.2, ki: 0.0, kd: 3.5 } });
-    assert.equal(t2Engine.canGoNext(), true);
-    t2Engine.goNext();
-    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-retest');
-    // Re-testing without raising Kp keeps Next Step locked
-    t2Engine.recordBenchTest({ gains: { kp: 2.0, ki: 0.0, kd: 3.5 } });
+    t2Engine.recordBenchTest({ gains: { kp: 2.5, ki: 0.0, kd: 3.5 } });
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-kp');
     assert.equal(t2Engine.canGoNext(), false);
-    // Raising Kp >= 4.5 and re-testing unlocks Next Step -> Start Flight
+    // Tuning Kp >= 4.5 unlocks Next Step while still allowing more Test PID comparisons
     t2Engine.recordPidAdjustment({ kp: 6.2, ki: 0.0, kd: 3.5 }, { kp: 1.2, ki: 0.0, kd: 3.5 });
     t2Engine.recordBenchTest({ gains: { kp: 6.2, ki: 0.0, kd: 3.5 } });
+    assert.equal(t2Engine.getCurrentStep().stepId, 't2-tune-kp');
     assert.equal(t2Engine.canGoNext(), true);
     t2Engine.goNext();
     assert.equal(t2Engine.getCurrentStep().stepId, 't2-start-flight');
+    // Starting flight finishes T2 guide directly so player flies freely
+    t2Engine.recordFlightStarted();
+    assert.equal(t2Engine.finished, true);
 
-    // Tutorial 3 teaches: Baseline Wind Test -> Next -> Raise Ki >= 0.8 & Re-test -> Next -> Start Flight
+    // Tutorial 3: only 2 pre-flight steps, highlights ONLY Ki knob, allows Hide Guide & repeated Test PID
+    assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-3'].length, 2);
     const t3Engine = new TutorialGuideEngine();
     t3Engine.start(TUTORIAL_SCENES['tutorial-3']);
-    assert.equal(t3Engine.getCurrentStep().stepId, 't3-baseline-test');
-    t3Engine.recordBenchTest({ gains: { kp: 4.5, ki: 0.0, kd: 3.4 } });
-    assert.equal(t3Engine.canGoNext(), true);
-    t3Engine.goNext();
-    assert.equal(t3Engine.getCurrentStep().stepId, 't3-tune-retest');
+    assert.equal(t3Engine.getCurrentStep().stepId, 't3-tune-ki');
+    assert.equal(t3Engine.getCurrentStep().targetSelector, '#knob-card-ki');
+    assert.equal(t3Engine.canSkipCurrentStep(), true);
     t3Engine.recordPidAdjustment({ kp: 4.5, ki: 1.5, kd: 3.4 }, { kp: 4.5, ki: 0.0, kd: 3.4 });
-    t3Engine.recordBenchTest({ gains: { kp: 4.5, ki: 1.5, kd: 3.4 } });
     assert.equal(t3Engine.canGoNext(), true);
     t3Engine.goNext();
     assert.equal(t3Engine.getCurrentStep().stepId, 't3-start-flight');
+    t3Engine.recordFlightStarted();
+    assert.equal(t3Engine.finished, true);
 
-    // Tutorial 4 leaves full Tune -> Test -> Compare -> Fly workflow autonomous (1 step)
+    // Tutorial 4: 1 autonomous step highlighting ONLY Kd knob & allowing Hide Guide
     assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-4'].length, 1);
+    assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-4'][0].targetSelector, '#knob-card-kd');
 
     // Tutorial 1 awards 3 stars on any successful completion without requiring precision
     const sloppyT1 = scoreFlightRun(

@@ -1813,6 +1813,7 @@ function bindEvents() {
       if (!tutorialGuide.canSkipCurrentStep()) return;
       tutorialGuide.dismiss();
       tutorialOverlay?.hide();
+      updatePreflightLaunchLock();
       updateGuideReopenButtons();
     }
   });

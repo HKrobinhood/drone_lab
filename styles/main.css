@@ -5076,10 +5076,6 @@ body {
 }
 
 /* Strict Procedural Highlight & Launch Lock */
-#btn-tut-skip {
-  display: none !important;
-}
-
 .tutorial-action-pulse {
   position: relative;
   z-index: 62;

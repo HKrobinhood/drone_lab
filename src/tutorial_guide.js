@@ -137,27 +137,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
       targetSelector: '#flight-canvas',
       pipMood: 'explaining',
       visualId: 'gravity-thrust',
-      title: 'Step 8 — Complete the Climb',
-      headline: 'Hover in the Blue Target',
-      instruction: 'Climb with W and hover in the blue zone.',
-      actionHint: 'Hold REF at (4.0 m, 7.5 m) for 1.5 s.',
+      title: 'Step 8 — Fly Into the Blue Circle',
+      headline: 'Guide Your Drone Into the Ring!',
+      instruction: 'Fly your drone into the blue circle and hold steady!',
+      actionHint: 'Hold W to lift REF into the blue target circle above, then release WASD and hold 1.5 s.',
       learnMore:
-        'During steady hover on a 1.20 kg drone, thrust settles around 11.8 N to balance downward gravity.',
+        'Move the yellow REF target inside the dashed blue circle using W/A/S/D. Your PID controller will steer the drone into the circle—release keys so speed drops below 0.45 m/s for 1.5 s to finish!',
       requiredAction: 'reach_target'
-    },
-    {
-      stepId: 't1-results',
-      view: 'result',
-      targetSelector: '#result-overview-wrap',
-      pipMood: 'celebrating',
-      visualId: 'pid-loop-steps',
-      title: 'Step 9 — Review Flight Telemetry',
-      headline: 'Close the Learning Loop',
-      instruction: 'Compare your flight metrics and tune again anytime!',
-      actionHint: 'Review your stars and curves below, then click Finish Guide.',
-      learnMore:
-        'In Tutorials 2–4, you will apply this exact Tune → Test Curve → Compare → Fly method to master Kp speed, Ki wind correction, and Kd damping.',
-      requiredAction: 'acknowledge'
     }
   ],
 

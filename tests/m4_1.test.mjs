@@ -86,9 +86,9 @@ describe('M4.1 — Unified Tutorial & Challenge Scene Contracts', () => {
 });
 
 describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide', () => {
-  it('covers all 9 onboarding steps in Tutorial 1 including Mission, Knobs, Tune, Test PID, Waveform, Start Flight, WASD, Target, and Results', () => {
+  it('covers all 8 onboarding steps in Tutorial 1 including Mission, Knobs, Tune, Test PID, Waveform, Start Flight, WASD, and Target', () => {
     const flow = TUTORIAL_GUIDE_FLOWS['tutorial-1'];
-    assert.equal(flow.length, 9);
+    assert.equal(flow.length, 8);
 
     const stepIds = flow.map((s) => s.stepId);
     assert.deepEqual(stepIds, [
@@ -99,8 +99,7 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
       't1-observe-bench',
       't1-start-flight',
       't1-wasd',
-      't1-reach-target',
-      't1-results'
+      't1-reach-target'
     ]);
 
     // Step 1-2 -> acknowledge & back navigation works; launch is locked and skip disabled
@@ -203,11 +202,12 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     assert.equal(engine.getCurrentStep().stepId, 't1-reach-target');
     assert.equal(engine.canGoNext(), false);
 
-    // Target stabilized -> completes Step 9 and advances to Step 10 (t1-results)
+    // Target stabilized -> completes Step 8 and finishes Tutorial 1 guide cleanly (no Step 9 overlay)
     sim.targetZone.stabilized = true;
     engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 0 }, { status: 'completed' }, 'flight');
     assert.equal(engine.targetReached, true);
-    assert.equal(engine.getCurrentStep().stepId, 't1-results');
+    assert.equal(engine.finished, true);
+    assert.equal(engine.getCurrentStep(), null);
   });
 
   it('uses unified PIP coach across Tutorial and Challenge pre-flight, flight, and debrief', () => {

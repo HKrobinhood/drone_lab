@@ -208,7 +208,7 @@
   - PIP 优先依据真实 Test Bench 遥测生成单句指导或祝贺，不泄露唯一最优参数。
 - **新手村实验引导升级（`src/tutorial_guide.js`, `src/visual_aids.js`, `src/scenes.js`）**：
   - 将新手村 4 课统一重构为「**调 PID → 测曲线（Test PID）→ 观察与对比波形（Before/After）→ 起飞验证（Start Flight）**」递进方法论：
-    - **Tutorial 1**：紧凑 9 步闭环（Step 1 看任务 → Step 2 建立工作流 → **Step 3 脉冲高亮旋钮调 PID 到合理区间** → Step 4 点 `Test PID` 画曲线 → Step 5 读波形 → **Step 6 脉冲高亮 `Start Flight` 解锁起飞** → Step 7–8 WASD 实操与目标悬停 → Step 9 复盘）。
+    - **Tutorial 1**：紧凑 8 步闭环（Step 1 看任务 → Step 2 建立工作流 → **Step 3 脉冲高亮 Kp 旋钮调至 7.5–9.0** → Step 4 点 `Test PID` 画曲线 → Step 5 读波形 → **Step 6 脉冲高亮 `Start Flight` 解锁起飞** → Step 7 WASD 实操 → **Step 8 明确引导将无人机飞入蓝色目标圈悬停 1.5 s**，完成后自然收尾进入结算页，无多余 Step 9 遮罩）。
     - **Tutorial 2（Kp）**：先测 `Kp=1.2` 慢响应基线波 → 调高 `Kp >= 4.5` 并 Re-Test 对比陡峭波形 → `Start Flight` 实战验证。
     - **Tutorial 3（Ki）**：先测 `Ki=0` 横风稳态漂移波 → 调高 `Ki >= 0.80` 并 Re-Test 观察曲线拉回目标线 → `Start Flight` 抗风实战。
     - **Tutorial 4（Kd）**：精简为 1 步自主提醒，由玩家独立运用“测振荡波 → 调 Kd → 对比平滑收敛波 → 起飞”毕业闭环。

@@ -30,13 +30,49 @@ export const DEFAULT_PHYSICS_CONFIG = Object.freeze({
   droneRadius: 0.45,
   worldWidth: 24.0,
   worldHeight: 14.0,
-  hardLandingSpeed: 3.5
+  hardLandingSpeed: 3.5,
+  // Nonlinear rotor power model: P = avionics + k_ind * T^1.5 + k_slew * |dT/dt|
+  avionicsPower: 8.0,
+  inducedPowerCoeff: 1.45,
+  slewPowerCoeff: 0.45
 });
 
 export function getTotalMass(config = DEFAULT_PHYSICS_CONFIG) {
   const base = Number.isFinite(config.droneMass) ? config.droneMass : (config.mass ?? 1.2);
   const payload = Number.isFinite(config.payloadMass) ? Math.max(0, config.payloadMass) : 0;
   return Math.max(0.1, base + payload);
+}
+
+/**
+ * Compute instantaneous rotor + avionics electrical power (Watts) from real thrust & slew rate.
+ * Uses momentum-theory induced power (T^1.5) plus dynamic throttle-change loss (|dT/dt|),
+ * creating an authentic physical trade-off between aggressive/oscillatory control and efficiency.
+ */
+export function computeRotorPower(thrust, prevThrust, dt, config = DEFAULT_PHYSICS_CONFIG) {
+  const safeT = Number.isFinite(thrust) ? Math.max(0, thrust) : 0;
+  const safePrevT = Number.isFinite(prevThrust) ? Math.max(0, prevThrust) : safeT;
+  const safeDt = Number.isFinite(dt) && dt > 1e-6 ? dt : 1 / 120;
+
+  const avionics = Number.isFinite(config?.avionicsPower)
+    ? config.avionicsPower
+    : DEFAULT_PHYSICS_CONFIG.avionicsPower;
+  const kInd = Number.isFinite(config?.inducedPowerCoeff)
+    ? config.inducedPowerCoeff
+    : DEFAULT_PHYSICS_CONFIG.inducedPowerCoeff;
+  const kSlew = Number.isFinite(config?.slewPowerCoeff)
+    ? config.slewPowerCoeff
+    : DEFAULT_PHYSICS_CONFIG.slewPowerCoeff;
+
+  if (safeT <= 0.05) {
+    return avionics;
+  }
+
+  const inducedPower = kInd * Math.pow(safeT, 1.5);
+  // Clamp extreme single-step derivative spikes while still strongly penalizing oscillation & harsh pulses
+  const slewRate = Math.min(180, Math.abs(safeT - safePrevT) / safeDt);
+  const slewPower = kSlew * slewRate;
+  const total = avionics + inducedPower + slewPower;
+  return Number.isFinite(total) ? total : avionics;
 }
 
 /**
@@ -79,6 +115,8 @@ export function createDroneState(startPos = {}) {
     az: 0,
     theta: 0,
     thrust: 0,
+    prevThrust: 0,
+    instantPower: DEFAULT_PHYSICS_CONFIG.avionicsPower,
     onGround: z <= 0.001,
     onPad: false,
     landedHard: false,
@@ -236,6 +274,10 @@ export function stepDronePhysics(
     if (vx > 0) vx = 0;
   }
 
+  const prevThrust = Number.isFinite(state.thrust) ? state.thrust : 0;
+  const safeThrust = Number.isFinite(thrust) ? thrust : 0;
+  const instantPower = computeRotorPower(safeThrust, prevThrust, dt, config);
+
   state.x = Number.isFinite(x) ? x : config.worldWidth * 0.5;
   state.z = Number.isFinite(z) ? z : 0;
   state.vx = Number.isFinite(vx) ? vx : 0;
@@ -243,7 +285,9 @@ export function stepDronePhysics(
   state.ax = Number.isFinite(ax) ? ax : 0;
   state.az = Number.isFinite(az) ? az : 0;
   state.theta = Number.isFinite(theta) ? theta : 0;
-  state.thrust = Number.isFinite(thrust) ? thrust : 0;
+  state.prevThrust = prevThrust;
+  state.thrust = safeThrust;
+  state.instantPower = instantPower;
   state.onGround = onGround;
   state.onPad = onPad;
   state.windX = windX;

@@ -22,7 +22,8 @@ import {
   FlightRenderer,
   renderRouteFitPreview,
   renderTelemetryTimeSeriesPlot,
-  renderLivePidResponseChart
+  renderLivePidResponseChart,
+  renderStrategyRadar
 } from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
@@ -31,10 +32,11 @@ import {
 } from './scenes.js';
 import {
   evaluatePidCoaching,
-  evaluateLiveFlightCoaching
+  evaluateLiveFlightCoaching,
+  predictStrategyTradeoffs
 } from './coach.js';
 import { generatePipDiagnosticReport, evaluateLiveControlStatus } from './feedback.js';
-import { scoreFlightRun, buildRatingBreakdown, buildNextStarAdvice } from './scoring.js';
+import { scoreFlightRun, buildRatingBreakdown, buildNextStarAdvice, computeStrategyDimensions } from './scoring.js';
 import { TutorialGuideEngine, PIP_INTRO_SCRIPT } from './tutorial_guide.js';
 import { TutorialSpotlightOverlay } from './guide_overlay.js';
 import {
@@ -125,6 +127,24 @@ const els = {
   preflightMaxThrust: document.getElementById('preflight-max-thrust'),
   preflightMaxTilt: document.getElementById('preflight-max-tilt'),
   preflightTimeLimit: document.getElementById('preflight-time-limit'),
+  preflightBatteryBudget: document.getElementById('preflight-battery-budget'),
+  preflightStrategyTag: document.getElementById('preflight-strategy-tag'),
+  preflightStrategyPills: document.getElementById('preflight-strategy-pills'),
+  preflightStrategyHint: document.getElementById('preflight-strategy-hint'),
+  tradeoffStrategyLabel: document.getElementById('tradeoff-strategy-label'),
+  tradeoffBars: {
+    speed: document.getElementById('tradeoff-bar-speed'),
+    stability: document.getElementById('tradeoff-bar-stability'),
+    precision: document.getElementById('tradeoff-bar-precision'),
+    efficiency: document.getElementById('tradeoff-bar-efficiency')
+  },
+  tradeoffVals: {
+    speed: document.getElementById('tradeoff-val-speed'),
+    stability: document.getElementById('tradeoff-val-stability'),
+    precision: document.getElementById('tradeoff-val-precision'),
+    efficiency: document.getElementById('tradeoff-val-efficiency')
+  },
+  tradeoffSummary: document.getElementById('tradeoff-summary'),
   preflightVisualAid: document.getElementById('preflight-visual-aid'),
   preflightVisualTitle: document.getElementById('preflight-visual-title'),
   preflightVisualSvg: document.getElementById('preflight-visual-svg'),
@@ -181,6 +201,10 @@ const els = {
   liveControlBadges: document.getElementById('live-control-badges'),
   flightResponseCanvas: document.getElementById('flight-response-canvas'),
   btnLiveAxisToggle: document.getElementById('btn-live-axis-toggle'),
+  flightBatteryPill: document.getElementById('flight-battery-pill'),
+  flightBatteryBarWrap: document.getElementById('flight-battery-bar-wrap'),
+  flightBatteryBarFill: document.getElementById('flight-battery-bar-fill'),
+  flightBatteryText: document.getElementById('flight-battery-text'),
   flightTimer: document.getElementById('flight-timer'),
   btnFlightBack: document.getElementById('btn-flight-back'),
   btnFlightPause: document.getElementById('btn-flight-pause'),
@@ -253,10 +277,13 @@ const els = {
   resultSettling: document.getElementById('result-settling'),
   resultRouteFit: document.getElementById('result-route-fit'),
   resultSmoothness: document.getElementById('result-smoothness'),
+  resultEnergy: document.getElementById('result-energy'),
   resultAvgError: document.getElementById('result-avg-error'),
   resultSaturation: document.getElementById('result-saturation'),
   resultPid: document.getElementById('result-pid'),
   resultPrevLegend: document.getElementById('result-prev-legend'),
+  resultStrategyPrevLegend: document.getElementById('result-strategy-prev-legend'),
+  resultStrategyCanvas: document.getElementById('result-strategy-canvas'),
   resultRouteCanvas: document.getElementById('result-route-canvas'),
   resultTelemetryCanvas: document.getElementById('result-telemetry-canvas'),
   resultRatingCard: document.getElementById('result-rating-card'),
@@ -270,6 +297,7 @@ const els = {
   resultPipTitle: document.getElementById('result-pip-title'),
   resultPipHeadline: document.getElementById('result-pip-headline'),
   resultPipExplanation: document.getElementById('result-pip-explanation'),
+  resultPipStrategy: document.getElementById('result-pip-strategy'),
   resultPipLessonNote: document.getElementById('result-pip-lesson-note'),
   resultPipComparison: document.getElementById('result-pip-comparison'),
   resultDiagList: document.getElementById('result-diag-list'),
@@ -388,8 +416,11 @@ function applySharedSliderBounds() {
   }
 }
 
-function renderZoneHint(pillEl, trackEl, zone) {
+function renderZoneHint(pillEl, trackEl, zone, hideRecommended = false) {
   if (!pillEl || !trackEl) return;
+  pillEl.classList.toggle('hidden', hideRecommended);
+  trackEl.classList.toggle('hidden', hideRecommended);
+  if (hideRecommended) return;
   const labels = { low: 'Low', recommended: 'Recommended', high: 'High' };
   pillEl.textContent = labels[zone] || 'Low';
   pillEl.className = `zone-pill zone-${zone}`;
@@ -398,8 +429,20 @@ function renderZoneHint(pillEl, trackEl, zone) {
   }
 }
 
+function renderStrategyTradeoffMeter(gains, scene) {
+  const pred = predictStrategyTradeoffs(gains, scene);
+  if (els.tradeoffStrategyLabel) els.tradeoffStrategyLabel.textContent = pred.strategyLabel;
+  if (els.tradeoffSummary) els.tradeoffSummary.textContent = pred.summary;
+  for (const axis of ['speed', 'stability', 'precision', 'efficiency']) {
+    const val = Math.round(pred[axis] ?? 0);
+    if (els.tradeoffBars[axis]) els.tradeoffBars[axis].style.width = `${val}%`;
+    if (els.tradeoffVals[axis]) els.tradeoffVals[axis].textContent = String(val);
+  }
+}
+
 function syncAllPidPanels(gains, scene = state.activeScene) {
   const analysis = evaluatePidCoaching(gains, scene);
+  const hideZones = Boolean(scene?.strategyProfile?.hideRecommendedZone);
   for (const group of PID_PANEL_GROUPS) {
     group.sliders.kp.value = String(gains.kp);
     group.sliders.ki.value = String(gains.ki);
@@ -407,10 +450,11 @@ function syncAllPidPanels(gains, scene = state.activeScene) {
     group.outputs.kp.textContent = gains.kp.toFixed(1);
     group.outputs.ki.textContent = gains.ki.toFixed(2);
     group.outputs.kd.textContent = gains.kd.toFixed(1);
-    renderZoneHint(group.zones.kp, group.tracks.kp, analysis.zones.kp);
-    renderZoneHint(group.zones.ki, group.tracks.ki, analysis.zones.ki);
-    renderZoneHint(group.zones.kd, group.tracks.kd, analysis.zones.kd);
+    renderZoneHint(group.zones.kp, group.tracks.kp, analysis.zones.kp, hideZones);
+    renderZoneHint(group.zones.ki, group.tracks.ki, analysis.zones.ki, hideZones);
+    renderZoneHint(group.zones.kd, group.tracks.kd, analysis.zones.kd, hideZones);
   }
+  renderStrategyTradeoffMeter(gains, scene);
   return analysis;
 }
 
@@ -787,6 +831,11 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   els.resultSettling.textContent = `${metrics.settlingTime.toFixed(1)} s`;
   els.resultRouteFit.textContent = `${metrics.pathFitScore.toFixed(0)}% (${metrics.pathDeviation.toFixed(2)} m dev)`;
   els.resultSmoothness.textContent = `${metrics.flightSmoothness.toFixed(0)}%`;
+  if (els.resultEnergy) {
+    els.resultEnergy.textContent = Number.isFinite(metrics.energyRemainingPct)
+      ? `${metrics.energyRemainingPct.toFixed(0)}% left (${Math.round(metrics.energyUsed)} J)`
+      : `${Math.round(metrics.energyUsed ?? 0)} J (${Math.round(metrics.peakPower ?? 0)} W pk)`;
+  }
   els.resultAvgError.textContent = `${metrics.averageTrackingError.toFixed(2)} m`;
   els.resultSaturation.textContent = `${metrics.controlSaturationDuration.toFixed(2)} s`;
   els.resultPid.textContent = formatGainsText(metrics.pidParameters);
@@ -795,6 +844,12 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   els.resultPipTitle.textContent = report.title;
   els.resultPipHeadline.textContent = report.headline;
   els.resultPipExplanation.textContent = report.spokenSummary;
+  if (els.resultPipStrategy && report.strategyVerdict) {
+    els.resultPipStrategy.textContent = report.strategyVerdict;
+    els.resultPipStrategy.classList.remove('hidden');
+  } else if (els.resultPipStrategy) {
+    els.resultPipStrategy.classList.add('hidden');
+  }
   if (report.metricLessonNote) {
     els.resultPipLessonNote.textContent = report.metricLessonNote;
     els.resultPipLessonNote.classList.remove('hidden');
@@ -852,9 +907,17 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
   }
 
   const prevTrail = previousAttempt?.trail || null;
+  const prevStrat = previousAttempt?.strategyProfile || null;
   els.resultPrevLegend.classList.toggle('hidden', !(prevTrail?.length > 1));
+  els.resultStrategyPrevLegend?.classList.toggle('hidden', !prevStrat);
 
   navigateTo('result');
+  renderStrategyRadar(
+    els.resultStrategyCanvas,
+    report.strategyProfile,
+    prevStrat,
+    state.activeScene?.strategyProfile?.priorities || null
+  );
   renderRouteFitPreview(els.resultRouteCanvas, sim, prevTrail);
   renderTelemetryTimeSeriesPlot(els.resultTelemetryCanvas, telemetry, sim.config.maxThrust);
 }
@@ -986,6 +1049,32 @@ function openPreflightTuning(scene, options = {}) {
   els.preflightMaxThrust.textContent = `${maxThrust.toFixed(1)} N (TWR ${twr.toFixed(2)})`;
   els.preflightMaxTilt.textContent = `${scene.maxTilt ?? 32} deg`;
   els.preflightTimeLimit.textContent = Number.isFinite(scene.timeLimit) ? `${scene.timeLimit} s` : 'No Limit';
+  if (els.preflightBatteryBudget) {
+    els.preflightBatteryBudget.textContent = Number.isFinite(scene.energyBudget)
+      ? `${Math.round(scene.energyBudget)} J (Strict Limit)`
+      : 'Unlimited (Monitored)';
+  }
+  if (els.preflightStrategyTag && els.preflightStrategyPills) {
+    const sp = scene.strategyProfile || {
+      focusTag: 'Balanced Control',
+      priorities: { speed: 2, stability: 2, precision: 2, efficiency: 2 },
+      tradeoffHint: 'Balance responsiveness, stability, precision, and battery efficiency.'
+    };
+    els.preflightStrategyTag.textContent = sp.focusTag;
+    els.preflightStrategyHint.textContent = sp.tradeoffHint;
+    const labels = [
+      ['speed', 'Speed'],
+      ['stability', 'Stability'],
+      ['precision', 'Precision'],
+      ['efficiency', 'Energy']
+    ];
+    els.preflightStrategyPills.innerHTML = labels
+      .map(([k, lbl]) => {
+        const lvl = sp.priorities?.[k] ?? 2;
+        return `<div class="strategy-prio-pill ${lvl >= 3 ? 'is-high' : ''}"><span>${lbl}</span><strong>${'★'.repeat(lvl)}${'☆'.repeat(3 - lvl)}</strong></div>`;
+      })
+      .join('');
+  }
   els.btnPreflightMeetPip.classList.toggle('hidden', !isTutorial);
 
   const aid = isTutorial && scene.visualId ? getStemVisualAid(scene.visualId) : null;
@@ -1010,8 +1099,9 @@ function openPreflightTuning(scene, options = {}) {
     gainsToUse = state.tunedGainsByLevel[scene.id] || { ...initialGains };
   }
 
-  els.prePidBadge.textContent =
-    initialGains.kp === 0 && initialGains.ki === 0 && initialGains.kd === 0
+  els.prePidBadge.textContent = scene?.strategyProfile?.hideRecommendedZone
+    ? 'Autonomous Strategy'
+    : initialGains.kp === 0 && initialGains.ki === 0 && initialGains.kd === 0
       ? 'Starts at Zero'
       : 'Lesson Preset';
 
@@ -1124,6 +1214,22 @@ function updateFlightHud() {
     ? `${snap.elapsedTime.toFixed(1)} / ${limit} s`
     : `${snap.elapsedTime.toFixed(1)} s`;
 
+  if (els.flightBatteryPill && els.flightBatteryText) {
+    const powerW = Math.round(snap.drone.instantPower ?? 0);
+    if (Number.isFinite(snap.energyRemainingPct)) {
+      const pct = Math.max(0, Math.min(100, snap.energyRemainingPct));
+      els.flightBatteryBarWrap?.classList.remove('hidden');
+      if (els.flightBatteryBarFill) els.flightBatteryBarFill.style.width = `${pct.toFixed(0)}%`;
+      els.flightBatteryText.textContent = `${pct.toFixed(0)}% · ${powerW} W`;
+      els.flightBatteryPill.classList.toggle('is-low', pct < 20);
+      els.flightBatteryPill.classList.toggle('is-warn', pct >= 20 && pct < 40);
+    } else {
+      els.flightBatteryBarWrap?.classList.add('hidden');
+      els.flightBatteryText.textContent = `${Math.round(snap.energyUsed ?? 0)} J · ${powerW} W`;
+      els.flightBatteryPill.classList.remove('is-low', 'is-warn');
+    }
+  }
+
   const totalMass = getTotalMass(sim.config);
   const satFlag = snap.drone.thrust >= sim.config.maxThrust - 0.05 ? ' (SAT)' : '';
   els.flightPos.textContent = `${snap.drone.x.toFixed(2)} m, ${snap.drone.z.toFixed(2)} m`;
@@ -1196,10 +1302,12 @@ function handleSceneOutcomeIfNeeded() {
     const scoreResult = scoreFlightRun(outcome, metrics, state.activeScene.id);
     const previousAttempt = state.lastAttempts[state.activeScene.id] || null;
 
+    const strategyProfile = computeStrategyDimensions(metrics, state.activeScene);
     state.lastAttempts[state.activeScene.id] = {
       outcome,
       metrics,
       scoreResult,
+      strategyProfile,
       trail: sim.trail.slice()
     };
     state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };

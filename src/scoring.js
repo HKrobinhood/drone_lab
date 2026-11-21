@@ -111,27 +111,27 @@ export const LEVEL_STAR_THRESHOLDS = Object.freeze({
 
   'level-1': {
     twoStar: { maxTime: 42, maxOvershoot: 2.4, minPathFit: 50 },
-    threeStar: { maxTime: 22, maxOvershoot: 1.25, maxSettling: 4.2, minPathFit: 72, minSmoothness: 68 }
+    threeStar: { maxTime: 18, maxOvershoot: 1.3, maxSettling: 2.0, minPathFit: 72, minSmoothness: 68 }
   },
   'level-2': {
-    twoStar: { maxTime: 44, maxOvershoot: 2.0, minPathFit: 52 },
-    threeStar: { maxTime: 24, maxOvershoot: 1.15, maxSettling: 4.5, minPathFit: 74, minSmoothness: 70 }
+    twoStar: { maxTime: 44, maxOvershoot: 1.8, minPathFit: 54 },
+    threeStar: { maxTime: 24, maxOvershoot: 0.55, maxSettling: 3.0, minPathFit: 76, minSmoothness: 74 }
   },
   'level-3': {
-    twoStar: { maxTime: 52, maxOvershoot: 2.8, minPathFit: 40 },
-    threeStar: { maxTime: 28, maxOvershoot: 1.9, maxSettling: 6.0, minPathFit: 54, minSmoothness: 65 }
+    twoStar: { maxTime: 52, maxOvershoot: 2.8, minPathFit: 40, minEnergyPct: 12 },
+    threeStar: { maxTime: 28, maxOvershoot: 1.85, maxSettling: 5.5, minPathFit: 54, minSmoothness: 65, minEnergyPct: 35 }
   },
   'level-4': {
     twoStar: { maxTime: 52, maxOvershoot: 1.9, minPathFit: 55 },
-    threeStar: { maxTime: 30, maxOvershoot: 1.1, maxSettling: 4.2, minPathFit: 76, minSmoothness: 70 }
+    threeStar: { maxTime: 26, maxOvershoot: 0.9, maxSettling: 3.8, minPathFit: 78, minSmoothness: 72 }
   },
   'level-5': {
-    twoStar: { maxTime: 55, maxOvershoot: 2.6, minPathFit: 40 },
-    threeStar: { maxTime: 32, maxOvershoot: 1.75, maxSettling: 5.5, minPathFit: 52, minSmoothness: 66 }
+    twoStar: { maxTime: 55, maxOvershoot: 2.6, minPathFit: 40, minEnergyPct: 10 },
+    threeStar: { maxTime: 30, maxOvershoot: 1.7, maxSettling: 5.0, minPathFit: 50, minSmoothness: 68, minEnergyPct: 30 }
   },
   'level-6': {
-    twoStar: { maxTime: 65, maxOvershoot: 2.6, minPathFit: 44 },
-    threeStar: { maxTime: 38, maxOvershoot: 1.7, maxSettling: 5.0, minPathFit: 58, minSmoothness: 66 }
+    twoStar: { maxTime: 65, maxOvershoot: 2.6, minPathFit: 44, minEnergyPct: 10 },
+    threeStar: { maxTime: 34, maxOvershoot: 1.6, maxSettling: 4.5, minPathFit: 58, minSmoothness: 68, minEnergyPct: 28 }
   }
 });
 
@@ -161,6 +161,8 @@ export function scoreFlightRun(outcome, metrics, levelId) {
   const pathFit = Number(metrics?.pathFitScore ?? 0);
   const smoothness = Number(metrics?.flightSmoothness ?? 0);
   const collisions = Number(metrics?.collisionCount ?? 0);
+  const hasEnergyMetric = Number.isFinite(metrics?.energyRemainingPct);
+  const energyPct = hasEnergyMetric ? Number(metrics.energyRemainingPct) : null;
 
   const checks2Star = [
     {
@@ -192,6 +194,18 @@ export function scoreFlightRun(outcome, metrics, levelId) {
     }
   ];
 
+  if (Number.isFinite(thresholds.twoStar.minEnergyPct) && hasEnergyMetric) {
+    checks2Star.push({
+      criterionKey: 'energy',
+      tier: 2,
+      shortLabel: 'Battery Left',
+      actualText: `${energyPct.toFixed(0)}%`,
+      targetText: `>= ${thresholds.twoStar.minEnergyPct}%`,
+      label: `Battery Left >= ${thresholds.twoStar.minEnergyPct}%`,
+      passed: completed && energyPct >= thresholds.twoStar.minEnergyPct
+    });
+  }
+
   const checks3Star = [
     {
       criterionKey: 'time',
@@ -207,8 +221,8 @@ export function scoreFlightRun(outcome, metrics, levelId) {
       tier: 3,
       shortLabel: 'Max Overshoot',
       actualText: `${overshoot.toFixed(2)} m`,
-      targetText: `<= ${thresholds.threeStar.maxOvershoot.toFixed(1)} m`,
-      label: `Max Overshoot <= ${thresholds.threeStar.maxOvershoot.toFixed(1)} m`,
+      targetText: `<= ${thresholds.threeStar.maxOvershoot.toFixed(2)} m`,
+      label: `Max Overshoot <= ${thresholds.threeStar.maxOvershoot.toFixed(2)} m`,
       passed: completed && overshoot <= thresholds.threeStar.maxOvershoot
     },
     {
@@ -248,6 +262,18 @@ export function scoreFlightRun(outcome, metrics, levelId) {
       passed: completed && collisions === 0
     }
   ];
+
+  if (Number.isFinite(thresholds.threeStar.minEnergyPct) && hasEnergyMetric) {
+    checks3Star.push({
+      criterionKey: 'energy',
+      tier: 3,
+      shortLabel: 'Battery Left',
+      actualText: `${energyPct.toFixed(0)}%`,
+      targetText: `>= ${thresholds.threeStar.minEnergyPct}%`,
+      label: `Battery Left >= ${thresholds.threeStar.minEnergyPct}%`,
+      passed: completed && energyPct >= thresholds.threeStar.minEnergyPct
+    });
+  }
 
   const passedTwoStar = completed && checks2Star.every((c) => c.passed);
   const passedThreeStar = passedTwoStar && checks3Star.every((c) => c.passed);
@@ -296,7 +322,7 @@ export function buildRatingBreakdown(scoreResult, metrics, outcome) {
   const precisionPassed =
     completed &&
     (precisionChecks || [])
-      .filter((c) => c.criterionKey !== 'time')
+      .filter((c) => c.criterionKey !== 'time' && c.criterionKey !== 'energy')
       .every((c) => c.passed);
 
   const summaryRows = [
@@ -316,16 +342,75 @@ export function buildRatingBreakdown(scoreResult, metrics, outcome) {
       label: 'Precision Target',
       passed: precisionPassed,
       actualText: `Fit ${pathFit.toFixed(0)}% · Over ${overshoot.toFixed(2)} m · Settle ${settling.toFixed(1)} s`,
-      targetText: `Fit >= ${tier?.minPathFit ?? 50}% · Over <= ${(tier?.maxOvershoot ?? 2.4).toFixed(1)} m`
+      targetText: `Fit >= ${tier?.minPathFit ?? 50}% · Over <= ${(tier?.maxOvershoot ?? 2.4).toFixed(2)} m`
     }
   ];
+
+  if (Number.isFinite(tier?.minEnergyPct) && Number.isFinite(metrics?.energyRemainingPct)) {
+    const energyPct = Number(metrics.energyRemainingPct);
+    summaryRows.push({
+      label: 'Energy Target',
+      passed: completed && energyPct >= tier.minEnergyPct,
+      actualText: `${energyPct.toFixed(0)}% left (${Math.round(metrics.energyUsed ?? 0)} J)`,
+      targetText: `>= ${tier.minEnergyPct}% battery`
+    });
+  }
 
   return {
     summaryRows,
     checks2Star: scoreResult?.checks2Star || [],
     checks3Star: scoreResult?.checks3Star || [],
-    metricsSnapshot: { time, overshoot, settling, pathFit, smoothness, collisions }
+    metricsSnapshot: {
+      time,
+      overshoot,
+      settling,
+      pathFit,
+      smoothness,
+      collisions,
+      energyUsed: Number(metrics?.energyUsed ?? 0),
+      energyRemainingPct: Number.isFinite(metrics?.energyRemainingPct) ? Number(metrics.energyRemainingPct) : null
+    }
   };
+}
+
+/**
+ * Compute 0-100 four-axis strategy performance scores strictly from real flight metrics:
+ * Speed, Stability, Precision, and Efficiency.
+ */
+export function computeStrategyDimensions(metrics = {}, scene = null) {
+  const th = getThresholdsForLevel(scene?.id);
+  const time = Math.max(0.1, Number(metrics?.completionTime ?? 0));
+  const overshoot = Math.max(0, Number(metrics?.maxOvershoot ?? 0));
+  const settling = Math.max(0, Number(metrics?.settlingTime ?? time));
+  const pathFit = clamp(Number(metrics?.pathFitScore ?? 0), 0, 100);
+  const smoothness = clamp(Number(metrics?.flightSmoothness ?? 0), 0, 100);
+  const satSec = Math.max(0, Number(metrics?.controlSaturationDuration ?? 0));
+
+  // Speed: benchmarked against 3-star time & settling targets
+  const timeRatio = time / Math.max(8, th.threeStar.maxTime);
+  const speed = Math.round(clamp(112 - timeRatio * 42 - Math.max(0, settling - 1.5) * 4.5, 8, 100));
+
+  // Stability: smoothness minus overshoot & saturation penalty
+  const stability = Math.round(clamp(smoothness * 0.72 + Math.max(0, 100 - overshoot * 34) * 0.28 - satSec * 5, 8, 100));
+
+  // Precision: route fit + low overshoot + low average error
+  const avgErr = Math.max(0, Number(metrics?.averageTrackingError ?? 0));
+  const precision = Math.round(clamp(pathFit * 0.62 + Math.max(0, 100 - overshoot * 42) * 0.25 + Math.max(0, 100 - avgErr * 35) * 0.13, 8, 100));
+
+  // Efficiency: real remaining battery % (when budgeted) or normalized energy per second / peak power
+  let efficiency;
+  if (Number.isFinite(metrics?.energyRemainingPct)) {
+    efficiency = Math.round(clamp(Number(metrics.energyRemainingPct) * 1.45, 5, 100));
+  } else {
+    const energyUsed = Math.max(0, Number(metrics?.energyUsed ?? 0));
+    const avgPower = energyUsed / Math.max(1, time);
+    const totalMass = (scene?.droneMass ?? 1.2) + (scene?.payloadMass ?? 0);
+    const hoverPowerRef = 8 + 1.45 * Math.pow(totalMass * 9.81, 1.5);
+    const powerExcessRatio = avgPower / Math.max(40, hoverPowerRef);
+    efficiency = Math.round(clamp(122 - powerExcessRatio * 34 - satSec * 6, 8, 100));
+  }
+
+  return { speed, stability, precision, efficiency };
 }
 
 /**
@@ -371,6 +456,11 @@ export function buildNextStarAdvice(scoreResult, metrics, diagnostics = null, sc
       return `Smooth out flight control (${smoothness.toFixed(0)}% vs >= ${th.minSmoothness}%) with steady WASD and balanced Kd for ${targetTierLabel}!`;
     case 'collisions':
       return `Complete the route with zero wall bumps to earn ${targetTierLabel}!`;
+    case 'energy': {
+      const pct = Number(metrics?.energyRemainingPct ?? 0);
+      const need = Math.max(1, (th.minEnergyPct ?? 30) - pct);
+      return `Save ${need.toFixed(0)}% more battery (trim Kp power spikes and oscillation) for ${targetTierLabel}!`;
+    }
     default:
       if (diagnostics?.overshootSeverity === 'high') {
         return `Too much overshoot—try raising Kd to earn ${targetTierLabel}!`;

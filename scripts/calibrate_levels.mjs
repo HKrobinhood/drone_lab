@@ -10,6 +10,7 @@
 
 import { FlightSimulation, FIXED_DT } from '../src/simulation.js';
 import { CHALLENGE_SCENES, evaluateSceneOutcome } from '../src/scenes.js';
+import { scoreFlightRun } from '../src/scoring.js';
 
 const LEVEL_WAYPOINTS = {
   'level-1': [{ x: 17.5, z: 7.5, tol: 0.8 }],
@@ -182,5 +183,22 @@ function sweepLevel(levelId) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   for (const id of Object.keys(CHALLENGE_SCENES)) {
     sweepLevel(id);
+  }
+
+  console.log('\n=== M5.3 Cross-Level Strategy Differentiation Matrix ===');
+  const strategyPresets = {
+    Agile: { kp: 9.8, ki: 0.3, kd: 3.1 },
+    Precision: { kp: 5.2, ki: 0.2, kd: 5.6 },
+    EcoCargo: { kp: 6.4, ki: 1.4, kd: 4.6 },
+    WindLock: { kp: 6.8, ki: 1.9, kd: 5.0 }
+  };
+  for (const [lvl, scene] of Object.entries(CHALLENGE_SCENES)) {
+    const row = {};
+    for (const [sName, g] of Object.entries(strategyPresets)) {
+      const r = runLevelSimulation(lvl, g);
+      const sc = scoreFlightRun({ status: r.feasible ? 'completed' : 'failed', reason: r.reason }, r, lvl);
+      row[sName] = r.feasible ? `${sc.stars}★ (${r.completionTime.toFixed(1)}s${r.energyRemainingPct != null ? `, ${r.energyRemainingPct.toFixed(0)}%E` : ''})` : `FAIL(${r.reason})`;
+    }
+    console.log(scene.name.padEnd(28), row);
   }
 }

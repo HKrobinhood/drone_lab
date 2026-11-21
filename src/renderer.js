@@ -874,3 +874,116 @@ export function renderLivePidResponseChart(canvas, telemetry = [], axis = 'z', w
 
   ctx.restore();
 }
+
+/**
+ * Render a 4-axis Strategy Trade-off Radar (Speed, Stability, Precision, Efficiency)
+ * on the Result Screen, comparing mission priority target vs. current & previous runs.
+ */
+export function renderStrategyRadar(canvas, currentProfile, previousProfile = null, priorities = null) {
+  if (!canvas || !currentProfile) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 320;
+  const height = rect.height || 180;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, width, height);
+
+  const cx = width * 0.5;
+  const cy = height * 0.52;
+  const maxR = Math.min(width * 0.31, height * 0.36);
+
+  const axes = [
+    { key: 'speed', label: 'Speed', angle: -Math.PI / 2 },
+    { key: 'precision', label: 'Precision', angle: 0 },
+    { key: 'efficiency', label: 'Efficiency', angle: Math.PI / 2 },
+    { key: 'stability', label: 'Stability', angle: Math.PI }
+  ];
+
+  // Concentric diamond guide rings (33%, 66%, 100%)
+  for (const frac of [0.33, 0.66, 1.0]) {
+    ctx.beginPath();
+    axes.forEach((ax, idx) => {
+      const px = cx + Math.cos(ax.angle) * maxR * frac;
+      const py = cy + Math.sin(ax.angle) * maxR * frac;
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axis spokes
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+  for (const ax of axes) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ax.angle) * maxR, cy + Math.sin(ax.angle) * maxR);
+    ctx.stroke();
+  }
+
+  const drawPoly = (values, fillStyle, strokeStyle, dashed = false) => {
+    ctx.save();
+    ctx.beginPath();
+    axes.forEach((ax, idx) => {
+      const val = Math.max(0, Math.min(100, Number(values?.[ax.key] ?? 0))) / 100;
+      const px = cx + Math.cos(ax.angle) * maxR * val;
+      const py = cy + Math.sin(ax.angle) * maxR * val;
+      if (idx === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    if (dashed) ctx.setLineDash([4, 4]);
+    if (fillStyle) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+    }
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  // Mission priority silhouette (dashed gold)
+  if (priorities) {
+    const prioScaled = {
+      speed: (priorities.speed ?? 2) * 32,
+      stability: (priorities.stability ?? 2) * 32,
+      precision: (priorities.precision ?? 2) * 32,
+      efficiency: (priorities.efficiency ?? 2) * 32
+    };
+    drawPoly(prioScaled, 'rgba(250, 204, 21, 0.08)', 'rgba(250, 204, 21, 0.72)', true);
+  }
+
+  // Previous run (dashed violet)
+  if (previousProfile) {
+    drawPoly(previousProfile, 'rgba(192, 132, 252, 0.1)', 'rgba(192, 132, 252, 0.85)', true);
+  }
+
+  // Current run (solid cyan)
+  drawPoly(currentProfile, 'rgba(56, 189, 248, 0.24)', '#38bdf8', false);
+
+  // Axis labels + numeric values
+  ctx.font = '700 10.5px sans-serif';
+  ctx.fillStyle = '#e2e8f0';
+  for (const ax of axes) {
+    const lx = cx + Math.cos(ax.angle) * (maxR + 18);
+    const ly = cy + Math.sin(ax.angle) * (maxR + 14);
+    ctx.textAlign = ax.angle === 0 ? 'left' : ax.angle === Math.PI ? 'right' : 'center';
+    const val = Math.round(Number(currentProfile[ax.key] ?? 0));
+    ctx.fillText(`${ax.label} ${val}`, lx, ly + 3);
+  }
+
+  ctx.restore();
+}

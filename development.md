@@ -37,6 +37,7 @@
 | **M5** | PID Diagnostics | 飞行遥测记录、过冲/振荡/滞后/稳态误差/抗饱和诊断、调参建议与轨迹对比 | **已完成** |
 | **M5.1** | Visual-First UI & Animated Star Results | 视觉优先教学与交互图解（<=15 词）、Ghost Drone + 实时 PID 曲线与状态标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据与下一星建议、精简失败页 | **已完成** |
 | **M5.2** | Homepage UI Redesign | 明亮卡通科技风游戏首页重设计：蓝天草地场景、左侧 PIP + 中央超大 `Start Game` + 右侧无人机、4 步图标玩法流程、4 张简洁课程信息卡与完整 `About` 课程弹窗 | **已完成** |
+| **M5.3** | Strategic Control Trade-offs & Energy Model | 真实非线性旋翼功耗与电池耗尽失败模型、L1–L6 差异化策略格局（极速/精密/重载节能/狭缝权衡/强风抗扰/四维终考）、L3–L6 淡出绿区改用实时四维权衡预测器与结算四维策略雷达对比 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -179,6 +180,16 @@
 - **响应式与无障碍**：桌面端（1440×900）首屏完整展示 Hero、Start Game、4 步流程与 4 卡课程概览；平板端（834×1112）切换 2×2 卡片网格；手机端（390×844）标题与 `Start Game` 保持居中、角色缩放无遮挡、无横向溢出；所有动画支持 `prefers-reduced-motion` 且无外部 CDN 依赖。
 - **测试结果**：`node --test tests/*.test.mjs` 全量通过；无头 Chrome 桌面/平板/手机实测截图与交互（`Start Game` 跳转 Mode Selection、`About` 弹窗开关、零控制台报错）均通过。
 
+### M5.3 — Strategic Control Trade-offs & Energy Model
+- **真实旋翼功耗与电池模型（`src/physics.js`, `src/simulation.js`）**：基于动量理论实现非线性功率 $P(t) = P_{\text{avionics}} + k_{\text{ind}} T^{1.5} + k_{\text{slew}} |dT/dt|$，实时积分耗能并记录峰值功率与剩余电量；在 L3（3200 J）、L5（2800 J）、L6（4400 J）开启严格电池上限，电量耗尽直接触发 `Mission Failed — Battery Depleted`。
+- **新手村（T1–T4）四维策略启蒙**：保持 4 关结构不变，在 T1–T4 分别融入推力与功耗、速度↔过冲/能耗、抗风精度↔饱和/能耗、阻尼稳定/节能↔速度的渐进式权衡教学。
+- **正式挑战关（L1–L6）差异化策略分化（`src/scenes.js`, `src/scoring.js`, `scripts/calibrate_levels.mjs`）**：
+  - L1 `Express Hover`（Speed-First）、L2 `Surgical Braking`（Precision-First）、L3 `Eco Cargo Run`（Energy-First）、L4 `Corridor Sprint`（Speed vs. Precision）、L5 `Storm Hold`（Wind Stability）、L6 `Final Rescue`（Full 4-Way Trade-off）。
+  - 经离线跨关矩阵扫描实证：无单一 PID 组合可在全部 6 关获得 3★（例如 L1 极速参数在 L2/L4 降星并在 L6 硬着陆失败；L2 精密参数在 L1 降星并在 L3/L6 电量耗尽失败）。
+- **渐进式支架淡出与四维可视化（`src/coach.js`, `src/renderer.js`, `index.html`, `src/main.js`）**：
+  - T1–T4 与 L1–L2 保留滑块 `Low / Recommended / High` 辅助提示；**L3–L6 隐藏精确绿区**，引导玩家结合 `Mission Strategy Priorities` 与实时 **4-Axis Strategy Trade-off Meter（Speed / Stability / Precision / Efficiency）** 自主决策。
+  - 飞行顶部新增实时电池进度条/瞬时功率胶囊与 `High Drain / Low Battery` 状态徽章；结算页新增 `Energy Target` 评级依据、四维策略对比雷达图（本次 vs 上次 vs 任务优先级）与 PIP 策略复盘。
+
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
 - [ ] 校准各关卡难度与评分阈值
@@ -189,8 +200,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.2 — Homepage UI Redesign`（已完成，待人工验收后进入 M6）
-- **已完成**：全新明亮卡通科技风 STEM 游戏首页（PIP + 中央大按钮 `Start Game` + 卡通无人机 + 4 步图标玩法 + 4 张课程信息卡 + 完整 `About` 课程弹窗），未影响既有 PID、WASD、Tutorial/Challenge、三星评分与存档功能。
+- **当前里程碑**：`M5.3 — Strategic Control Trade-offs & Energy Model`（已完成，待人工验收后进入 M6）
+- **已完成**：真实旋翼非线性功耗与电池耗尽失败模型、T1–T4 四维策略启蒙、L1–L6 差异化策略格局、L3–L6 淡出绿区与实时四维权衡预测、飞行电量条及结算四维策略雷达对比。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -244,6 +255,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m5.1): improve STEM visuals and animated star results` — 完成 M5.1 视觉优先教学与交互图解、Ghost Drone / 实时 PID 曲线与状态标签、PIP 精简优化、居中三星动画、真实 M4 评级依据与精简失败结果页。
 - `feat(m5.1): unify tutorial and challenge star result display` — 统一新手村与正式关卡的三星动画与评级依据展示。
 - `feat(ui): redesign STEM game homepage` — 完成 M5.2 明亮卡通科技风 STEM 首页重设计、4 步图标玩法、4 张课程信息卡与完整 `About` 课程弹窗。
+- `feat(m5.3): add strategic PID trade-offs, rotor energy model, and 4-axis radar` — 完成 M5.3 非线性旋翼功耗与电池模型、L1–L6 差异化策略格局、L3–L6 绿区淡出、实时四维权衡预测与结算策略雷达对比。
 
 ---
 

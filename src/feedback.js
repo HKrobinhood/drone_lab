@@ -10,7 +10,8 @@
  * Pure JS module (no DOM/Canvas dependency).
  */
 
-import { evaluatePostFlightFeedback } from './coach.js';
+import { evaluatePostFlightFeedback, predictStrategyTradeoffs } from './coach.js';
+import { computeStrategyDimensions } from './scoring.js';
 
 function countOscillationReversals(values, deadband = 0.22) {
   if (!values || values.length < 4) return 0;
@@ -175,6 +176,23 @@ export function analyzeFlightTelemetry(telemetry = [], metrics = {}, scene = nul
     });
   }
 
+  if (Number.isFinite(metrics?.energyUsed) && metrics.energyUsed > 0) {
+    const remPct = metrics?.energyRemainingPct;
+    const energyVal = Number.isFinite(remPct)
+      ? `${remPct.toFixed(0)}% left`
+      : `${Math.round(metrics.energyUsed)} J`;
+    const lowBatt = Number.isFinite(remPct) && remPct < 25;
+    findings.push({
+      key: 'energy',
+      label: 'Energy Efficiency',
+      severity: lowBatt ? 'warning' : Number.isFinite(remPct) && remPct < 40 ? 'caution' : 'good',
+      value: energyVal,
+      coachLine: Number.isFinite(remPct)
+        ? `Used ${Math.round(metrics.energyUsed)} J (peak ${Math.round(metrics.peakPower ?? 0)} W), leaving ${remPct.toFixed(0)}% battery.`
+        : `Total electrical draw was ${Math.round(metrics.energyUsed)} J with ${Math.round(metrics.peakPower ?? 0)} W peak rotor power.`
+    });
+  }
+
   return {
     sampleCount,
     maxOvershoot,
@@ -314,11 +332,18 @@ export function generatePipDiagnosticReport(
     }
   }
 
+  const strategyProfile = computeStrategyDimensions(metrics, scene);
+  const predictedStrategy = predictStrategyTradeoffs(metrics?.pidParameters, scene);
+  const missionFocus = scene?.strategyProfile?.focusTag || 'Balanced Control';
+  const strategyVerdict = `Strategy Profile (${predictedStrategy.strategyLabel}) vs. ${missionFocus}: Speed ${strategyProfile.speed} · Stability ${strategyProfile.stability} · Precision ${strategyProfile.precision} · Efficiency ${strategyProfile.efficiency}.`;
+
   return {
     mood,
     title: 'PIP Flight Coach — Telemetry Analysis',
     headline,
     spokenSummary: narrativeParts.join(' '),
+    strategyVerdict,
+    strategyProfile,
     metricLessonNote,
     comparisonNote,
     diagnostics: diag,
@@ -367,6 +392,19 @@ export function evaluateLiveControlStatus(telemetry = [], sim = null, scene = nu
 
   if (last.saturated || satCount >= 6) {
     badges.push({ key: 'saturated', label: 'Saturated', tone: 'danger', icon: '⚡' });
+  }
+  const avgRecentPower =
+    recent.reduce((sum, s) => sum + Number(s.power ?? 0), 0) / recent.length;
+  const totalMass = (scene?.droneMass ?? 1.2) + (scene?.payloadMass ?? 0);
+  const highPowerLimit = totalMass > 1.7 ? 195 : 135;
+  const lowBattery = Number.isFinite(last.energyPct) && last.energyPct < 20;
+  if (lowBattery || avgRecentPower > highPowerLimit) {
+    badges.push({
+      key: 'high_drain',
+      label: lowBattery ? 'Low Battery' : 'High Drain',
+      tone: lowBattery ? 'danger' : 'warning',
+      icon: '🔋'
+    });
   }
   if (recentReversals >= 3) {
     badges.push({ key: 'oscillation', label: 'Oscillation', tone: 'warning', icon: '〰' });

@@ -111,12 +111,12 @@ describe('M4 — 1 to 3 Star Scoring & Calibration', () => {
 
   it('earns 3 stars on real well-tuned runs across L1-L6', () => {
     const tunedByLevel = {
-      'level-1': { kp: 6.5, ki: 0.4, kd: 3.8 },
-      'level-2': { kp: 6.5, ki: 0.4, kd: 4.5 },
-      'level-3': { kp: 6.7, ki: 1.6, kd: 4.6 },
-      'level-4': { kp: 6.6, ki: 0.4, kd: 4.6 },
-      'level-5': { kp: 7.0, ki: 1.8, kd: 4.8 },
-      'level-6': { kp: 7.0, ki: 1.5, kd: 4.6 }
+      'level-1': { kp: 9.8, ki: 0.3, kd: 3.1 },
+      'level-2': { kp: 5.2, ki: 0.2, kd: 5.6 },
+      'level-3': { kp: 6.4, ki: 1.4, kd: 4.6 },
+      'level-4': { kp: 5.2, ki: 0.2, kd: 5.6 },
+      'level-5': { kp: 6.8, ki: 1.9, kd: 5.0 },
+      'level-6': { kp: 6.8, ki: 1.9, kd: 5.0 }
     };
 
     for (const [levelId, gains] of Object.entries(tunedByLevel)) {

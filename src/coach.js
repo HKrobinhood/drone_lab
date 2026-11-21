@@ -298,6 +298,15 @@ export function evaluatePostFlightFeedback(outcome, metrics, scene) {
     };
   }
 
+  if (reason === 'battery_depleted') {
+    return {
+      state: 'flight_feedback',
+      title: 'What went wrong?',
+      explanation: `Battery ran out (${Math.round(metrics?.energyUsed ?? 0)} J used, peak power ${Math.round(metrics?.peakPower ?? 0)} W). High thrust spikes, oscillation, or sluggish hovering drained power too fast.`,
+      tip: 'Use moderate Kp, firm Kd damping (no hunting), and steady Ki trim so rotor power stays low and smooth.'
+    };
+  }
+
   if (reason === 'out_of_bounds') {
     return {
       state: 'flight_feedback',
@@ -416,4 +425,76 @@ export function evaluateLiveFlightCoaching(sim, scene, guideStep = null) {
       scene.briefing || 'Guide the yellow REF marker smoothly with WASD toward your mission goal.'
     ]
   };
+}
+
+/**
+ * Predict four-axis strategy trade-offs (Speed, Stability, Precision, Efficiency) from
+ * current PID gains and plant physics (mass, maxThrust, disturbance) for Pre-flight planning.
+ */
+export function predictStrategyTradeoffs(gains = {}, scene = null) {
+  const kp = Math.max(0, Number(gains?.kp ?? 0));
+  const ki = Math.max(0, Number(gains?.ki ?? 0));
+  const kd = Math.max(0, Number(gains?.kd ?? 0));
+
+  if (kp < 0.4) {
+    return {
+      speed: 5,
+      stability: 20,
+      precision: 5,
+      efficiency: 15,
+      strategyLabel: 'Idle (Zero Thrust Response)',
+      summary: 'Raise Kp first so your controller can generate lift and movement.'
+    };
+  }
+
+  const totalMass = (scene?.droneMass ?? 1.2) + (scene?.payloadMass ?? 0);
+  const massFactor = 1.2 / Math.max(0.6, totalMass);
+  const dampingRatio = (kd * Math.sqrt(massFactor)) / (2 * Math.sqrt(Math.max(0.2, kp)));
+  const needsIntegral = Boolean(scene?.requiresIntegral);
+
+  // Speed: rises with Kp and massFactor, damped by excessive Kd
+  const rawSpeed = 18 + Math.min(82, kp * 9.5 * Math.sqrt(massFactor)) - Math.max(0, kd - 4.2) * 5.2;
+  const speed = Math.round(Math.max(8, Math.min(100, rawSpeed)));
+
+  // Stability: peaks around dampingRatio 0.72 - 1.15, penalized by underdamping & excess Ki
+  const underdampPen = dampingRatio < 0.65 ? (0.65 - dampingRatio) * 145 : 0;
+  const kiWindupPen = Math.max(0, ki - 2.4) * 14 + (ki > 0.6 && dampingRatio < 0.55 ? 18 : 0);
+  const stability = Math.round(Math.max(8, Math.min(100, 96 - underdampPen - kiWindupPen)));
+
+  // Precision: needs crisp Kp, solid damping, and adequate Ki if wind/heavy payload exists
+  const kiGapPen = needsIntegral && ki < 1.0 ? (1.0 - ki) * 42 : 0;
+  const highKpOverPen = kp > 9.0 && dampingRatio < 0.68 ? (kp - 9.0) * 8 : 0;
+  const precision = Math.round(
+    Math.max(8, Math.min(100, 88 - Math.abs(kp - 6.2) * 3.2 - underdampPen * 0.65 - kiGapPen - highKpOverPen))
+  );
+
+  // Efficiency: nonlinear thrust spikes (high Kp + low Kd) & slow sluggish drift both hurt energy
+  const spikePen = Math.max(0, kp - 7.0) * 6.5 + (dampingRatio < 0.58 ? (0.58 - dampingRatio) * 110 : 0);
+  const slowDragPen = kp < 4.2 ? (4.2 - kp) * 14 : 0;
+  const heavinessPen = totalMass > 1.7 ? (totalMass - 1.7) * 18 : 0;
+  const efficiency = Math.round(
+    Math.max(8, Math.min(100, 94 - spikePen - slowDragPen - kiGapPen * 0.5 - Math.max(0, ki - 2.6) * 10 - heavinessPen))
+  );
+
+  let strategyLabel = 'Balanced Cruise';
+  let summary = 'Balanced trade-off across speed, damping, precision, and battery efficiency.';
+
+  if (dampingRatio < 0.45) {
+    strategyLabel = 'Underdamped / High Drain Risk';
+    summary = 'Low damping vs Kp risks oscillation, overshoot, and rapid battery drain.';
+  } else if (kp >= 8.0 && kd <= 4.3) {
+    strategyLabel = 'Agile (Speed-First)';
+    summary = 'Fast climb and snappy tracking, trading away some overshoot margin and peak power efficiency.';
+  } else if (dampingRatio >= 0.78 && kp <= 7.2 && ki <= 1.1) {
+    strategyLabel = 'Precision Damped';
+    summary = 'High damping eliminates overshoot for tight zones, trading off raw top acceleration.';
+  } else if (ki >= 1.1 && dampingRatio >= 0.58) {
+    strategyLabel = needsIntegral ? 'Wind / Load Lock' : 'High-Trim Cruise';
+    summary = 'Strong integral trim holds exact position against steady wind or payload with steady damping.';
+  } else if (efficiency >= 76 && kp <= 7.0 && kd >= 3.8) {
+    strategyLabel = 'Eco Smooth';
+    summary = 'Smooth thrust profile minimizes T^1.5 power spikes to maximize remaining battery.';
+  }
+
+  return { speed, stability, precision, efficiency, strategyLabel, summary };
 }

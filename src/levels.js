@@ -51,51 +51,51 @@ export const CHALLENGE_LEVELS = [
     id: 'level-1',
     mode: 'challenge',
     order: 1,
-    name: 'Level 1 — Basic Hover',
+    name: 'Level 1 — Express Hover',
     difficulty: 'Easy',
-    learningFocus: 'Proportional Gain (Kp)',
-    summary: 'Take off with WASD and tune Kp to hover steadily inside a wide aerial target zone.',
-    milestone: 'M3.2'
+    learningFocus: 'Speed-First Strategy (Agile Kp)',
+    summary: 'Wide hover zone with a crisp 3-star speed & settling target—choose an agile Kp strategy.',
+    milestone: 'M5.3'
   },
   {
     id: 'level-2',
     mode: 'challenge',
     order: 2,
-    name: 'Level 2 — Smooth Braking',
+    name: 'Level 2 — Surgical Braking',
     difficulty: 'Easy',
-    learningFocus: 'Derivative Damping (Kd)',
-    summary: 'Coordinate Kp and Kd to brake smoothly and stop inside a tighter target zone.',
-    milestone: 'M3.2'
+    learningFocus: 'Precision-First Strategy (High Kd)',
+    summary: 'Compact target and tight stopping limit—trade top speed for near-zero overshoot damping.',
+    milestone: 'M5.3'
   },
   {
     id: 'level-3',
     mode: 'challenge',
     order: 3,
-    name: 'Level 3 — Heavy Cargo',
+    name: 'Level 3 — Eco Cargo Run',
     difficulty: 'Intermediate',
-    learningFocus: 'Mass, Thrust & Saturation',
-    summary: 'Carry a heavy cargo payload under fixed maximum thrust with increased inertia and saturation risk.',
-    milestone: 'M3.2'
+    learningFocus: 'Energy-First Strategy (3200 J Battery)',
+    summary: 'Carry heavy cargo on a finite battery—avoid thrust spikes and oscillation to finish efficiently.',
+    milestone: 'M5.3'
   },
   {
     id: 'level-4',
     mode: 'challenge',
     order: 4,
-    name: 'Level 4 — Precision Corridor',
+    name: 'Level 4 — Corridor Sprint',
     difficulty: 'Intermediate',
-    learningFocus: 'Precision vs. Stability Trade-off',
-    summary: 'Thread a tight obstacle corridor where overshoot and oscillation cause collisions.',
-    milestone: 'M3.2'
+    learningFocus: 'Speed vs. Precision Trade-off',
+    summary: 'Thread tight obstacle gates briskly without triggering oscillatory wall collisions.',
+    milestone: 'M5.3'
   },
   {
     id: 'level-5',
     mode: 'challenge',
     order: 5,
-    name: 'Level 5 — Wind Disturbance',
+    name: 'Level 5 — Storm Hold',
     difficulty: 'Advanced',
-    learningFocus: 'Integral Control (Ki) & Gust Rejection',
-    summary: 'Reject sustained crosswind and repeatable gusts while avoiding integral windup.',
-    milestone: 'M3.2'
+    learningFocus: 'Wind Stability vs. Energy (2800 J)',
+    summary: 'Hold precision under crosswind and gusts using Wind-Lock Ki/Kd without draining battery.',
+    milestone: 'M5.3'
   },
   {
     id: 'level-6',
@@ -103,9 +103,9 @@ export const CHALLENGE_LEVELS = [
     order: 6,
     name: 'Level 6 — Final Rescue',
     difficulty: 'Expert',
-    learningFocus: 'Comprehensive PID Synthesis',
-    summary: 'Combine heavy payload, narrow obstacles, crosswind, rings, and precision landing under time pressure.',
-    milestone: 'M3.2'
+    learningFocus: 'Full 4-Way Strategy Synthesis (4400 J)',
+    summary: 'Balance Speed, Stability, Precision, and Battery across payload, gusts, rings, and soft landing.',
+    milestone: 'M5.3'
   }
 ];
 

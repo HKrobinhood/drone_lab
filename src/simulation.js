@@ -147,6 +147,8 @@ export class FlightSimulation {
     this.landingPad = options.landingPad || null;
     this.ringDefs = options.rings || [];
     this.outOfBoundsMargin = options.outOfBoundsMargin ?? null;
+    this.energyBudget = Number.isFinite(options.energyBudget) && options.energyBudget > 0 ? options.energyBudget : null;
+    this.failOnBatteryEmpty = Boolean(options.failOnBatteryEmpty && this.energyBudget !== null);
     this.reset(options.autoStart === true);
   }
 
@@ -195,12 +197,17 @@ export class FlightSimulation {
         : null;
       this.ringDefs = scene.rings || [];
       this.outOfBoundsMargin = scene.outOfBoundsMargin ?? null;
+      this.energyBudget =
+        Number.isFinite(scene.energyBudget) && scene.energyBudget > 0 ? scene.energyBudget : null;
+      this.failOnBatteryEmpty = Boolean(scene.failOnBatteryEmpty && this.energyBudget !== null);
 
       if (!options.preserveGains) {
         this.setGains(scene.initialPID || scene.initialGains || DEFAULT_PID_GAINS);
       }
     } else {
       this.config = { ...this.baseConfig };
+      this.energyBudget = null;
+      this.failOnBatteryEmpty = false;
     }
     this.reset(startRunning);
   }
@@ -252,6 +259,9 @@ export class FlightSimulation {
     this.outOfBounds = false;
     this.landedOffPad = false;
     this.hasBeenAirborne = this.startPos.z > 0.25;
+    this.energyUsed = 0;
+    this.peakPower = 0;
+    this.batteryDepleted = false;
 
     // Telemetry metrics accumulators (M3.1 -> M4 scoring interface)
     this.metrics = {
@@ -355,6 +365,16 @@ export class FlightSimulation {
       this.hasBeenAirborne = true;
     }
 
+    // Integrate real rotor + avionics electrical energy (Joules)
+    const powerW = Number.isFinite(this.drone.instantPower) ? this.drone.instantPower : 0;
+    this.energyUsed += powerW * dt;
+    if (powerW > this.peakPower) {
+      this.peakPower = powerW;
+    }
+    if (this.energyBudget !== null && this.energyUsed >= this.energyBudget) {
+      this.batteryDepleted = true;
+    }
+
     // Record M4 scoring telemetry metrics
     const errX = this.reference.x - this.drone.x;
     const errZ = this.reference.z - this.drone.z;
@@ -415,6 +435,8 @@ export class FlightSimulation {
         dZ: resZ.dTerm,
         outZ: resZ.output,
         thrust: this.drone.thrust,
+        power: powerW,
+        energyPct: this.getEnergyRemainingPct(),
         saturated: Boolean(thrustSaturated || resX.saturated || resZ.saturated)
       });
       if (this.trail.length > 2400) {
@@ -582,6 +604,11 @@ export class FlightSimulation {
     this.previousTrail = Array.isArray(trail) ? trail.map((p) => ({ x: p.x, z: p.z })) : [];
   }
 
+  getEnergyRemainingPct() {
+    if (this.energyBudget === null || this.energyBudget <= 0) return null;
+    return clamp(((this.energyBudget - this.energyUsed) / this.energyBudget) * 100, 0, 100);
+  }
+
   getTelemetrySeries() {
     return this.telemetry.slice();
   }
@@ -606,6 +633,7 @@ export class FlightSimulation {
         : Math.max(0, this.elapsedTime - this.metrics.lastRefMoveTime);
 
     const { pathDeviation, pathFitScore } = computePathFit(this.refTrail, this.trail);
+    const energyRemainingPct = this.getEnergyRemainingPct();
 
     return {
       completionTime: this.elapsedTime,
@@ -617,6 +645,11 @@ export class FlightSimulation {
       flightSmoothness,
       pathDeviation,
       pathFitScore,
+      energyUsed: this.energyUsed,
+      energyBudget: this.energyBudget,
+      energyRemainingPct,
+      peakPower: this.peakPower,
+      batteryDepleted: this.batteryDepleted,
       collisionCount: this.collisionCount,
       controlSaturationDuration: this.metrics.controlSaturationDuration,
       pidParameters: { ...this.gains }
@@ -641,6 +674,11 @@ export class FlightSimulation {
       collisionCount: this.collisionCount,
       outOfBounds: this.outOfBounds,
       landedOffPad: this.landedOffPad,
+      energyUsed: this.energyUsed,
+      energyBudget: this.energyBudget,
+      energyRemainingPct: this.getEnergyRemainingPct(),
+      peakPower: this.peakPower,
+      batteryDepleted: this.batteryDepleted,
       windMode: this.windMode,
       metrics: this.getFlightMetrics()
     };

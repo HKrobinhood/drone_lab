@@ -597,6 +597,14 @@
                 <div><span>Success Requirements</span><strong id="preflight-success-req"></strong></div>
                 <div><span>Flight Conditions</span><strong id="preflight-conditions"></strong></div>
               </div>
+              <div id="preflight-strategy-box" class="strategy-priority-box">
+                <div class="strategy-priority-head">
+                  <span class="prog-label">Mission Strategy Priorities</span>
+                  <span id="preflight-strategy-tag" class="badge badge-stem">Speed-First</span>
+                </div>
+                <div id="preflight-strategy-pills" class="strategy-priority-pills"></div>
+                <p id="preflight-strategy-hint" class="strategy-hint-text"></p>
+              </div>
               <div class="progression-cards">
                 <div class="progression-box">
                   <span class="prog-label">Previous Knowledge</span>
@@ -636,6 +644,10 @@
                 <div class="spec-box">
                   <span>Time Limit</span>
                   <strong id="preflight-time-limit">65 s</strong>
+                </div>
+                <div class="spec-box spec-battery-box">
+                  <span>Battery Budget</span>
+                  <strong id="preflight-battery-budget">Monitored</strong>
                 </div>
               </div>
               <div id="preflight-visual-aid" class="preflight-visual-aid hidden">
@@ -779,6 +791,37 @@
                 </div>
               </div>
 
+              <!-- Live 4-Axis Strategy Trade-off Predictor -->
+              <div id="preflight-tradeoff-panel" class="tradeoff-panel" aria-live="polite">
+                <div class="tradeoff-panel-head">
+                  <span class="telemetry-title" style="margin:0;">Predicted Strategy Trade-offs</span>
+                  <strong id="tradeoff-strategy-label" class="tradeoff-badge">Balanced Cruise</strong>
+                </div>
+                <div class="tradeoff-meters">
+                  <div class="tradeoff-meter-row">
+                    <span>Speed</span>
+                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-speed" class="tradeoff-bar-fill bar-speed"></div></div>
+                    <strong id="tradeoff-val-speed">50</strong>
+                  </div>
+                  <div class="tradeoff-meter-row">
+                    <span>Stability</span>
+                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-stability" class="tradeoff-bar-fill bar-stability"></div></div>
+                    <strong id="tradeoff-val-stability">50</strong>
+                  </div>
+                  <div class="tradeoff-meter-row">
+                    <span>Precision</span>
+                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-precision" class="tradeoff-bar-fill bar-precision"></div></div>
+                    <strong id="tradeoff-val-precision">50</strong>
+                  </div>
+                  <div class="tradeoff-meter-row">
+                    <span>Efficiency</span>
+                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-efficiency" class="tradeoff-bar-fill bar-efficiency"></div></div>
+                    <strong id="tradeoff-val-efficiency">50</strong>
+                  </div>
+                </div>
+                <p id="tradeoff-summary" class="tradeoff-summary"></p>
+              </div>
+
               <div class="pid-actions">
                 <button id="btn-pre-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
                 <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight</button>
@@ -802,6 +845,13 @@
             </div>
           </div>
           <div class="flight-controls-top">
+            <div id="flight-battery-pill" class="battery-pill" title="Real-time rotor power and battery state">
+              <span class="battery-label">Power</span>
+              <div id="flight-battery-bar-wrap" class="battery-bar hidden">
+                <div id="flight-battery-bar-fill" class="battery-bar-fill" style="width:100%"></div>
+              </div>
+              <strong id="flight-battery-text">0 J · 8 W</strong>
+            </div>
             <div class="timer-pill">
               <span>Time</span>
               <strong id="flight-timer">0.0 s</strong>
@@ -1119,6 +1169,7 @@
                 </div>
                 <div class="result-pip-bubble">
                   <p id="result-pip-explanation"></p>
+                  <p id="result-pip-strategy" class="result-pip-strategy hidden"></p>
                   <p id="result-pip-lesson-note" class="result-pip-lesson-note hidden"></p>
                   <p id="result-pip-comparison" class="result-pip-comparison hidden"></p>
                 </div>
@@ -1142,7 +1193,17 @@
             </div>
 
             <!-- Detailed Flight Charts & Telemetry Metrics -->
-            <div class="result-grid result-telemetry-row">
+            <div class="result-grid result-telemetry-row result-telemetry-row-3">
+              <article class="info-card">
+                <span class="card-eyebrow">Strategy Trade-off Profile</span>
+                <div class="route-legend">
+                  <span><i class="legend-ref"></i> Mission Priority</span>
+                  <span><i class="legend-actual"></i> This Run</span>
+                  <span id="result-strategy-prev-legend" class="hidden"><i class="legend-prev"></i> Previous</span>
+                </div>
+                <canvas id="result-strategy-canvas" class="result-strategy-canvas" aria-label="Four-axis strategy performance radar"></canvas>
+              </article>
+
               <article class="info-card">
                 <span class="card-eyebrow">Route Fit Comparison</span>
                 <div class="route-legend">
@@ -1185,6 +1246,10 @@
                 <div class="spec-box">
                   <span>Flight Stability</span>
                   <strong id="result-smoothness">100%</strong>
+                </div>
+                <div class="spec-box">
+                  <span>Energy / Battery</span>
+                  <strong id="result-energy">0 J</strong>
                 </div>
                 <div class="spec-box">
                   <span>Avg Tracking Error</span>

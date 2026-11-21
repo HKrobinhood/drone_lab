@@ -23,6 +23,7 @@ import { FlightSimulation, PID_SLIDER_BOUNDS, FIXED_DT } from '../src/simulation
 import { TUTORIAL_SCENES, CHALLENGE_SCENES } from '../src/scenes.js';
 import { TutorialGuideEngine, TUTORIAL_GUIDE_FLOWS } from '../src/tutorial_guide.js';
 import { PID_PARAM_EXPLAINERS, getPidParamExplainer } from '../src/visual_aids.js';
+import { scoreFlightRun, buildRatingBreakdown } from '../src/scoring.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -231,6 +232,19 @@ describe('M5.4 — Beginner Onboarding, Visual Explainers & English-Only UI', ()
 
     // Tutorial 4 leaves full Tune -> Test -> Compare -> Fly workflow autonomous (1 step)
     assert.equal(TUTORIAL_GUIDE_FLOWS['tutorial-4'].length, 1);
+
+    // Tutorial 1 awards 3 stars on any successful completion without requiring precision
+    const sloppyT1 = scoreFlightRun(
+      { status: 'completed' },
+      { completionTime: 95, maxOvershoot: 4.5, settlingTime: 18, pathFitScore: 18, flightSmoothness: 25, collisionCount: 0 },
+      'tutorial-1'
+    );
+    assert.equal(sloppyT1.stars, 3);
+    const t1Breakdown = buildRatingBreakdown(sloppyT1, { completionTime: 95, maxOvershoot: 4.5, pathFitScore: 18 }, { status: 'completed' });
+    assert.equal(t1Breakdown.summaryRows.some((r) => r.label === 'Precision Target'), false);
+
+    const failedT1 = scoreFlightRun({ status: 'failed' }, { completionTime: 15 }, 'tutorial-1');
+    assert.equal(failedT1.stars, 0);
 
     for (const [sceneId, steps] of Object.entries(TUTORIAL_GUIDE_FLOWS)) {
       for (const step of steps) {

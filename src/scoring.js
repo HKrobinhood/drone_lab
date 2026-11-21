@@ -93,8 +93,9 @@ export function computePathFit(refTrail, actualTrail) {
 
 export const LEVEL_STAR_THRESHOLDS = Object.freeze({
   'tutorial-1': {
-    twoStar: { maxTime: 45, maxOvershoot: 2.4, minPathFit: 50 },
-    threeStar: { maxTime: 24, maxOvershoot: 1.3, maxSettling: 4.5, minPathFit: 68, minSmoothness: 65 }
+    completionGrantsThreeStars: true,
+    twoStar: { maxTime: 120, maxOvershoot: 99, minPathFit: 0 },
+    threeStar: { maxTime: 120, maxOvershoot: 99, maxSettling: 120, minPathFit: 0, minSmoothness: 0 }
   },
   'tutorial-2': {
     twoStar: { maxTime: 45, maxOvershoot: 2.5, minPathFit: 50 },
@@ -163,6 +164,40 @@ export function scoreFlightRun(outcome, metrics, levelId) {
   const collisions = Number(metrics?.collisionCount ?? 0);
   const hasEnergyMetric = Number.isFinite(metrics?.energyRemainingPct);
   const energyPct = hasEnergyMetric ? Number(metrics.energyRemainingPct) : null;
+
+  // Onboarding starter rule (Tutorial 1): any successful completion earns 3 stars without precision limits
+  if (thresholds.completionGrantsThreeStars) {
+    const checks2Star = [
+      {
+        criterionKey: 'completion',
+        tier: 2,
+        shortLabel: 'Mission Completed',
+        actualText: completed ? 'Cleared' : 'Failed',
+        targetText: 'Reach blue circle',
+        label: 'Fly into the blue target circle and hold steady',
+        passed: completed
+      }
+    ];
+    const checks3Star = [
+      {
+        criterionKey: 'completion',
+        tier: 3,
+        shortLabel: 'Starter Mastery',
+        actualText: completed ? '3 Stars Awarded' : 'Not Cleared',
+        targetText: 'Complete lesson',
+        label: 'Complete Tutorial 1 (no precision requirement)',
+        passed: completed
+      }
+    ];
+    return {
+      stars: completed ? 3 : 0,
+      maxStars: 3,
+      summaryLabel: completed ? 'Tutorial Complete (3 Stars)' : 'Mission Failed',
+      thresholds,
+      checks2Star,
+      checks3Star
+    };
+  }
 
   const checks2Star = [
     {
@@ -315,6 +350,37 @@ export function buildRatingBreakdown(scoreResult, metrics, outcome) {
   const settling = Number(metrics?.settlingTime ?? time);
   const smoothness = Number(metrics?.flightSmoothness ?? 0);
   const collisions = Number(metrics?.collisionCount ?? 0);
+
+  if (scoreResult?.thresholds?.completionGrantsThreeStars) {
+    return {
+      summaryRows: [
+        {
+          label: 'Mission Completed',
+          passed: completed,
+          actualText: completed ? 'Cleared' : 'Failed',
+          targetText: 'Goal Reached'
+        },
+        {
+          label: 'Tutorial 1 Reward',
+          passed: completed,
+          actualText: completed ? '3 Stars Earned' : '0 Stars',
+          targetText: 'Complete flight (no precision limit)'
+        }
+      ],
+      checks2Star: scoreResult?.checks2Star || [],
+      checks3Star: scoreResult?.checks3Star || [],
+      metricsSnapshot: {
+        time,
+        overshoot,
+        settling,
+        pathFit,
+        smoothness,
+        collisions,
+        energyUsed: Number(metrics?.energyUsed ?? 0),
+        energyRemainingPct: Number.isFinite(metrics?.energyRemainingPct) ? Number(metrics.energyRemainingPct) : null
+      }
+    };
+  }
 
   const timeTarget = tier?.maxTime ?? 45;
   const timePassed = completed && time <= timeTarget;

@@ -768,12 +768,17 @@ export function renderLivePidResponseChart(canvas, telemetry = [], axis = 'z', w
   const width = rect.width || 460;
   const height = rect.height || 108;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const targetW = Math.round(width * dpr);
+  const targetH = Math.round(height * dpr);
 
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
+  // Only resize backing store when dimensions actually change (avoids 60fps canvas flicker in Safari/Chrome)
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
 
   ctx.save();
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   ctx.fillStyle = '#0b1220';
   ctx.fillRect(0, 0, width, height);
@@ -1004,12 +1009,16 @@ export function renderTestBenchChart(canvas, currentResult, previousResult = nul
   const width = rect.width || 460;
   const height = rect.height || 148;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const targetW = Math.round(width * dpr);
+  const targetH = Math.round(height * dpr);
 
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
 
   ctx.save();
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   ctx.fillStyle = '#0b1220';
   ctx.fillRect(0, 0, width, height);

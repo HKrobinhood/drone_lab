@@ -371,6 +371,7 @@ let lastFrameTime = null;
 let pipDebounceTimer = null;
 let lastGuideRenderSig = '';
 let lastFlightPipSig = '';
+let lastFlightPipUpdateAt = 0;
 let lastControlBadgeSig = '';
 let starAnimTimers = [];
 let starAnimTargetCount = 0;
@@ -713,27 +714,46 @@ function renderPipCard(cardEls, coachData) {
   };
   const mood = coachData.mood || resolvePipMood(coachData.state);
   const baseClass = cardEls === els.flightPipCard ? 'pip-card pip-card-compact' : 'pip-card';
-  cardEls.card.className = `${baseClass} pip-${coachData.state || 'teaching'} pip-expr-${mood}`;
-  if (cardEls.avatar) {
+  const nextClass = `${baseClass} pip-${coachData.state || 'teaching'} pip-expr-${mood}`;
+  if (cardEls.card.className !== nextClass) {
+    cardEls.card.className = nextClass;
+  }
+  if (cardEls.avatar && cardEls.card.dataset.pipMood !== mood) {
+    cardEls.card.dataset.pipMood = mood;
     cardEls.avatar.innerHTML = renderPipRobotSvg(mood);
   }
-  cardEls.badge.textContent = stateLabels[coachData.state] || 'Coach';
-  cardEls.headline.textContent = coachData.headline;
-  cardEls.messages.innerHTML = '';
-  for (const msg of (coachData.messages || []).slice(0, 1)) {
-    const li = document.createElement('li');
-    li.textContent = msg;
-    cardEls.messages.appendChild(li);
+  const nextBadge = stateLabels[coachData.state] || 'Coach';
+  if (cardEls.badge.textContent !== nextBadge) {
+    cardEls.badge.textContent = nextBadge;
   }
+  if (cardEls.headline.textContent !== coachData.headline) {
+    cardEls.headline.textContent = coachData.headline;
+  }
+
+  const nextMsg = (coachData.messages || [])[0] || '';
+  let firstLi = cardEls.messages.firstElementChild;
+  if (!firstLi || cardEls.messages.childElementCount !== 1) {
+    cardEls.messages.innerHTML = '';
+    firstLi = document.createElement('li');
+    cardEls.messages.appendChild(firstLi);
+  }
+  if (firstLi.textContent !== nextMsg) {
+    firstLi.textContent = nextMsg;
+  }
+
   if (cardEls.learnMore && cardEls.learnMoreText) {
     const extra = coachData.learnMore || ((coachData.messages || []).length > 1 ? coachData.messages[1] : null);
     if (extra) {
       cardEls.learnMore.classList.remove('hidden');
-      cardEls.learnMoreText.textContent = extra;
-      cardEls.learnMore.open = false;
+      if (cardEls.learnMoreText.textContent !== extra) {
+        cardEls.learnMoreText.textContent = extra;
+        cardEls.learnMore.open = false;
+      }
     } else {
       cardEls.learnMore.classList.add('hidden');
-      cardEls.learnMoreText.textContent = '';
+      if (cardEls.learnMoreText.textContent) {
+        cardEls.learnMoreText.textContent = '';
+      }
     }
   }
 }
@@ -1506,11 +1526,15 @@ function renderFlightBriefingSummary(scene) {
 }
 
 function updateFlightPipCard(force = false) {
+  const now = performance.now();
+  if (!force && now - lastFlightPipUpdateAt < 220) return;
+
   const step = tutorialGuide.isRunningForView('flight') ? tutorialGuide.getCurrentStep() : null;
   const coachData = evaluateLiveFlightCoaching(sim, state.activeScene, step);
   const sig = `${coachData.state}|${coachData.headline}|${coachData.messages.join(';')}`;
   if (force || sig !== lastFlightPipSig) {
     lastFlightPipSig = sig;
+    lastFlightPipUpdateAt = now;
     renderPipCard(els.flightPipCard, coachData);
   }
 }
@@ -1760,14 +1784,16 @@ function launchScene(scene, options = {}) {
     els.flightWasdIntroAvatar.innerHTML = renderPipRobotSvg('greeting', 'pip-avatar-mini');
   }
 
-  if (scene.mode === 'tutorial') {
+  if (scene.id === 'tutorial-1') {
     if (tutorialGuide.sceneId !== scene.id) {
       tutorialGuide.start(scene);
     }
     tutorialGuide.recordFlightStarted();
     tutorialGuide.jumpToView('flight');
   } else {
+    // Tutorials 2-4 and Challenges fly directly without flight-screen spotlight overlays
     tutorialGuide.resetState();
+    tutorialOverlay?.hide();
   }
 
   navigateTo('flight');

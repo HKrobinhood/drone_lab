@@ -151,29 +151,17 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't2-tune-kp',
       view: 'preflight',
-      targetSelector: '#knob-card-kp',
+      targetSelector: null,
+      spotlight: false,
+      focusParam: 'kp',
       pipMood: 'thinking',
       visualId: 'kp-response',
-      title: 'Step 1 — Tune Kp & Watch Curves',
+      title: 'Tune Kp & Inspect the Curve',
       headline: 'Pilot, Today I Measure Tracking Lag!',
-      instruction: 'Adjust Kp and run Test PID multiple times to compare waves.',
-      actionHint: 'Experiment freely with Test PID, then set Kp >= 4.5 to unlock Next Step.',
+      instruction: 'Adjust Kp, run Test PID, and fly when ready.',
+      actionHint: 'Tune Kp, click Test PID to observe the curve, then Start Flight whenever it looks good.',
       learnMore:
         'Try Test PID at low Kp = 1.2 first, then raise Kp and test again as many times as you like to compare Tracking Lag and Settling Time.',
-      requiredAction: 'tune_kp_ready'
-    },
-    {
-      stepId: 't2-start-flight',
-      view: 'preflight',
-      targetSelector: '#btn-pre-start-flight-2',
-      pipMood: 'celebrating',
-      visualId: null,
-      title: 'Step 2 — Fly Your Tuned Kp',
-      headline: 'Launch & Fly Directly!',
-      instruction: 'Happy with your Kp curve? Press Start Flight now!',
-      actionHint: 'Click Start Flight and fly directly into the right target zone.',
-      learnMore:
-        'You can still tweak Kp live or re-test anytime. After launch, fly directly into (18.0 m, 5.5 m) and hold 2.0 s.',
       requiredAction: 'start_flight'
     }
   ],
@@ -182,29 +170,17 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't3-tune-ki',
       view: 'preflight',
-      targetSelector: '#knob-card-ki',
+      targetSelector: null,
+      spotlight: false,
+      focusParam: 'ki',
       pipMood: 'thinking',
       visualId: 'ki-integral',
-      title: 'Step 1 — Tune Ki & Watch Wind Drift',
+      title: 'Tune Ki & Inspect Wind Drift',
       headline: 'Pilot, Today I Measure Steady-State Offset!',
-      instruction: 'Adjust Ki and run Test PID multiple times to fix drift.',
-      actionHint: 'Experiment freely with Test PID, then set Ki >= 0.80 to unlock Next Step.',
+      instruction: 'Adjust Ki, run Test PID, and fly when ready.',
+      actionHint: 'Tune Ki, click Test PID to watch wind drift on the curve, then Start Flight whenever ready.',
       learnMore:
         'Try Test PID at Ki = 0.00 to see wind drift, then raise Ki and re-test as many times as you like until the wave pulls back onto Target.',
-      requiredAction: 'tune_ki_ready'
-    },
-    {
-      stepId: 't3-start-flight',
-      view: 'preflight',
-      targetSelector: '#btn-pre-start-flight-2',
-      pipMood: 'celebrating',
-      visualId: null,
-      title: 'Step 2 — Launch Into Crosswind',
-      headline: 'Fly Directly Into Crosswind!',
-      instruction: 'Drift looks fixed? Press Start Flight to fly!',
-      actionHint: 'Click Start Flight and hold centered inside (16.0 m, 5.5 m).',
-      learnMore:
-        'Avoid pushing Ki too high—check the curve for overshoot before takeoff, then fly directly into the target zone.',
       requiredAction: 'start_flight'
     }
   ],
@@ -213,13 +189,15 @@ export const TUTORIAL_GUIDE_FLOWS = {
     {
       stepId: 't4-autonomous',
       view: 'preflight',
-      targetSelector: '#knob-card-kd',
+      targetSelector: null,
+      spotlight: false,
+      focusParam: 'kd',
       pipMood: 'thinking',
       visualId: 'kd-damping',
-      title: 'Autonomous Practice — Tune Kd & Fly',
+      title: 'Tune Kd & Inspect Overshoot',
       headline: 'Pilot, Watch Overshoot, Settling & Stability!',
-      instruction: 'Adjust Kd and test curves freely, then Start Flight!',
-      actionHint: 'Experiment with Kd and Test PID as often as you like, then click Start Flight.',
+      instruction: 'Adjust Kd, run Test PID, and fly when ready.',
+      actionHint: 'Tune Kd, click Test PID to inspect overshoot on the curve, then Start Flight whenever ready.',
       learnMore:
         'Run Test PID at low Kd = 0.4 to see oscillations, adjust Kd and re-test multiple times until braking is smooth, then fly directly.',
       requiredAction: 'start_flight'
@@ -382,7 +360,7 @@ export class TutorialGuideEngine {
   isLaunchLocked() {
     if (!this.active || this.finished || this.dismissed) return false;
     const step = this.steps[this.stepIndex];
-    if (!step || step.view !== 'preflight') return false;
+    if (!step || step.view !== 'preflight' || step.spotlight === false) return false;
     return step.requiredAction !== 'start_flight';
   }
 

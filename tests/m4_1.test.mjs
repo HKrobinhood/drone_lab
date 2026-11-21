@@ -217,7 +217,7 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
 
     const sim = new FlightSimulation();
     sim.loadScene(t3, true);
-    const liveTut = evaluateLiveFlightCoaching(sim, t3, TUTORIAL_GUIDE_FLOWS['tutorial-3'][1]);
+    const liveTut = evaluateLiveFlightCoaching(sim, t3, TUTORIAL_GUIDE_FLOWS['tutorial-3'][0]);
     assert.ok(liveTut.headline);
     assert.ok(liveTut.messages.length >= 1);
 

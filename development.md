@@ -209,10 +209,8 @@
 - **新手村实验引导升级（`src/tutorial_guide.js`, `src/visual_aids.js`, `src/scenes.js`）**：
   - 将新手村 4 课统一重构为「**调 PID → 测曲线（Test PID）→ 观察与对比波形（Before/After）→ 起飞验证（Start Flight）**」递进方法论：
     - **Tutorial 1**：紧凑 8 步闭环（Step 1 看任务 → Step 2 建立工作流 → **Step 3 脉冲高亮 Kp 旋钮调至 7.5–9.0** → Step 4 点 `Test PID` 画曲线 → Step 5 读波形 → **Step 6 脉冲高亮 `Start Flight` 解锁起飞** → Step 7 WASD 实操 → **Step 8 明确引导将无人机飞入蓝色目标圈悬停 1.5 s**，完成后自然收尾进入结算页，无多余 Step 9 遮罩）。
-    - **Tutorial 2（Kp）**：精简为 2 步赛前引导（仅高亮 `Kp` 单旋钮，不高亮 `Test PID`，允许多次调节与反复 `Test PID` 对比波形，`Kp >= 4.5` 解锁 `Next Step → Start Flight` 后直接自由飞行，无飞行页 Step 4 遮罩）。
-    - **Tutorial 3（Ki）**：精简为 2 步赛前引导（仅高亮 `Ki` 单旋钮，允许多次调节与 `Test PID` 观察风偏收敛，`Ki >= 0.80` 解锁起飞后直接飞行）。
-    - **Tutorial 4（Kd）**：1 步自主实验（仅高亮 `Kd` 单旋钮，自由多次测试波形对比后随时起飞）。
-  - **分层门禁与 `Hide Guide` 权限**：Tutorial 1 严格不显示 `Hide Guide` 且走完 Step 1–5 才解锁起飞；Tutorial 2–4 起显示 `Hide Guide` 供熟悉流程的玩家随时收起并直接飞行。
+    - **Tutorial 2 / 3 / 4（Kp / Ki / Kd 无遮罩自由实验引导）**：取消全屏聚光高亮遮罩与起飞锁，由顶部 PIP Flight Coach 对话气泡温和引导——每次调节对应参数（Kp / Ki / Kd）即时提示点击 `Test PID` 观察曲线，测试后弹出基于真实波形的诊断建议（带轻量弹出呼吸动效），并明确告知玩家“只要觉得曲线满意，随时可以点击 `Start Flight` 进入飞行”。
+  - **分层门禁**：Tutorial 1 保持完整 8 步 Spotlight 手把手引导（不显示 `Hide Guide`、完成 Step 1–5 解锁起飞、完成即 3★）；Tutorial 2–4 进入无遮罩自由调参实验模式。
   - 同步更新 `pid-loop-steps` 矢量流程图为 `1. Tune PID → 2. Test Curve → 3. Read Wave → 4. Start Flight → 5. Fly & Review`。
 - **测试结果与已知问题**：
   - 全量语法检查与自动化测试 `node --test tests/*.test.mjs`：**35 套件、91 项测试全部通过（0 失败）**，包含新增 `tests/m5_4.test.mjs`。

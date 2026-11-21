@@ -676,9 +676,14 @@ function runCurrentBenchTest() {
     els.benchChallengeBadge.classList.add('bench-pop');
   }
 
-  // Update PIP speech bubble with real Test Bench evidence
+  // Update PIP speech bubble with real Test Bench evidence + gentle pop highlight (no blocking overlay)
   const pipData = evaluateTestBenchPipCoaching(result, comparison, currentGains, scene);
   renderPipCard(els.prePipCard, pipData);
+  if (els.prePipCard?.card) {
+    els.prePipCard.card.classList.remove('pip-coach-pop');
+    void els.prePipCard.card.offsetWidth;
+    els.prePipCard.card.classList.add('pip-coach-pop');
+  }
 
   if (scene.mode === 'tutorial' && tutorialGuide.active) {
     tutorialGuide.recordBenchTest(result);
@@ -763,14 +768,14 @@ function closePipIntro(persistSeen = true) {
   }
 }
 
-function applyPidGains(rawGains, scene = state.activeScene) {
+function applyPidGains(rawGains, scene = state.activeScene, options = {}) {
   sim.setGains(rawGains);
   const gains = { ...sim.gains };
   if (scene?.id) {
     state.tunedGainsByLevel[scene.id] = { ...gains };
   }
   const analysis = syncAllPidPanels(gains, scene);
-  renderPreflightPipWithTutorialBrief(analysis, scene);
+  renderPreflightPipWithTutorialBrief(analysis, scene, options);
 
   if (scene?.mode === 'tutorial' && tutorialGuide.active) {
     const baseline = state.baselineGainsByLevel[scene.id];
@@ -784,11 +789,38 @@ function applyPidGains(rawGains, scene = state.activeScene) {
   return gains;
 }
 
-function renderPreflightPipWithTutorialBrief(analysis, scene = state.activeScene) {
+const FREE_TUTORIAL_FOCUS = Object.freeze({
+  'tutorial-2': { param: 'kp', label: 'Kp', decimals: 1, prompt: 'Adjust Kp, click Test PID to observe the curve, and click Start Flight whenever you feel ready!' },
+  'tutorial-3': { param: 'ki', label: 'Ki', decimals: 2, prompt: 'Adjust Ki, click Test PID to watch wind drift on the curve, and click Start Flight whenever you feel ready!' },
+  'tutorial-4': { param: 'kd', label: 'Kd', decimals: 1, prompt: 'Adjust Kd, click Test PID to check overshoot on the curve, and click Start Flight whenever you feel ready!' }
+});
+
+function renderPreflightPipWithTutorialBrief(analysis, scene = state.activeScene, options = {}) {
   if (!scene) {
     renderPipCard(els.prePipCard, analysis);
     return;
   }
+
+  // Tutorials 2, 3, 4: No spotlight overlay — PIP coaches each parameter tweak toward Test PID -> observe curve -> fly when ready
+  const freeFocus = FREE_TUTORIAL_FOCUS[scene.id];
+  if (freeFocus) {
+    const val = Number(sim.gains?.[freeFocus.param] ?? 0).toFixed(freeFocus.decimals);
+    const headline = options.fromUserAdjust
+      ? `${freeFocus.label} updated to ${val} — Click Test PID!`
+      : `Experiment with ${freeFocus.label} & Test PID`;
+    const msg = options.fromUserAdjust
+      ? `Click Test PID to watch how ${freeFocus.label} = ${val} shapes the curve. When it looks right to you, click Start Flight!`
+      : freeFocus.prompt;
+    renderPipCard(els.prePipCard, {
+      state: analysis.state === 'warning' ? 'warning' : options.fromUserAdjust ? 'teaching' : 'explaining',
+      mood: options.fromUserAdjust ? 'thinking' : 'explaining',
+      headline,
+      messages: [msg],
+      learnMore: scene.pipMetricBrief || null
+    });
+    return;
+  }
+
   // Keep PIP speech bubble concise (1 primary suggestion) and grounded
   const compactMsg = analysis?.messages?.[0] || "Let's tune your drone and try Test PID!";
   if (scene.mode === 'tutorial' && analysis.state !== 'warning') {
@@ -820,14 +852,14 @@ function resetScenePid(scene = state.activeScene) {
   return gains;
 }
 
-function schedulePipUpdate(gains, scene) {
+function schedulePipUpdate(gains, scene, options = {}) {
   if (pipDebounceTimer) {
     window.clearTimeout(pipDebounceTimer);
   }
   pipDebounceTimer = window.setTimeout(() => {
     pipDebounceTimer = null;
     const analysis = syncAllPidPanels(gains, scene);
-    renderPreflightPipWithTutorialBrief(analysis, scene);
+    renderPreflightPipWithTutorialBrief(analysis, scene, options);
   }, 120);
 }
 
@@ -855,14 +887,18 @@ function updatePreflightLaunchLock() {
 function syncTutorialOverlay(force = false) {
   updatePreflightLaunchLock();
   if (!tutorialOverlay) return;
-  if (state.activeScene?.mode !== 'tutorial' || !tutorialGuide.isRunningForView(state.currentView)) {
+  const step = tutorialGuide.getCurrentStep();
+  if (
+    state.activeScene?.mode !== 'tutorial' ||
+    !tutorialGuide.isRunningForView(state.currentView) ||
+    step?.spotlight === false
+  ) {
     tutorialOverlay.hide();
     lastGuideRenderSig = '';
     updateGuideReopenButtons();
     return;
   }
 
-  const step = tutorialGuide.getCurrentStep();
   const prog = tutorialGuide.getProgressInfo();
   const warn = getTutorialSafetyWarning(state.activeScene, sim.gains);
   const sig = JSON.stringify({
@@ -885,10 +921,10 @@ function syncTutorialOverlay(force = false) {
 }
 
 function updateGuideReopenButtons() {
-  const isTutorial = state.activeScene?.mode === 'tutorial';
-  const showReopen = isTutorial && tutorialGuide.dismissed && !tutorialGuide.finished;
-  els.btnPreflightReopenGuide.classList.toggle('hidden', !isTutorial || !showReopen);
-  els.btnFlightReopenGuide.classList.toggle('hidden', !isTutorial);
+  const hasSpotlightFlow = state.activeScene?.id === 'tutorial-1';
+  const showReopen = hasSpotlightFlow && tutorialGuide.dismissed && !tutorialGuide.finished;
+  els.btnPreflightReopenGuide.classList.toggle('hidden', !hasSpotlightFlow || !showReopen);
+  els.btnFlightReopenGuide.classList.toggle('hidden', !hasSpotlightFlow);
   els.btnFlightReopenGuide.textContent = showReopen ? 'Reopen Guide' : 'Restart Guide';
 }
 
@@ -1892,8 +1928,8 @@ function bindEvents() {
       btnPlusEl: document.getElementById(`btn-${param}-plus`),
       onChange: (axis, nextVal) => {
         const nextGains = { ...sim.gains, [axis]: nextVal };
-        applyPidGains(nextGains, state.activeScene);
-        schedulePipUpdate(nextGains, state.activeScene);
+        applyPidGains(nextGains, state.activeScene, { fromUserAdjust: true });
+        schedulePipUpdate(nextGains, state.activeScene, { fromUserAdjust: true });
       }
     });
   }

@@ -570,6 +570,10 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
   const ki = Number(gains?.ki ?? 0);
   const kd = Number(gains?.kd ?? 0);
 
+  const isFreeTutorial =
+    scene?.id === 'tutorial-2' || scene?.id === 'tutorial-3' || scene?.id === 'tutorial-4';
+  const readyTail = isFreeTutorial ? ' Click Start Flight whenever you think it looks ready!' : '';
+
   // 1. Unable to lift or barely moved
   if (!m.reachedTarget && result.testType !== 'wind') {
     if (kp < 1.5) {
@@ -577,7 +581,7 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
         state: 'warning',
         mood: 'warning',
         headline: 'Too weak to reach target',
-        messages: ['Try raising Kp to improve response and lift toward the target.']
+        messages: [`Try raising Kp to improve response and lift toward the target.${readyTail}`]
       };
     }
     if (kd > kp * 1.4 && kd > 6.0) {
@@ -585,14 +589,14 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
         state: 'teaching',
         mood: 'thinking',
         headline: 'Braking is too heavy',
-        messages: ['High Kd is slowing movement. Try lowering Kd or raising Kp slightly.']
+        messages: [`High Kd is slowing movement. Try lowering Kd or raising Kp slightly.${readyTail}`]
       };
     }
     return {
       state: 'warning',
       mood: 'warning',
       headline: 'Drone fell short',
-      messages: ['Raise Kp or add a little Ki if heavy cargo is sagging below target.']
+      messages: [`Raise Kp or add a little Ki if heavy cargo is sagging below target.${readyTail}`]
     };
   }
 
@@ -602,7 +606,7 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
       state: 'warning',
       mood: 'warning',
       headline: 'Too much overshoot!',
-      messages: ['Too much overshoot! Explore higher Kd to brake smoother, or trim Kp.']
+      messages: [`Too much overshoot! Explore higher Kd to brake smoother, or trim Kp.${readyTail}`]
     };
   }
 
@@ -613,14 +617,14 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
         state: 'teaching',
         mood: 'explaining',
         headline: 'Steady drift detected',
-        messages: ['Your drone stays off-target. Explore raising Ki to cancel steady drift.']
+        messages: [`Your drone stays off-target. Explore raising Ki to cancel steady drift.${readyTail}`]
       };
     }
     return {
       state: 'warning',
       mood: 'thinking',
       headline: 'Still drifting off target',
-      messages: ['Check both Ki and Kp—thrust limits or low damping may be delaying recovery.']
+      messages: [`Check both Ki and Kp—thrust limits or low damping may be delaying recovery.${readyTail}`]
     };
   }
 
@@ -630,17 +634,21 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
       state: 'warning',
       mood: 'warning',
       headline: 'Motors maxed out',
-      messages: ['Thrust hit its limit often. Try smoother gains to avoid windup and power drain.']
+      messages: [`Thrust hit its limit often. Try smoother gains to avoid windup and power drain.${readyTail}`]
     };
   }
 
   // 5. Slow / not settled yet
   if (!m.settled || (m.settlingTime !== null && m.settlingTime > 4.2)) {
+    const slowHint =
+      scene?.id === 'tutorial-2'
+        ? 'Response is still sluggish on the curve—try raising Kp and run Test PID again.'
+        : 'Try tuning Kp and Kd together so your drone reaches and settles sooner.';
     return {
       state: 'teaching',
       mood: 'thinking',
       headline: 'Slow to settle',
-      messages: ['Try tuning Kp and Kd together so your drone reaches and settles sooner.']
+      messages: [`${slowHint}${readyTail}`]
     };
   }
 
@@ -648,12 +656,12 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
   if (result.challenge?.passed) {
     const improvedText =
       comparison?.comparable && comparison.overallStatus === 'improved'
-        ? `Nice! ${comparison.primarySummary}. Ready for Start Flight!`
-        : 'Nice! Your flight response is smooth and ready for Start Flight!';
+        ? `Nice! ${comparison.primarySummary}. Whenever you think it looks good, click Start Flight!`
+        : 'Nice! Your response curve looks smooth — click Start Flight whenever you feel ready!';
     return {
       state: 'ready',
       mood: 'celebrating',
-      headline: 'Tuning Goal Met!',
+      headline: 'Curve Looks Great!',
       messages: [improvedText]
     };
   }
@@ -663,7 +671,7 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
       state: 'ready',
       mood: 'celebrating',
       headline: 'Nice improvement!',
-      messages: [`Nice! Your flight is smoother (${comparison.primarySummary}).`]
+      messages: [`Nice! Your flight is smoother (${comparison.primarySummary}).${readyTail}`]
     };
   }
 
@@ -671,6 +679,6 @@ export function evaluateTestBenchPipCoaching(result, comparison, gains, scene) {
     state: 'teaching',
     mood: 'explaining',
     headline: 'Keep experimenting!',
-    messages: ['Adjust one knob slightly and click Test PID again to compare curves.']
+    messages: [`Adjust a knob and click Test PID again to compare curves.${readyTail}`]
   };
 }

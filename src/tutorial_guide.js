@@ -66,13 +66,13 @@ export const TUTORIAL_GUIDE_FLOWS = {
       view: 'preflight',
       targetSelector: '#knob-card-kp',
       pipMood: 'thinking',
-      visualId: 'kp-response',
+      visualId: 'knob-rotate',
       title: 'Step 3 — Explore Low, High & Recommended',
       headline: 'Use the 3 Zone Badges as Your Guide',
-      instruction: 'Try Low (0), then High, then Recommended on Kp.',
-      actionHint: 'First turn Kp down to 0 (Low zone) to see how the zone badge changes.',
+      instruction: 'Rotate Kp to Low (0), High, then Recommended.',
+      actionHint: 'Drag the glowing Kp knob counter-clockwise to 0 (Low zone) first.',
       learnMore:
-        'Each knob shows three reference badges: Low, Recommended, and High. Use them as a quick reference whenever tuning—practice moving Kp from 0 (Low) up to High (> 9.0), then back to Recommended (4.5–9.0).',
+        'Each knob shows three reference badges: Low, Recommended, and High. Drag the dial (or use scroll / +/-) to move Kp from 0 (Low) up to High (> 9.0), then back to Recommended (4.5–9.0).',
       requiredAction: 'tune_pid_valid'
     },
     {

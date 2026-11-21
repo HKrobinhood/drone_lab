@@ -38,10 +38,86 @@ export class TutorialSpotlightOverlay {
     this.btnSkip = document.getElementById('btn-tut-skip');
 
     this.activeTarget = null;
+    this.activeKnobCue = null;
     this.lastStepId = null;
     this.resizeObserver = null;
 
     this.#bindEvents();
+  }
+
+  #clearKnobRotateCue() {
+    if (this.activeKnobCue) {
+      this.activeKnobCue.remove();
+      this.activeKnobCue = null;
+    }
+    if (this.activeTarget) {
+      this.activeTarget.classList.remove('tutorial-knob-rotate-guide');
+      this.activeTarget.removeAttribute('data-rotate-dir');
+      this.activeTarget.removeAttribute('data-rotate-phase');
+    }
+  }
+
+  #syncKnobRotateCue(targetEl, step) {
+    const showCue = Boolean(
+      targetEl &&
+      step?.requiredAction === 'tune_pid_valid' &&
+      !step.satisfied
+    );
+    if (!showCue) {
+      this.#clearKnobRotateCue();
+      return;
+    }
+
+    const dialEl = targetEl.querySelector('.knob-dial');
+    if (!dialEl) {
+      this.#clearKnobRotateCue();
+      return;
+    }
+
+    const phaseIdx = Number(step.zoneSubIndex ?? 0);
+    const phase = phaseIdx === 0 ? 'low' : phaseIdx === 1 ? 'high' : 'recommended';
+    const dir = phase === 'high' ? 'cw' : 'ccw';
+    const badgeLabel =
+      phase === 'low'
+        ? '↺ Turn to 0'
+        : phase === 'high'
+          ? '↻ Turn High'
+          : '↺ To Green';
+
+    targetEl.classList.add('tutorial-knob-rotate-guide');
+    targetEl.dataset.rotateDir = dir;
+    targetEl.dataset.rotatePhase = phase;
+
+    if (!this.activeKnobCue || !dialEl.contains(this.activeKnobCue)) {
+      this.activeKnobCue?.remove();
+      const cue = document.createElement('div');
+      cue.className = 'knob-rotate-cue';
+      cue.setAttribute('aria-hidden', 'true');
+      cue.innerHTML = `
+        <svg class="knob-rotate-cue-svg" viewBox="0 0 124 124">
+          <g class="knob-cue-orbit-ccw">
+            <path d="M 32 104 A 52 52 0 0 1 18 34" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="7 5" />
+            <polygon points="24,104 35,109 35,96" fill="currentColor" />
+            <circle cx="24" cy="48" r="5" class="knob-cue-dot" />
+          </g>
+          <g class="knob-cue-orbit-cw">
+            <path d="M 106 34 A 52 52 0 0 1 92 104" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="7 5" />
+            <polygon points="100,104 89,109 89,96" fill="currentColor" />
+            <circle cx="100" cy="48" r="5" class="knob-cue-dot" />
+          </g>
+        </svg>
+        <span class="knob-rotate-cue-badge"></span>
+      `;
+      dialEl.appendChild(cue);
+      this.activeKnobCue = cue;
+    }
+
+    this.activeKnobCue.dataset.dir = dir;
+    this.activeKnobCue.dataset.phase = phase;
+    const badge = this.activeKnobCue.querySelector('.knob-rotate-cue-badge');
+    if (badge && badge.textContent !== badgeLabel) {
+      badge.textContent = badgeLabel;
+    }
   }
 
   #bindEvents() {
@@ -63,6 +139,7 @@ export class TutorialSpotlightOverlay {
     if (!this.root.classList.contains('hidden')) {
       this.root.classList.add('hidden');
     }
+    this.#clearKnobRotateCue();
     if (this.activeTarget) {
       this.activeTarget.classList.remove('tutorial-target-active', 'tutorial-action-pulse');
       this.resizeObserver?.unobserve(this.activeTarget);
@@ -84,6 +161,7 @@ export class TutorialSpotlightOverlay {
     }
 
     if (this.activeTarget && this.activeTarget !== targetEl) {
+      this.#clearKnobRotateCue();
       this.activeTarget.classList.remove('tutorial-target-active', 'tutorial-action-pulse');
       this.resizeObserver?.unobserve(this.activeTarget);
     }
@@ -98,6 +176,7 @@ export class TutorialSpotlightOverlay {
       step.requiredAction === 'run_test_pid' ||
       step.requiredAction === 'start_flight';
     this.activeTarget.classList.toggle('tutorial-action-pulse', shouldPulse);
+    this.#syncKnobRotateCue(targetEl, step);
     this.resizeObserver?.observe(this.activeTarget);
     this.root.classList.remove('hidden');
 

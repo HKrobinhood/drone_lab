@@ -4832,6 +4832,7 @@ body {
 
 /* Rotary SVG Dial */
 .knob-dial {
+  position: relative;
   width: 104px;
   height: 104px;
   cursor: grab;
@@ -5197,6 +5198,278 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .pip-coach-pop {
+    animation: none !important;
+  }
+}
+
+/* ==================== TUTORIAL 1 STEP 3 KNOB-ROTATION ANIMATION ==================== */
+/* 1. Direct non-blocking animated rotation ring & badge on the highlighted Kp dial */
+.knob-rotate-cue {
+  position: absolute;
+  inset: -12px;
+  pointer-events: none;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  transition: opacity 150ms ease;
+}
+
+.knob-rotate-cue[data-phase="high"] {
+  color: #ea580c;
+}
+
+.knob-rotate-cue[data-phase="recommended"] {
+  color: #16a34a;
+}
+
+.knob-dial.is-dragging .knob-rotate-cue {
+  opacity: 0.15;
+}
+
+.knob-rotate-cue-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.knob-cue-orbit-ccw,
+.knob-cue-orbit-cw {
+  transform-origin: 62px 62px;
+  opacity: 0;
+}
+
+.knob-rotate-cue[data-dir="ccw"] .knob-cue-orbit-ccw {
+  opacity: 1;
+  animation: knobCueTurnCcw 1.55s ease-in-out infinite;
+}
+
+.knob-rotate-cue[data-dir="cw"] .knob-cue-orbit-cw {
+  opacity: 1;
+  animation: knobCueTurnCw 1.55s ease-in-out infinite;
+}
+
+.knob-cue-dot {
+  fill: #ffffff;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
+
+.knob-rotate-cue-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1.5px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(2, 6, 23, 0.35);
+  animation: knobCueBadgeFloat 1.55s ease-in-out infinite;
+}
+
+@keyframes knobCueTurnCcw {
+  0% {
+    transform: rotate(18deg);
+    opacity: 0.45;
+  }
+  55% {
+    transform: rotate(-22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(18deg);
+    opacity: 0.45;
+  }
+}
+
+@keyframes knobCueTurnCw {
+  0% {
+    transform: rotate(-18deg);
+    opacity: 0.45;
+  }
+  55% {
+    transform: rotate(22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-18deg);
+    opacity: 0.45;
+  }
+}
+
+@keyframes knobCueBadgeFloat {
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -2px);
+  }
+}
+
+/* 2. Guide card inline SVG knob rotation demo (Low -> High -> Recommended) */
+.knob-demo-pointer {
+  transform-origin: 76px 62px;
+}
+
+.knob-demo-pointer.is-anim {
+  animation: knobDemoRotateCycle 5.4s ease-in-out infinite;
+}
+
+.knob-demo-hand {
+  transform-origin: 76px 62px;
+}
+
+.knob-demo-hand.is-anim {
+  animation: knobDemoHandCycle 5.4s ease-in-out infinite;
+}
+
+.knob-demo-hand.is-static-ccw {
+  transform: translate(-18px, 16px);
+}
+
+.knob-demo-hand.is-static-cw {
+  transform: translate(18px, -12px);
+}
+
+.knob-demo-arrow-ccw,
+.knob-demo-arrow-cw {
+  animation: knobDemoArrowPulse 1.8s ease-in-out infinite;
+}
+
+.knob-demo-pill rect {
+  transition: fill 180ms ease, stroke-width 180ms ease;
+}
+
+.knob-demo-pill.is-lit rect {
+  stroke-width: 2.2;
+}
+
+.knob-demo-pill-low.is-lit rect {
+  fill: rgba(148, 163, 184, 0.25);
+}
+
+.knob-demo-pill-high.is-lit rect {
+  fill: rgba(249, 115, 22, 0.24);
+}
+
+.knob-demo-pill-rec.is-lit rect {
+  fill: rgba(34, 197, 94, 0.24);
+}
+
+.knob-demo-pill.is-demo-low rect {
+  animation: knobDemoPillLow 5.4s ease-in-out infinite;
+}
+
+.knob-demo-pill.is-demo-high rect {
+  animation: knobDemoPillHigh 5.4s ease-in-out infinite;
+}
+
+.knob-demo-pill.is-demo-rec rect {
+  animation: knobDemoPillRec 5.4s ease-in-out infinite;
+}
+
+@keyframes knobDemoRotateCycle {
+  0%, 6% {
+    transform: rotate(-30deg);
+  }
+  20%, 34% {
+    transform: rotate(-135deg);
+  }
+  52%, 66% {
+    transform: rotate(105deg);
+  }
+  82%, 96% {
+    transform: rotate(-24deg);
+  }
+  100% {
+    transform: rotate(-30deg);
+  }
+}
+
+@keyframes knobDemoHandCycle {
+  0%, 6% {
+    transform: translate(0, 0);
+    opacity: 0.7;
+  }
+  20%, 34% {
+    transform: translate(-20px, 18px);
+    opacity: 1;
+  }
+  52%, 66% {
+    transform: translate(20px, -16px);
+    opacity: 1;
+  }
+  82%, 96% {
+    transform: translate(-4px, -14px);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.7;
+  }
+}
+
+@keyframes knobDemoArrowPulse {
+  0%, 100% {
+    stroke-dashoffset: 0;
+    opacity: 0.55;
+  }
+  50% {
+    stroke-dashoffset: -14;
+    opacity: 1;
+  }
+}
+
+@keyframes knobDemoPillLow {
+  0%, 14%, 40%, 100% {
+    fill: #1e293b;
+    stroke-width: 1.4;
+  }
+  20%, 35% {
+    fill: rgba(148, 163, 184, 0.28);
+    stroke-width: 2.3;
+  }
+}
+
+@keyframes knobDemoPillHigh {
+  0%, 44%, 72%, 100% {
+    fill: #1e293b;
+    stroke-width: 1.4;
+  }
+  52%, 66% {
+    fill: rgba(249, 115, 22, 0.28);
+    stroke-width: 2.3;
+  }
+}
+
+@keyframes knobDemoPillRec {
+  0%, 76%, 100% {
+    fill: #1e293b;
+    stroke-width: 1.4;
+  }
+  82%, 96% {
+    fill: rgba(34, 197, 94, 0.28);
+    stroke-width: 2.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob-cue-orbit-ccw,
+  .knob-cue-orbit-cw,
+  .knob-rotate-cue-badge,
+  .knob-demo-pointer.is-anim,
+  .knob-demo-hand.is-anim,
+  .knob-demo-arrow-ccw,
+  .knob-demo-arrow-cw,
+  .knob-demo-pill rect {
     animation: none !important;
   }
 }

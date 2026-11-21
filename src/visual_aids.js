@@ -227,6 +227,88 @@ export const STEM_VISUAL_AIDS = Object.freeze({
     }
   },
 
+  'knob-rotate': {
+    id: 'knob-rotate',
+    title: 'How to Rotate the Kp Knob',
+    defaultVariant: 'demo',
+    controls: [
+      { id: 'demo', label: 'Auto Demo' },
+      { id: 'low', label: 'Low (0)' },
+      { id: 'high', label: 'High (>9)' },
+      { id: 'recommended', label: 'Recommended' }
+    ],
+    renderSvg: (variant = 'demo') => {
+      const mode = ['demo', 'low', 'high', 'recommended'].includes(variant) ? variant : 'demo';
+      const isDemo = mode === 'demo';
+      const staticAngle = mode === 'low' ? -135 : mode === 'high' ? 105 : -24;
+      const pointerClass = isDemo ? 'knob-demo-pointer is-anim' : 'knob-demo-pointer';
+      const pointerTransform = isDemo ? '' : `transform="rotate(${staticAngle} 76 62)"`;
+      const handClass = isDemo
+        ? 'knob-demo-hand is-anim'
+        : mode === 'high'
+          ? 'knob-demo-hand is-static-cw'
+          : 'knob-demo-hand is-static-ccw';
+      const lowActive = mode === 'low' ? 'is-lit' : isDemo ? 'is-demo-low' : '';
+      const highActive = mode === 'high' ? 'is-lit' : isDemo ? 'is-demo-high' : '';
+      const recActive = mode === 'recommended' ? 'is-lit' : isDemo ? 'is-demo-rec' : '';
+      const dirHint =
+        mode === 'low'
+          ? 'Drag down / left to 0'
+          : mode === 'high'
+            ? 'Drag up / right past 9.0'
+            : mode === 'recommended'
+              ? 'Dial back to 4.5 - 9.0'
+              : 'Drag knob up/down or scroll';
+      return `
+      <svg class="stem-diagram-svg knob-rotate-demo-svg" viewBox="0 0 280 120" role="img" aria-label="Animated guide showing how to drag and rotate the Kp knob through Low, High, and Recommended zones">
+        <rect x="2" y="2" width="276" height="116" rx="10" fill="#0b1220" stroke="#1e293b" />
+        <!-- Curved rotation guide arrows around mini knob -->
+        <path d="M 38 78 A 40 40 0 0 1 50 31" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="4 3" stroke-linecap="round" class="${isDemo || mode === 'low' || mode === 'recommended' ? 'knob-demo-arrow-ccw' : ''}" opacity="${mode === 'high' ? '0.25' : '0.9'}" />
+        <polygon points="34,74 37,85 45,77" fill="#38bdf8" opacity="${mode === 'high' ? '0.25' : '0.95'}" />
+        <path d="M 102 31 A 40 40 0 0 1 114 78" fill="none" stroke="#fb923c" stroke-width="2.2" stroke-dasharray="4 3" stroke-linecap="round" class="${isDemo || mode === 'high' ? 'knob-demo-arrow-cw' : ''}" opacity="${mode === 'low' ? '0.25' : '0.9'}" />
+        <polygon points="118,74 115,85 107,77" fill="#fb923c" opacity="${mode === 'low' ? '0.25' : '0.95'}" />
+
+        <!-- Mini rotary knob track & body -->
+        <path d="M 55 83 A 30 30 0 1 1 97 83" fill="none" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+        <path d="M 55 83 A 30 30 0 0 1 56 40" fill="none" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" opacity="0.55" />
+        <path d="M 56 40 A 30 30 0 0 1 92 36" fill="none" stroke="#22c55e" stroke-width="5" stroke-linecap="round" opacity="0.72" />
+        <path d="M 92 36 A 30 30 0 0 1 97 83" fill="none" stroke="#f97316" stroke-width="5" stroke-linecap="round" opacity="0.65" />
+        <circle cx="76" cy="62" r="22" fill="#1e293b" stroke="#38bdf8" stroke-width="2" />
+        <g class="${pointerClass}" ${pointerTransform}>
+          <line x1="76" y1="62" x2="76" y2="43" stroke="#f8fafc" stroke-width="2.8" stroke-linecap="round" />
+          <circle cx="76" cy="45" r="3.4" fill="#38bdf8" stroke="#ffffff" stroke-width="1.3" />
+        </g>
+
+        <!-- Animated drag handle cursor -->
+        <g class="${handClass}">
+          <circle cx="76" cy="62" r="7" fill="rgba(56, 189, 248, 0.28)" stroke="#7dd3fc" stroke-width="1.5" />
+          <circle cx="76" cy="62" r="3" fill="#ffffff" />
+        </g>
+
+        <text x="76" y="106" text-anchor="middle" fill="#7dd3fc" font-size="8.8" font-weight="700">${dirHint}</text>
+
+        <!-- 3 Zone Reference Pills -->
+        <text x="144" y="24" fill="#e2e8f0" font-size="9.5" font-weight="800">3 Reference Zones</text>
+        <g class="knob-demo-pill knob-demo-pill-low ${lowActive}">
+          <rect x="144" y="31" width="122" height="21" rx="6" fill="#1e293b" stroke="#64748b" stroke-width="1.4" />
+          <circle cx="155" cy="41.5" r="3.5" fill="#94a3b8" />
+          <text x="164" y="45" fill="#cbd5e1" font-size="9" font-weight="700">1. LOW (0)</text>
+        </g>
+        <g class="knob-demo-pill knob-demo-pill-high ${highActive}">
+          <rect x="144" y="57" width="122" height="21" rx="6" fill="#1e293b" stroke="#fb923c" stroke-width="1.4" />
+          <circle cx="155" cy="67.5" r="3.5" fill="#fb923c" />
+          <text x="164" y="71" fill="#fdba74" font-size="9" font-weight="700">2. HIGH (&gt; 9.0)</text>
+        </g>
+        <g class="knob-demo-pill knob-demo-pill-rec ${recActive}">
+          <rect x="144" y="83" width="122" height="21" rx="6" fill="#1e293b" stroke="#4ade80" stroke-width="1.4" />
+          <circle cx="155" cy="93.5" r="3.5" fill="#4ade80" />
+          <text x="164" y="97" fill="#86efac" font-size="9" font-weight="700">3. RECOMMENDED</text>
+        </g>
+      </svg>
+    `;
+    }
+  },
+
   'ki-integral': {
     id: 'ki-integral',
     title: 'Ki — Integral Wind Correction',

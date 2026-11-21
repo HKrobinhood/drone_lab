@@ -563,14 +563,17 @@
         </div>
       </section>
 
-      <!-- ==================== VIEW 3.5: PRE-FLIGHT BRIEFING & TUNING ==================== -->
+      <!-- ==================== VIEW 3.5: PRE-FLIGHT TUNING GARAGE ==================== -->
       <section id="view-preflight" class="view" aria-labelledby="preflight-title">
-        <div class="preflight-header">
-          <div>
-            <button id="btn-preflight-back" type="button" class="btn btn-ghost btn-sm">&larr; Back to Levels</button>
-            <span id="preflight-mode-badge" class="badge badge-stem">Pre-flight Briefing</span>
-            <h1 id="preflight-title">Level 1 — Stable Hover</h1>
-            <p id="preflight-description" class="section-subtitle"></p>
+        <div class="preflight-header preflight-header-compact">
+          <div class="preflight-title-wrap">
+            <div class="preflight-nav-row">
+              <button id="btn-preflight-back" type="button" class="btn btn-ghost btn-sm">&larr; Back to Levels</button>
+              <span id="preflight-mode-badge" class="badge badge-stem">Pre-flight Garage</span>
+              <span id="preflight-strategy-tag" class="badge badge-neutral">Speed-First</span>
+            </div>
+            <h1 id="preflight-title">Level 1 — Express Hover</h1>
+            <p id="preflight-short-goal" class="preflight-short-goal">Fly into the blue zone and hold your position.</p>
           </div>
           <div class="preflight-header-actions">
             <button id="btn-preflight-meet-pip" type="button" class="btn btn-ghost btn-sm hidden">
@@ -580,124 +583,200 @@
               Interactive Guide
             </button>
             <button id="btn-pre-start-flight" type="button" class="btn btn-primary btn-lg">
-              Start Flight
+              Start Flight &rarr;
             </button>
           </div>
         </div>
 
-        <div class="preflight-grid">
-          <div class="preflight-left">
-            <article id="mission-briefing-panel" class="info-card">
-              <div class="briefing-top-row">
-                <span class="card-eyebrow">Mission Briefing</span>
-                <span id="preflight-learning-focus" class="badge badge-neutral">PID Control</span>
+        <div class="tuning-workspace">
+          <!-- ===== AREA A: MISSION PLAYGROUND & PID TEST BENCH ===== -->
+          <div class="playground-column">
+            <section id="mission-playground-panel" class="playground-card" aria-label="Mission Playground">
+              <div class="playground-chips-row" id="preflight-quick-chips" aria-label="Key mission conditions">
+                <!-- Populated dynamically with concise icon + numeric chips -->
               </div>
-              <p id="preflight-objective" class="preflight-objective-text"></p>
-              <div class="briefing-meta-row">
-                <div><span>Success Requirements</span><strong id="preflight-success-req"></strong></div>
-                <div><span>Flight Conditions</span><strong id="preflight-conditions"></strong></div>
-              </div>
-              <div id="preflight-strategy-box" class="strategy-priority-box">
-                <div class="strategy-priority-head">
-                  <span class="prog-label">Mission Strategy Priorities</span>
-                  <span id="preflight-strategy-tag" class="badge badge-stem">Speed-First</span>
-                </div>
-                <div id="preflight-strategy-pills" class="strategy-priority-pills"></div>
-                <p id="preflight-strategy-hint" class="strategy-hint-text"></p>
-              </div>
-              <div class="progression-cards">
-                <div class="progression-box">
-                  <span class="prog-label">Previous Knowledge</span>
-                  <p id="preflight-prev-knowledge"></p>
-                </div>
-                <div class="progression-box prog-new">
-                  <span class="prog-label">New Challenge</span>
-                  <p id="preflight-new-challenge"></p>
-                  <p id="preflight-learning-obj" class="prog-subobj"></p>
-                </div>
-              </div>
-            </article>
 
-            <article id="drone-specs-panel" class="info-card">
-              <span class="card-eyebrow">Drone Specifications</span>
-              <div class="specs-grid">
-                <div class="spec-box">
-                  <span>Drone Mass</span>
-                  <strong id="preflight-drone-mass">1.20 kg</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Payload</span>
-                  <strong id="preflight-payload">0.00 kg</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Wind Conditions</span>
-                  <strong id="preflight-wind">Calm Air (0.0 N)</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Maximum Thrust</span>
-                  <strong id="preflight-max-thrust">28.0 N</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Max Tilt Angle</span>
-                  <strong id="preflight-max-tilt">32 deg</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Time Limit</span>
-                  <strong id="preflight-time-limit">65 s</strong>
-                </div>
-                <div class="spec-box spec-battery-box">
-                  <span>Battery Budget</span>
-                  <strong id="preflight-battery-budget">Monitored</strong>
-                </div>
+              <div class="playground-canvas-wrap">
+                <canvas id="preflight-arena-canvas" class="preflight-arena-canvas" aria-label="Mission scene preview showing drone, target zone, and obstacles"></canvas>
+                <span class="playground-preview-badge">Mission Preview</span>
               </div>
-              <div id="preflight-visual-aid" class="preflight-visual-aid hidden">
-                <div class="visual-aid-head">
-                  <span id="preflight-visual-title" class="card-eyebrow">Visual Concept</span>
-                  <details class="learn-more-inline">
-                    <summary>Learn More</summary>
-                    <p id="preflight-learn-more-text"></p>
-                  </details>
-                </div>
-                <div id="preflight-visual-svg"></div>
-              </div>
-            </article>
+            </section>
 
-            <article id="preflight-prev-card" class="info-card prev-attempt-card hidden">
-              <span class="card-eyebrow">Previous Attempt</span>
-              <h2 id="preflight-prev-status">Mission Failed</h2>
-              <p id="preflight-prev-reason" class="prev-reason"></p>
-              <div class="specs-grid">
-                <div class="spec-box">
-                  <span>Previous PID</span>
-                  <strong id="preflight-prev-pid">0.0 / 0.00 / 0.0</strong>
+            <!-- Interactive PID Test Bench (Real 120 Hz Simulation) -->
+            <section id="test-bench-panel" class="bench-card" aria-label="Interactive PID Test Bench">
+              <div class="bench-header">
+                <div class="bench-challenge-wrap">
+                  <span class="bench-eyebrow">Tuning Challenge</span>
+                  <div class="bench-goal-line">
+                    <strong id="bench-challenge-title">Reach the target height.</strong>
+                    <span id="bench-challenge-badge" class="bench-status-pill is-idle">Try Test PID</span>
+                  </div>
                 </div>
-                <div class="spec-box">
-                  <span>Flight Time</span>
-                  <strong id="preflight-prev-time">0.0 s</strong>
+                <span id="bench-test-label" class="badge badge-neutral">Step Response</span>
+              </div>
+
+              <div class="bench-chart-wrap">
+                <div class="bench-legend">
+                  <span><i class="legend-ref"></i> Target</span>
+                  <span id="bench-prev-legend" class="hidden"><i class="legend-prev"></i> Previous</span>
+                  <span><i class="legend-actual"></i> Current</span>
                 </div>
-                <div class="spec-box">
-                  <span>Max Overshoot</span>
-                  <strong id="preflight-prev-overshoot">0.00 m</strong>
+                <canvas id="test-bench-canvas" class="test-bench-canvas" aria-label="Real PID Test Bench response curve"></canvas>
+              </div>
+
+              <!-- Real measured bench metrics -->
+              <div class="bench-metrics-row" aria-live="polite">
+                <div class="bench-metric-pill">
+                  <span>Overshoot</span>
+                  <strong id="bench-metric-overshoot">--</strong>
                 </div>
-                <div class="spec-box">
-                  <span>Avg Error</span>
-                  <strong id="preflight-prev-error">0.00 m</strong>
+                <div class="bench-metric-pill">
+                  <span>Settling Time</span>
+                  <strong id="bench-metric-settling">--</strong>
                 </div>
-                <div class="spec-box">
-                  <span>Saturation</span>
-                  <strong id="preflight-prev-sat">0.00 s</strong>
-                </div>
-                <div class="spec-box">
-                  <span>Final Speed</span>
-                  <strong id="preflight-prev-speed">0.00 m/s</strong>
+                <div class="bench-metric-pill">
+                  <span>Steady Error</span>
+                  <strong id="bench-metric-error">--</strong>
                 </div>
               </div>
-            </article>
+
+              <!-- Before / After comparison strip (same experimental condition only) -->
+              <div id="bench-compare-strip" class="bench-compare-strip hidden" aria-live="polite">
+                <span class="compare-label">Before &rarr; After</span>
+                <div id="bench-compare-badges" class="compare-badges"></div>
+              </div>
+            </section>
+
+            <!-- Progressive Disclosure Accordions (Collapsed by default so screen stays clean) -->
+            <div class="preflight-drawers">
+              <details id="preflight-details-mission" class="preflight-drawer">
+                <summary>
+                  <span>Mission Details</span>
+                  <span class="drawer-hint">Goals, strategy priorities &amp; previous run</span>
+                </summary>
+                <div class="drawer-body">
+                  <article id="mission-briefing-panel" class="info-card drawer-inner-card">
+                    <div class="briefing-top-row">
+                      <span class="card-eyebrow">Mission Briefing</span>
+                      <span id="preflight-learning-focus" class="badge badge-neutral">PID Control</span>
+                    </div>
+                    <p id="preflight-description" class="section-subtitle"></p>
+                    <p id="preflight-objective" class="preflight-objective-text"></p>
+                    <div class="briefing-meta-row">
+                      <div><span>Success Requirements</span><strong id="preflight-success-req"></strong></div>
+                      <div><span>Flight Conditions</span><strong id="preflight-conditions"></strong></div>
+                    </div>
+                    <div id="preflight-strategy-box" class="strategy-priority-box">
+                      <div class="strategy-priority-head">
+                        <span class="prog-label">Mission Strategy Priorities</span>
+                      </div>
+                      <div id="preflight-strategy-pills" class="strategy-priority-pills"></div>
+                      <p id="preflight-strategy-hint" class="strategy-hint-text"></p>
+                    </div>
+                    <div class="progression-cards">
+                      <div class="progression-box">
+                        <span class="prog-label">Previous Knowledge</span>
+                        <p id="preflight-prev-knowledge"></p>
+                      </div>
+                      <div class="progression-box prog-new">
+                        <span class="prog-label">New Challenge</span>
+                        <p id="preflight-new-challenge"></p>
+                        <p id="preflight-learning-obj" class="prog-subobj"></p>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article id="preflight-prev-card" class="info-card prev-attempt-card drawer-inner-card hidden">
+                    <span class="card-eyebrow">Previous Flight Attempt</span>
+                    <h2 id="preflight-prev-status">Mission Failed</h2>
+                    <p id="preflight-prev-reason" class="prev-reason"></p>
+                    <div class="specs-grid">
+                      <div class="spec-box"><span>Previous PID</span><strong id="preflight-prev-pid">0.0 / 0.00 / 0.0</strong></div>
+                      <div class="spec-box"><span>Flight Time</span><strong id="preflight-prev-time">0.0 s</strong></div>
+                      <div class="spec-box"><span>Max Overshoot</span><strong id="preflight-prev-overshoot">0.00 m</strong></div>
+                      <div class="spec-box"><span>Avg Error</span><strong id="preflight-prev-error">0.00 m</strong></div>
+                      <div class="spec-box"><span>Saturation</span><strong id="preflight-prev-sat">0.00 s</strong></div>
+                      <div class="spec-box"><span>Final Speed</span><strong id="preflight-prev-speed">0.00 m/s</strong></div>
+                    </div>
+                  </article>
+                </div>
+              </details>
+
+              <details id="preflight-details-specs" class="preflight-drawer">
+                <summary>
+                  <span>Drone Specs &amp; Learn More</span>
+                  <span class="drawer-hint">Mass, thrust, wind, battery &amp; concept diagram</span>
+                </summary>
+                <div class="drawer-body">
+                  <article id="drone-specs-panel" class="info-card drawer-inner-card">
+                    <span class="card-eyebrow">Drone Specifications</span>
+                    <div class="specs-grid">
+                      <div class="spec-box"><span>Drone Mass</span><strong id="preflight-drone-mass">1.20 kg</strong></div>
+                      <div class="spec-box"><span>Payload</span><strong id="preflight-payload">0.00 kg</strong></div>
+                      <div class="spec-box"><span>Wind Conditions</span><strong id="preflight-wind">Calm Air (0.0 N)</strong></div>
+                      <div class="spec-box"><span>Maximum Thrust</span><strong id="preflight-max-thrust">28.0 N</strong></div>
+                      <div class="spec-box"><span>Max Tilt Angle</span><strong id="preflight-max-tilt">32 deg</strong></div>
+                      <div class="spec-box"><span>Time Limit</span><strong id="preflight-time-limit">65 s</strong></div>
+                      <div class="spec-box spec-battery-box"><span>Battery Budget</span><strong id="preflight-battery-budget">Monitored</strong></div>
+                    </div>
+                    <div id="preflight-visual-aid" class="preflight-visual-aid hidden">
+                      <div class="visual-aid-head">
+                        <span id="preflight-visual-title" class="card-eyebrow">Visual Concept</span>
+                        <details class="learn-more-inline">
+                          <summary>Learn More</summary>
+                          <p id="preflight-learn-more-text"></p>
+                        </details>
+                      </div>
+                      <div id="preflight-visual-svg"></div>
+                    </div>
+                  </article>
+                </div>
+              </details>
+
+              <details id="preflight-details-tradeoffs" class="preflight-drawer">
+                <summary>
+                  <span>Strategy Trade-offs</span>
+                  <span id="drawer-strategy-preview" class="drawer-hint">Balanced Cruise</span>
+                </summary>
+                <div class="drawer-body">
+                  <div id="preflight-tradeoff-panel" class="tradeoff-panel" aria-live="polite">
+                    <div class="tradeoff-panel-head">
+                      <span class="telemetry-title" style="margin:0;">Predicted Strategy Trade-offs</span>
+                      <strong id="tradeoff-strategy-label" class="tradeoff-badge">Balanced Cruise</strong>
+                    </div>
+                    <div class="tradeoff-meters">
+                      <div class="tradeoff-meter-row">
+                        <span>Speed</span>
+                        <div class="tradeoff-bar-track"><div id="tradeoff-bar-speed" class="tradeoff-bar-fill bar-speed"></div></div>
+                        <strong id="tradeoff-val-speed">50</strong>
+                      </div>
+                      <div class="tradeoff-meter-row">
+                        <span>Stability</span>
+                        <div class="tradeoff-bar-track"><div id="tradeoff-bar-stability" class="tradeoff-bar-fill bar-stability"></div></div>
+                        <strong id="tradeoff-val-stability">50</strong>
+                      </div>
+                      <div class="tradeoff-meter-row">
+                        <span>Precision</span>
+                        <div class="tradeoff-bar-track"><div id="tradeoff-bar-precision" class="tradeoff-bar-fill bar-precision"></div></div>
+                        <strong id="tradeoff-val-precision">50</strong>
+                      </div>
+                      <div class="tradeoff-meter-row">
+                        <span>Efficiency</span>
+                        <div class="tradeoff-bar-track"><div id="tradeoff-bar-efficiency" class="tradeoff-bar-fill bar-efficiency"></div></div>
+                        <strong id="tradeoff-val-efficiency">50</strong>
+                      </div>
+                    </div>
+                    <p id="tradeoff-summary" class="tradeoff-summary"></p>
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
 
-          <div class="preflight-right">
-            <!-- PIP Virtual Flight Coach Card -->
-            <aside id="pip-coach-card" class="pip-card pip-welcome" aria-live="polite" aria-label="PIP Virtual Flight Coach">
+          <!-- ===== AREA B & C: PIP SPEECH BUBBLE + PID TUNING GARAGE ===== -->
+          <div class="garage-column">
+            <!-- AREA C: Compact PIP Flight Coach Speech Bubble -->
+            <aside id="pip-coach-card" class="pip-card pip-bubble-card pip-welcome" aria-live="polite" aria-label="PIP Virtual Flight Coach">
               <div class="pip-avatar-wrap" aria-hidden="true">
                 <svg class="pip-robot-svg" viewBox="0 0 84 84">
                   <g class="pip-float">
@@ -719,11 +798,11 @@
               <div class="pip-content">
                 <div class="pip-title-row">
                   <span class="pip-name">PIP — Flight Coach</span>
-                  <span id="pip-state-badge" class="pip-state-pill">Welcome</span>
+                  <span id="pip-state-badge" class="pip-state-pill">Greeting</span>
                 </div>
-                <strong id="pip-headline" class="pip-headline">Hi! I am PIP, your PID Flight Coach.</strong>
+                <strong id="pip-headline" class="pip-headline">Let's tune your drone!</strong>
                 <ul id="pip-messages" class="pip-messages">
-                  <li>All three gains start at zero. Raise Kp first, then add Kd damping!</li>
+                  <li>Turn up Kp first, then click Test PID to see how it responds.</li>
                 </ul>
                 <details id="pre-pip-learn-more" class="pip-learn-more hidden">
                   <summary>Learn More</summary>
@@ -732,100 +811,196 @@
               </div>
             </aside>
 
-            <aside id="preflight-pid-panel" class="pid-panel preflight-pid-panel" aria-label="Pre-flight PID Tuning Panel">
+            <!-- AREA B: PID Tuning Garage (Game-like Rotary Knobs + Visual Explainers + Test/Reset/Fly) -->
+            <aside id="preflight-pid-panel" class="pid-panel garage-panel" aria-label="PID Tuning Garage">
               <div class="pid-panel-header">
-                <h2>PID Tuning Panel</h2>
+                <h2>PID Tuning Garage</h2>
                 <span id="pre-pid-badge" class="badge badge-stem">Starts at Zero</span>
               </div>
 
-              <div id="preflight-sliders-wrap">
-                <div class="slider-group">
-                  <div class="slider-label-row">
-                    <label for="pre-slider-kp">Kp — Proportional</label>
-                    <div class="slider-readout-group">
-                      <span id="pre-zone-kp" class="zone-pill zone-low">Low</span>
-                      <output id="pre-val-kp" for="pre-slider-kp">0.0</output>
-                    </div>
+              <div id="preflight-knobs-wrap" class="pid-knobs-grid">
+                <!-- Knob 1: Kp — Response -->
+                <div id="knob-card-kp" class="pid-knob-card knob-accent-kp">
+                  <div class="knob-card-top">
+                    <button type="button" class="knob-icon-btn" data-explain="kp" aria-expanded="false" title="What does Kp do? Click for visual guide">
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                        <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor" />
+                      </svg>
+                      <span>?</span>
+                    </button>
+                    <span id="pre-zone-kp" class="zone-pill zone-low">Low</span>
                   </div>
-                  <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="0" />
-                  <div id="pre-track-kp" class="zone-track" aria-hidden="true">
-                    <span data-zone="low">Low</span>
-                    <span data-zone="recommended">Recommended</span>
-                    <span data-zone="high">High</span>
+                  <div class="knob-title-group">
+                    <strong>Kp</strong>
+                    <span>Response</span>
                   </div>
-                  <p class="slider-help">Kp — Response strength to current position error.</p>
+
+                  <div
+                    id="knob-dial-kp"
+                    class="knob-dial"
+                    role="slider"
+                    tabindex="0"
+                    aria-label="Kp Response Gain"
+                    aria-valuemin="0"
+                    aria-valuemax="18"
+                    aria-valuenow="0"
+                    title="Drag, scroll, or use arrow keys to adjust Kp"
+                  >
+                    <svg class="knob-svg" viewBox="0 0 100 100" aria-hidden="true">
+                      <g class="knob-ticks"></g>
+                      <path class="knob-arc-track" d="" />
+                      <path id="knob-arc-kp" class="knob-arc-fill" d="" />
+                      <circle cx="50" cy="50" r="28" class="knob-cap" />
+                      <g id="knob-pointer-kp" class="knob-pointer-group">
+                        <line x1="50" y1="50" x2="50" y2="25" class="knob-pointer-line" />
+                        <circle cx="50" cy="27" r="3.4" class="knob-pointer-dot" />
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="knob-stepper">
+                    <button id="btn-kp-minus" type="button" class="knob-step-btn" aria-label="Decrease Kp">&minus;</button>
+                    <input id="input-kp" type="number" class="knob-num-input" min="0" max="18" step="0.1" value="0.0" aria-label="Exact Kp value" />
+                    <button id="btn-kp-plus" type="button" class="knob-step-btn" aria-label="Increase Kp">+</button>
+                  </div>
                 </div>
 
-                <div class="slider-group">
-                  <div class="slider-label-row">
-                    <label for="pre-slider-ki">Ki — Integral</label>
-                    <div class="slider-readout-group">
-                      <span id="pre-zone-ki" class="zone-pill zone-low">Low</span>
-                      <output id="pre-val-ki" for="pre-slider-ki">0.00</output>
-                    </div>
+                <!-- Knob 2: Ki — Correction -->
+                <div id="knob-card-ki" class="pid-knob-card knob-accent-ki">
+                  <div class="knob-card-top">
+                    <button type="button" class="knob-icon-btn" data-explain="ki" aria-expanded="false" title="What does Ki do? Click for visual guide">
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                        <path d="M4 17c3-1 5-4 8-4s5 2 8-3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                        <path d="M4 17h16v3H4z" fill="currentColor" opacity="0.35" />
+                      </svg>
+                      <span>?</span>
+                    </button>
+                    <span id="pre-zone-ki" class="zone-pill zone-low">Low</span>
                   </div>
-                  <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0" />
-                  <div id="pre-track-ki" class="zone-track" aria-hidden="true">
-                    <span data-zone="low">Low</span>
-                    <span data-zone="recommended">Recommended</span>
-                    <span data-zone="high">High</span>
+                  <div class="knob-title-group">
+                    <strong>Ki</strong>
+                    <span>Correction</span>
                   </div>
-                  <p class="slider-help">Ki — Correction for accumulated steady-state error.</p>
+
+                  <div
+                    id="knob-dial-ki"
+                    class="knob-dial"
+                    role="slider"
+                    tabindex="0"
+                    aria-label="Ki Correction Gain"
+                    aria-valuemin="0"
+                    aria-valuemax="8"
+                    aria-valuenow="0"
+                    title="Drag, scroll, or use arrow keys to adjust Ki"
+                  >
+                    <svg class="knob-svg" viewBox="0 0 100 100" aria-hidden="true">
+                      <g class="knob-ticks"></g>
+                      <path class="knob-arc-track" d="" />
+                      <path id="knob-arc-ki" class="knob-arc-fill" d="" />
+                      <circle cx="50" cy="50" r="28" class="knob-cap" />
+                      <g id="knob-pointer-ki" class="knob-pointer-group">
+                        <line x1="50" y1="50" x2="50" y2="25" class="knob-pointer-line" />
+                        <circle cx="50" cy="27" r="3.4" class="knob-pointer-dot" />
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="knob-stepper">
+                    <button id="btn-ki-minus" type="button" class="knob-step-btn" aria-label="Decrease Ki">&minus;</button>
+                    <input id="input-ki" type="number" class="knob-num-input" min="0" max="8" step="0.05" value="0.00" aria-label="Exact Ki value" />
+                    <button id="btn-ki-plus" type="button" class="knob-step-btn" aria-label="Increase Ki">+</button>
+                  </div>
                 </div>
 
-                <div class="slider-group">
-                  <div class="slider-label-row">
-                    <label for="pre-slider-kd">Kd — Derivative</label>
-                    <div class="slider-readout-group">
-                      <span id="pre-zone-kd" class="zone-pill zone-low">Low</span>
-                      <output id="pre-val-kd" for="pre-slider-kd">0.0</output>
-                    </div>
+                <!-- Knob 3: Kd — Damping -->
+                <div id="knob-card-kd" class="pid-knob-card knob-accent-kd">
+                  <div class="knob-card-top">
+                    <button type="button" class="knob-icon-btn" data-explain="kd" aria-expanded="false" title="What does Kd do? Click for visual guide">
+                      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2.2" />
+                        <path d="M5 7a9 9 0 0 0 0 10M19 7a9 9 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                      </svg>
+                      <span>?</span>
+                    </button>
+                    <span id="pre-zone-kd" class="zone-pill zone-low">Low</span>
                   </div>
-                  <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="0" />
-                  <div id="pre-track-kd" class="zone-track" aria-hidden="true">
-                    <span data-zone="low">Low</span>
-                    <span data-zone="recommended">Recommended</span>
-                    <span data-zone="high">High</span>
+                  <div class="knob-title-group">
+                    <strong>Kd</strong>
+                    <span>Damping</span>
                   </div>
-                  <p class="slider-help">Kd — Damping and braking against velocity.</p>
+
+                  <div
+                    id="knob-dial-kd"
+                    class="knob-dial"
+                    role="slider"
+                    tabindex="0"
+                    aria-label="Kd Damping Gain"
+                    aria-valuemin="0"
+                    aria-valuemax="16"
+                    aria-valuenow="0"
+                    title="Drag, scroll, or use arrow keys to adjust Kd"
+                  >
+                    <svg class="knob-svg" viewBox="0 0 100 100" aria-hidden="true">
+                      <g class="knob-ticks"></g>
+                      <path class="knob-arc-track" d="" />
+                      <path id="knob-arc-kd" class="knob-arc-fill" d="" />
+                      <circle cx="50" cy="50" r="28" class="knob-cap" />
+                      <g id="knob-pointer-kd" class="knob-pointer-group">
+                        <line x1="50" y1="50" x2="50" y2="25" class="knob-pointer-line" />
+                        <circle cx="50" cy="27" r="3.4" class="knob-pointer-dot" />
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div class="knob-stepper">
+                    <button id="btn-kd-minus" type="button" class="knob-step-btn" aria-label="Decrease Kd">&minus;</button>
+                    <input id="input-kd" type="number" class="knob-num-input" min="0" max="16" step="0.1" value="0.0" aria-label="Exact Kd value" />
+                    <button id="btn-kd-plus" type="button" class="knob-step-btn" aria-label="Increase Kd">+</button>
+                  </div>
                 </div>
               </div>
 
-              <!-- Live 4-Axis Strategy Trade-off Predictor -->
-              <div id="preflight-tradeoff-panel" class="tradeoff-panel" aria-live="polite">
-                <div class="tradeoff-panel-head">
-                  <span class="telemetry-title" style="margin:0;">Predicted Strategy Trade-offs</span>
-                  <strong id="tradeoff-strategy-label" class="tradeoff-badge">Balanced Cruise</strong>
+              <!-- On-demand Visual Parameter Explainer Card (opens when clicking Kp/Ki/Kd icon) -->
+              <div id="pid-explainer-card" class="pid-explainer-card hidden" aria-live="polite">
+                <div class="pid-explainer-head">
+                  <div>
+                    <strong id="pid-explainer-title">Kp — Response</strong>
+                    <span id="pid-explainer-role" class="pid-explainer-role">Reacts to current position error</span>
+                  </div>
+                  <button id="btn-close-explainer" type="button" class="btn btn-ghost btn-sm" aria-label="Close visual explanation">&times;</button>
                 </div>
-                <div class="tradeoff-meters">
-                  <div class="tradeoff-meter-row">
-                    <span>Speed</span>
-                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-speed" class="tradeoff-bar-fill bar-speed"></div></div>
-                    <strong id="tradeoff-val-speed">50</strong>
-                  </div>
-                  <div class="tradeoff-meter-row">
-                    <span>Stability</span>
-                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-stability" class="tradeoff-bar-fill bar-stability"></div></div>
-                    <strong id="tradeoff-val-stability">50</strong>
-                  </div>
-                  <div class="tradeoff-meter-row">
-                    <span>Precision</span>
-                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-precision" class="tradeoff-bar-fill bar-precision"></div></div>
-                    <strong id="tradeoff-val-precision">50</strong>
-                  </div>
-                  <div class="tradeoff-meter-row">
-                    <span>Efficiency</span>
-                    <div class="tradeoff-bar-track"><div id="tradeoff-bar-efficiency" class="tradeoff-bar-fill bar-efficiency"></div></div>
-                    <strong id="tradeoff-val-efficiency">50</strong>
-                  </div>
-                </div>
-                <p id="tradeoff-summary" class="tradeoff-summary"></p>
+                <div id="pid-explainer-visual" class="pid-explainer-visual"></div>
+                <ul id="pid-explainer-bullets" class="pid-explainer-bullets"></ul>
+                <details class="learn-more-inline">
+                  <summary>Learn More (Formula)</summary>
+                  <p id="pid-explainer-formula"></p>
+                </details>
               </div>
 
-              <div class="pid-actions">
+              <!-- Synchronized hidden range inputs & zone tracks for full keyboard/accessibility & backward sync -->
+              <div id="preflight-sliders-wrap" class="sr-only" aria-hidden="true">
+                <input id="pre-slider-kp" type="range" min="0" max="18" step="0.1" value="0" tabindex="-1" />
+                <output id="pre-val-kp" for="pre-slider-kp">0.0</output>
+                <div id="pre-track-kp" class="zone-track"><span data-zone="low"></span><span data-zone="recommended"></span><span data-zone="high"></span></div>
+
+                <input id="pre-slider-ki" type="range" min="0" max="8" step="0.05" value="0" tabindex="-1" />
+                <output id="pre-val-ki" for="pre-slider-ki">0.00</output>
+                <div id="pre-track-ki" class="zone-track"><span data-zone="low"></span><span data-zone="recommended"></span><span data-zone="high"></span></div>
+
+                <input id="pre-slider-kd" type="range" min="0" max="16" step="0.1" value="0" tabindex="-1" />
+                <output id="pre-val-kd" for="pre-slider-kd">0.0</output>
+                <div id="pre-track-kd" class="zone-track"><span data-zone="low"></span><span data-zone="recommended"></span><span data-zone="high"></span></div>
+              </div>
+
+              <!-- Primary Garage Action Row -->
+              <div class="garage-actions">
+                <button id="btn-test-pid" type="button" class="btn btn-bench">
+                  <span aria-hidden="true">&#9889;</span> Test PID
+                </button>
                 <button id="btn-pre-reset-pid" type="button" class="btn btn-outline">Reset PID</button>
-                <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight</button>
+                <button id="btn-pre-start-flight-2" type="button" class="btn btn-primary">Start Flight &rarr;</button>
               </div>
+              <p class="garage-skip-hint">Experiment freely with <strong>Test PID</strong>, or jump straight into <strong>Start Flight</strong> anytime.</p>
             </aside>
           </div>
         </div>

@@ -93,44 +93,45 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     const stepIds = flow.map((s) => s.stepId);
     assert.deepEqual(stepIds, [
       't1-briefing',
-      't1-specs',
-      't1-pid-panel',
-      't1-pid-sliders',
-      't1-pip-assistant',
+      't1-knobs-intro',
+      't1-adjust-knob',
+      't1-test-pid',
+      't1-observe-bench',
+      't1-retest-pid',
       't1-start-flight',
       't1-wasd',
-      't1-flight-info',
       't1-reach-target',
       't1-results'
     ]);
 
-    // Step 1-3 -> acknowledge & back navigation works
+    // Step 1-2 -> acknowledge & back navigation works
     const engine = new TutorialGuideEngine();
     engine.start(TUTORIAL_SCENES['tutorial-1']);
     assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
     assert.equal(engine.canGoBack(), false);
 
     assert.equal(engine.goNext(), true);
-    assert.equal(engine.getCurrentStep().stepId, 't1-specs');
+    assert.equal(engine.getCurrentStep().stepId, 't1-knobs-intro');
     assert.equal(engine.canGoBack(), true);
 
     assert.equal(engine.goBack(), true);
     assert.equal(engine.getCurrentStep().stepId, 't1-briefing');
 
-    engine.goNext(); // specs
-    engine.goNext(); // pid-panel
-    engine.goNext(); // pid-sliders
-    assert.equal(engine.getCurrentStep().stepId, 't1-pid-sliders');
+    engine.goNext(); // knobs-intro
+    engine.goNext(); // adjust-knob
+    assert.equal(engine.getCurrentStep().stepId, 't1-adjust-knob');
 
-    // Step 4 cannot skip without real slider adjustment
+    // Step 3 cannot skip without real knob/slider adjustment
     assert.equal(engine.canGoNext(), false);
     assert.equal(engine.goNext(), false);
 
-    // Same gain values do not count as adjustment; real gain change advances
+    // Same gain values do not count as adjustment; real gain change advances to Test PID
     assert.equal(engine.recordPidAdjustment({ kp: 6.5, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), false);
     assert.equal(engine.recordPidAdjustment({ kp: 7.2, ki: 0.6, kd: 3.8 }, { kp: 6.5, ki: 0.6, kd: 3.8 }), true);
-    assert.equal(engine.getCurrentStep().stepId, 't1-pip-assistant');
+    assert.equal(engine.getCurrentStep().stepId, 't1-test-pid');
 
+    engine.recordBenchTest(); // t1-observe-bench
+    engine.goNext(); // t1-retest-pid
     engine.goNext(); // t1-start-flight
     assert.equal(engine.getCurrentStep().stepId, 't1-start-flight');
     assert.equal(engine.canGoNext(), false);
@@ -173,16 +174,12 @@ describe('M4.1 — Unified PIP Coach & Config-Driven Interactive Tutorial Guide'
     engine.evaluateTelemetry(sim, { moveX: 1, moveZ: 0 }, { status: 'running' }, 'flight');
     assert.equal(engine.wasdDone.d, true);
 
-    // Release keys & settle -> advances to Step 8 (t1-flight-info)
+    // Release keys & settle -> advances to Step 9 (t1-reach-target)
     for (let i = 0; i < 60; i++) {
       sim.stepFixed(FIXED_DT, { moveX: 0, moveZ: 0 });
       engine.evaluateTelemetry(sim, { moveX: 0, moveZ: 0 }, { status: 'running' }, 'flight');
     }
     assert.equal(engine.wasdDone.release, true);
-    assert.equal(engine.getCurrentStep().stepId, 't1-flight-info');
-
-    // Next -> Step 9 (t1-reach-target)
-    engine.goNext();
     assert.equal(engine.getCurrentStep().stepId, 't1-reach-target');
     assert.equal(engine.canGoNext(), false);
 

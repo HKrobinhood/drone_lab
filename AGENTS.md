@@ -98,7 +98,7 @@ Drone_lab/
 
 ## 七、代码与测试规范
 
-1. **逻辑与渲染解耦**：`pid.js`、`physics.js`、`simulation.js`、`scoring.js`、`feedback.js`、`levels.js`、`storage.js`、`tutorial_guide.js`、`visual_aids.js` 必须可在 Node.js 环境下脱离 DOM/Canvas 独立运行自动化测试。
+1. **逻辑与渲染解耦**：`pid.js`、`physics.js`、`simulation.js`、`scoring.js`、`feedback.js`、`levels.js`、`storage.js`、`tutorial_guide.js`、`visual_aids.js`、`test_bench.js`、`pid_knob.js`（纯数学部分）必须可在 Node.js 环境下脱离 DOM/Canvas 独立运行自动化测试。
 2. **双模式共享实现规范与教学设计原则**：
    - Tutorial and Challenge must share the same flight controller, simulation engine and core flight UI. Tutorial-specific behavior must be implemented through configuration and guidance rather than a separate game implementation.
    - All Tutorial Village coaching reuses the unified **PIP** character (`Greeting / Teaching / Warning / Ready / Success / Failure`), follows a **Visual → One Sentence (<= 15 words) → Player Action** structure paired with interactive inline SVG/CSS diagrams, places deeper explanations in collapsible `Learn More` sections, keeps flight telemetry visual-first (Ghost Drone REF, Flight Trails, real-telemetry response plots), and anchors Challenge results on a centered animated 1–3 star showcase derived strictly from M4 scoring rules while respecting `prefers-reduced-motion`.

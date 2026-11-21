@@ -410,3 +410,51 @@ export function renderResultStarSvg(index = 1) {
     </svg>
   `.trim();
 }
+
+/**
+ * Beginner-friendly visual explainers for Kp, Ki, and Kd tuning knobs.
+ * Scientifically accurate: emphasizes coupled behavior rather than claiming
+ * any single gain acts in isolation. Mathematical formulas live in Learn More.
+ */
+export const PID_PARAM_EXPLAINERS = Object.freeze({
+  kp: {
+    key: 'kp',
+    title: 'Kp — Response',
+    shortRole: 'Reacts to current position error',
+    visualId: 'kp-response',
+    bullets: [
+      'Low Kp: drone may react slowly to target changes.',
+      'High Kp: pushes harder, which can cause overshoot if damping is low.'
+    ],
+    formulaLearnMore:
+      'Proportional term: P = Kp × (REF − Position). Works together with Ki and Kd—overall stability depends on how all three gains balance against drone mass and thrust limits.'
+  },
+  ki: {
+    key: 'ki',
+    title: 'Ki — Correction',
+    shortRole: 'Fixes persistent drift over time',
+    visualId: 'ki-integral',
+    bullets: [
+      'Helps cancel steady errors from wind or heavy payload.',
+      'Too much Ki can build up integral windup and slow recovery.'
+    ],
+    formulaLearnMore:
+      'Integral term: I = Ki × ∫ error dt (with anti-windup clamping). Because I accumulates over time, it interacts closely with Kp and Kd during fast maneuvers.'
+  },
+  kd: {
+    key: 'kd',
+    title: 'Kd — Damping',
+    shortRole: 'Brakes fast motion to steady flight',
+    visualId: 'kd-damping',
+    bullets: [
+      'Helps suppress overshoot and oscillations when stopping.',
+      'Excessive Kd can make the drone feel sluggish and slow to respond.'
+    ],
+    formulaLearnMore:
+      'Derivative damping term: D = −Kd × measured_velocity (avoids derivative kick on sudden REF steps). Effective damping depends on the ratio between Kd, Kp, and total mass.'
+  }
+});
+
+export function getPidParamExplainer(paramKey) {
+  return PID_PARAM_EXPLAINERS[paramKey] || null;
+}

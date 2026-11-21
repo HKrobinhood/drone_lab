@@ -21,11 +21,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
 describe('M5.1 — Flight Screen WASD Intro & Progressive Metric Coaching via PIP', () => {
-  it('keeps Tutorial 1 pre-flight Briefing/Specs intact and puts WASD intro right at Flight Screen start', () => {
+  it('keeps Tutorial 1 pre-flight Mission Playground & Gravity visual intact and puts WASD intro right at Flight Screen start', () => {
     const t1 = TUTORIAL_GUIDE_FLOWS['tutorial-1'];
     assert.equal(t1[0].stepId, 't1-briefing');
-    assert.equal(t1[1].stepId, 't1-specs');
-    assert.equal(t1[1].visualId, 'gravity-thrust');
+    assert.equal(t1[0].visualId, 'gravity-thrust');
 
     const flightStartStep = t1.find((s) => s.view === 'flight');
     assert.equal(flightStartStep.stepId, 't1-wasd');

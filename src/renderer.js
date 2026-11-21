@@ -987,3 +987,161 @@ export function renderStrategyRadar(canvas, currentProfile, previousProfile = nu
 
   ctx.restore();
 }
+
+/**
+ * Draw standardized PID Test Bench response curve from real simulation samples:
+ * - Reference target line (dashed gold)
+ * - Settling tolerance band (soft green)
+ * - Previous response curve (dashed violet, only when experimentKey matches)
+ * - Current response curve (solid bright cyan)
+ */
+export function renderTestBenchChart(canvas, currentResult, previousResult = null) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 460;
+  const height = rect.height || 148;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, width, height);
+
+  if (!currentResult || !Array.isArray(currentResult.samples) || currentResult.samples.length < 2) {
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 3; i++) {
+      const gy = (height * i) / 4;
+      ctx.beginPath();
+      ctx.moveTo(28, gy);
+      ctx.lineTo(width - 14, gy);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Click "Test PID" to run a real 6.5 s flight response test', width * 0.5, height * 0.52);
+    ctx.restore();
+    return;
+  }
+
+  const padL = 36;
+  const padR = 14;
+  const padT = 16;
+  const padB = 22;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  const comparablePrev =
+    previousResult &&
+    previousResult.experimentKey === currentResult.experimentKey &&
+    Array.isArray(previousResult.samples) &&
+    previousResult.samples.length >= 2
+      ? previousResult
+      : null;
+
+  const allVals = [currentResult.refVal, currentResult.startVal];
+  for (const s of currentResult.samples) allVals.push(s.actual);
+  if (comparablePrev) {
+    for (const s of comparablePrev.samples) allVals.push(s.actual);
+  }
+
+  let yMin = Math.min(...allVals) - 0.6;
+  let yMax = Math.max(...allVals) + 0.6;
+  if (yMax - yMin < 2.2) {
+    const mid = (yMin + yMax) * 0.5;
+    yMin = mid - 1.2;
+    yMax = mid + 1.2;
+  }
+
+  const tMax = Math.max(1, currentResult.duration || 6.5);
+  const toX = (t) => padL + (t / tMax) * plotW;
+  const toY = (v) => padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= 3; i++) {
+    const gy = padT + (plotH * i) / 3;
+    ctx.moveTo(padL, gy);
+    ctx.lineTo(padL + plotW, gy);
+  }
+  ctx.stroke();
+
+  // Settling tolerance band around Reference (+/- 0.25 m)
+  const bandHalf = currentResult.testType === 'wind' ? 0.25 : 0.22;
+  const bandTop = toY(currentResult.refVal + bandHalf);
+  const bandBot = toY(currentResult.refVal - bandHalf);
+  ctx.fillStyle = 'rgba(34, 197, 94, 0.11)';
+  ctx.fillRect(padL, bandTop, plotW, Math.max(2, bandBot - bandTop));
+
+  // Reference Position line (gold dashed)
+  const refY = toY(currentResult.refVal);
+  ctx.save();
+  ctx.beginPath();
+  ctx.setLineDash([5, 4]);
+  ctx.moveTo(padL, refY);
+  ctx.lineTo(padL + plotW, refY);
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.restore();
+
+  // Previous Response (violet dashed)
+  if (comparablePrev) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([5, 4]);
+    ctx.moveTo(toX(comparablePrev.samples[0].t), toY(comparablePrev.samples[0].actual));
+    for (let i = 1; i < comparablePrev.samples.length; i++) {
+      ctx.lineTo(toX(comparablePrev.samples[i].t), toY(comparablePrev.samples[i].actual));
+    }
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.78)';
+    ctx.lineWidth = 1.9;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Current Response (solid cyan)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(toX(currentResult.samples[0].t), toY(currentResult.samples[0].actual));
+  for (let i = 1; i < currentResult.samples.length; i++) {
+    ctx.lineTo(toX(currentResult.samples[i].t), toY(currentResult.samples[i].actual));
+  }
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 2.6;
+  ctx.stroke();
+  const last = currentResult.samples[currentResult.samples.length - 1];
+  ctx.fillStyle = '#7dd3fc';
+  ctx.beginPath();
+  ctx.arc(toX(last.t), toY(last.actual), 3.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Axis Labels
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 9.5px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${yMax.toFixed(1)}m`, padL - 5, padT + 6);
+  ctx.fillText(`${yMin.toFixed(1)}m`, padL - 5, padT + plotH);
+
+  ctx.textAlign = 'left';
+  ctx.fillText('0 s', padL, height - 6);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fde047';
+  ctx.fillText(`Target ${currentResult.refVal.toFixed(1)} m`, padL + plotW * 0.5, padT - 4);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(`${tMax.toFixed(1)} s`, width - padR, height - 6);
+
+  ctx.restore();
+}

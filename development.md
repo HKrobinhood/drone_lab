@@ -38,6 +38,7 @@
 | **M5.1** | Visual-First UI & Animated Star Results | 视觉优先教学与交互图解（<=15 词）、Ghost Drone + 实时 PID 曲线与状态标签、PIP 精简优化、居中三星逐颗弹跳动画、真实 M4 评级依据与下一星建议、精简失败页 | **已完成** |
 | **M5.2** | Homepage UI Redesign | 明亮卡通科技风游戏首页重设计：蓝天草地场景、左侧 PIP + 中央超大 `Start Game` + 右侧无人机、4 步图标玩法流程、4 张简洁课程信息卡与完整 `About` 课程弹窗 | **已完成** |
 | **M5.3** | Strategic Control Trade-offs & Energy Model | 真实非线性旋翼功耗与电池耗尽失败模型、L1–L6 差异化策略格局（极速/精密/重载节能/狭缝权衡/强风抗扰/四维终考）、L3–L6 淡出绿区改用实时四维权衡预测器与结算四维策略雷达对比 | **已完成** |
+| **M5.4** | Beginner-Friendly PID Tuning Redesign | 降噪三区布局（Mission Playground 场景预览 + PID Tuning Garage 圆形旋钮 + 紧凑 PIP 气泡）、可展开 Kp/Ki/Kd 图解卡、基于真实 120 Hz 仿真的 PID Test Bench（Step/Wind 实验、Tuning Challenge、Before/After 曲线与指标对比）及新手实验引导升级 | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
 
 ---
@@ -190,6 +191,28 @@
   - T1–T4 与 L1–L2 保留滑块 `Low / Recommended / High` 辅助提示；**L3–L6 隐藏精确绿区**，引导玩家结合 `Mission Strategy Priorities` 与实时 **4-Axis Strategy Trade-off Meter（Speed / Stability / Precision / Efficiency）** 自主决策。
   - 飞行顶部新增实时电池进度条/瞬时功率胶囊与 `High Drain / Low Battery` 状态徽章；结算页新增 `Energy Target` 评级依据、四维策略对比雷达图（本次 vs 上次 vs 任务优先级）与 PIP 策略复盘。
 
+### M5.4 — Beginner-Friendly PID Tuning Redesign
+- **UI 降噪与三区重组（`index.html`, `styles/main.css`, `src/main.js`）**：
+  - 将原先在赛前界面同时展开的十余项文字栏目重组为三个视觉清晰区域：
+    1. **Mission Playground**：顶部简洁图标数值条（Hold、Speed、Mass、Wind、Max Thrust、Battery）+ 实时 2D 关卡预览画布（`#preflight-arena-canvas`，复用 `FlightRenderer` 绘制无人机、目标区、障碍物与风向），让初学者看图理解任务。
+    2. **PID Tuning Garage**：三颗游戏化圆形控制旋钮（`Kp — Response`、`Ki — Correction`、`Kd — Damping`）+ `Test PID` / `Reset PID` / `Start Flight` 操作行。
+    3. **PIP Flight Coach**：顶部紧凑迷你机器人 + 单句建议对话气泡。
+  - 原有完整任务详情（Mission Briefing / 策略优先级 / 历史试飞）、Drone Specifications / 概念图解、以及四维 Strategy Trade-offs 收纳至默认折叠的 `<details>` 抽屉按需展开，不丢失任何教学信息且大幅降低首屏信息密度。
+- **游戏化圆形控制旋钮与参数图解（`src/pid_knob.js`, `src/visual_aids.js`）**：
+  - 零外部库纯 SVG + Pointer Events 旋钮，带 270° 刻度与彩色弧线、鼠标/触控拖拽（`touch-action: none`）、滚轮、键盘方向键、`−`/`+` 微调按钮与精确数值输入框，实时双向同步至真实 `PIDController` 边界与步长。
+  - 每个旋钮左上角带闪电 / 累积误差 / 刹车图标按钮，点击就近展开交互式 SVG 参数图解卡（强调三参数耦合、不含误导性单参数论断），数学公式收纳在折叠 `Learn More (Formula)` 中。
+- **真实仿真 PID Test Bench、实验挑战与 Before/After 对比（`src/test_bench.js`, `src/renderer.js`）**：
+  - 点击 `Test PID` 创建完全隔离的 `FlightSimulation` 实例运行 6.5 秒真实 120 Hz 物理实验（按关卡自动选择 `Takeoff Height Step`、`Position Step` 或 `Wind Disturbance`），绝不污染正式飞行状态。
+  - 折线图展示 `Target`（金虚线）、`Previous`（紫虚线）与 `Current`（青实线）真实采样轨迹，底部如实展示 `Overshoot`、`Settling Time`（未收敛显示 `Not Settled`）、`Steady Error`（不可测显示 `N/A`）。
+  - 仅在相同 `experimentKey` 实验条件下生成 Before → After 对比胶囊（改善绿显、退化如实红显）；每关配备独立实验式 **Tuning Challenge**（严格按真实物理指标判定、不检查推荐区、可随时跳过直接 `Start Flight`）。
+  - PIP 优先依据真实 Test Bench 遥测生成单句指导或祝贺，不泄露唯一最优参数。
+- **新手村实验引导升级（`src/tutorial_guide.js`）**：
+  - Tutorial 1 升级为覆盖“认识任务画面 → 认识三颗旋钮 → 调参 → 点击 Test PID → 读懂曲线 → 二次调参对比 → Start Flight → WASD 操控 → 进区悬停 → 复盘”的 10 步实操闭环，T2–T4 逐步减少强制步骤。
+- **测试结果与已知问题**：
+  - 全量语法检查与自动化测试 `node --test tests/*.test.mjs`：**35 套件、91 项测试全部通过（0 失败）**，包含新增 `tests/m5_4.test.mjs`。
+  - Headless Chrome 实机交互与视觉截图验证（桌面 1440×900 与手机 390×844）：旋钮多方式同步、参数图解展开、Tutorial 4 真实物理 Before (`Kd=0.4`, Overshoot 86% / Not Settled) → After (`Kd=4.6`, Overshoot 3% / 1.8 s / `✓ Goal Met!`)、L3 去脚手架与跳过 Test PID 直接起飞全部通过，零控制台/运行报错、零横向溢出。
+  - 已知问题：暂无阻塞缺陷。
+
 ### M6 — Polish and Deployment
 - [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
 - [ ] 校准各关卡难度与评分阈值
@@ -200,8 +223,8 @@
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.3 — Strategic Control Trade-offs & Energy Model`（已完成，待人工验收后进入 M6）
-- **已完成**：真实旋翼非线性功耗与电池耗尽失败模型、T1–T4 四维策略启蒙、L1–L6 差异化策略格局、L3–L6 淡出绿区与实时四维权衡预测、飞行电量条及结算四维策略雷达对比。
+- **当前里程碑**：`M5.4 — Beginner-Friendly PID Tuning Redesign`（已完成，待人工验收后进入 M6）
+- **已完成**：三区视觉优先赛前界面（Mission Playground 场景预览 + PID Tuning Garage 游戏化圆形旋钮 + 紧凑 PIP 气泡）、Kp/Ki/Kd 可展开交互图解、真实 120 Hz PID Test Bench（Before/After 曲线与指标对比 + 实验式 Tuning Challenge）及新手村实验引导升级。
 - **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
 
 ---
@@ -256,6 +279,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m5.1): unify tutorial and challenge star result display` — 统一新手村与正式关卡的三星动画与评级依据展示。
 - `feat(ui): redesign STEM game homepage` — 完成 M5.2 明亮卡通科技风 STEM 首页重设计、4 步图标玩法、4 张课程信息卡与完整 `About` 课程弹窗。
 - `feat(m5.3): add strategic PID trade-offs, rotor energy model, and 4-axis radar` — 完成 M5.3 非线性旋翼功耗与电池模型、L1–L6 差异化策略格局、L3–L6 绿区淡出、实时四维权衡预测与结算策略雷达对比。
+- `feat(tuning): redesign beginner PID tuning experience` — 完成 M5.4 初学者友好型 PID 调参重设计（Mission Playground 实时预览、圆形旋钮、参数图解卡、真实仿真 PID Test Bench 与 Before/After 对比、新手实验引导）。
 
 ---
 

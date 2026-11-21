@@ -23,7 +23,8 @@ import {
   renderRouteFitPreview,
   renderTelemetryTimeSeriesPlot,
   renderLivePidResponseChart,
-  renderStrategyRadar
+  renderStrategyRadar,
+  renderTestBenchChart
 } from './renderer.js';
 import { getTotalMass } from './physics.js';
 import {
@@ -45,8 +46,16 @@ import {
   getStemVisualAid,
   renderInteractiveVisualAidHtml,
   bindVisualAidInteractions,
-  renderResultStarSvg
+  renderResultStarSvg,
+  getPidParamExplainer
 } from './visual_aids.js';
+import { PidKnobControl } from './pid_knob.js';
+import {
+  runPidBenchTest,
+  compareBenchTests,
+  evaluateTestBenchPipCoaching,
+  getTuningChallengeForScene
+} from './test_bench.js';
 
 const state = {
   currentView: 'start',
@@ -60,6 +69,8 @@ const state = {
   tunedGainsByLevel: {},
   baselineGainsByLevel: {},
   lastAttempts: {},
+  benchHistoryByLevel: {},
+  activeExplainerParam: null,
   pipIntroIndex: 0,
   pipIntroOpen: false
 };
@@ -104,15 +115,40 @@ const els = {
   btnPipIntroSkip: document.getElementById('btn-pip-intro-skip'),
   btnPipIntroNext: document.getElementById('btn-pip-intro-next'),
 
-  // Pre-flight Briefing & Tuning elements
+  // Pre-flight Briefing & Tuning Garage elements
   btnPreflightBack: document.getElementById('btn-preflight-back'),
   btnPreflightMeetPip: document.getElementById('btn-preflight-meet-pip'),
   btnPreflightReopenGuide: document.getElementById('btn-preflight-reopen-guide'),
   btnPreStartFlight: document.getElementById('btn-pre-start-flight'),
   btnPreStartFlight2: document.getElementById('btn-pre-start-flight-2'),
   btnPreResetPid: document.getElementById('btn-pre-reset-pid'),
+  btnTestPid: document.getElementById('btn-test-pid'),
   preflightModeBadge: document.getElementById('preflight-mode-badge'),
   preflightTitle: document.getElementById('preflight-title'),
+  preflightShortGoal: document.getElementById('preflight-short-goal'),
+  preflightQuickChips: document.getElementById('preflight-quick-chips'),
+  preflightArenaCanvas: document.getElementById('preflight-arena-canvas'),
+  benchChallengeTitle: document.getElementById('bench-challenge-title'),
+  benchChallengeBadge: document.getElementById('bench-challenge-badge'),
+  benchTestLabel: document.getElementById('bench-test-label'),
+  benchPrevLegend: document.getElementById('bench-prev-legend'),
+  testBenchCanvas: document.getElementById('test-bench-canvas'),
+  benchMetricOvershoot: document.getElementById('bench-metric-overshoot'),
+  benchMetricSettling: document.getElementById('bench-metric-settling'),
+  benchMetricError: document.getElementById('bench-metric-error'),
+  benchCompareStrip: document.getElementById('bench-compare-strip'),
+  benchCompareBadges: document.getElementById('bench-compare-badges'),
+  drawerStrategyPreview: document.getElementById('drawer-strategy-preview'),
+  preflightDetailsMission: document.getElementById('preflight-details-mission'),
+  preflightDetailsSpecs: document.getElementById('preflight-details-specs'),
+  preflightDetailsTradeoffs: document.getElementById('preflight-details-tradeoffs'),
+  pidExplainerCard: document.getElementById('pid-explainer-card'),
+  pidExplainerTitle: document.getElementById('pid-explainer-title'),
+  pidExplainerRole: document.getElementById('pid-explainer-role'),
+  pidExplainerVisual: document.getElementById('pid-explainer-visual'),
+  pidExplainerBullets: document.getElementById('pid-explainer-bullets'),
+  pidExplainerFormula: document.getElementById('pid-explainer-formula'),
+  btnCloseExplainer: document.getElementById('btn-close-explainer'),
   preflightDescription: document.getElementById('preflight-description'),
   preflightLearningFocus: document.getElementById('preflight-learning-focus'),
   preflightObjective: document.getElementById('preflight-objective'),
@@ -325,8 +361,10 @@ const els = {
 
 const sim = new FlightSimulation();
 const renderer = new FlightRenderer(els.flightCanvas);
+const previewRenderer = els.preflightArenaCanvas ? new FlightRenderer(els.preflightArenaCanvas) : null;
 const tutorialGuide = new TutorialGuideEngine();
 let tutorialOverlay = null;
+const pidKnobs = {};
 
 let rafId = null;
 let lastFrameTime = null;
@@ -432,6 +470,7 @@ function renderZoneHint(pillEl, trackEl, zone, hideRecommended = false) {
 function renderStrategyTradeoffMeter(gains, scene) {
   const pred = predictStrategyTradeoffs(gains, scene);
   if (els.tradeoffStrategyLabel) els.tradeoffStrategyLabel.textContent = pred.strategyLabel;
+  if (els.drawerStrategyPreview) els.drawerStrategyPreview.textContent = pred.strategyLabel;
   if (els.tradeoffSummary) els.tradeoffSummary.textContent = pred.summary;
   for (const axis of ['speed', 'stability', 'precision', 'efficiency']) {
     const val = Math.round(pred[axis] ?? 0);
@@ -454,8 +493,206 @@ function syncAllPidPanels(gains, scene = state.activeScene) {
     renderZoneHint(group.zones.ki, group.tracks.ki, analysis.zones.ki, hideZones);
     renderZoneHint(group.zones.kd, group.tracks.kd, analysis.zones.kd, hideZones);
   }
+  for (const axis of ['kp', 'ki', 'kd']) {
+    pidKnobs[axis]?.setValue(gains[axis], false);
+  }
   renderStrategyTradeoffMeter(gains, scene);
   return analysis;
+}
+
+// ==================== PID VISUAL EXPLAINERS & TEST BENCH (M5.4) ====================
+function closeParamExplainer() {
+  state.activeExplainerParam = null;
+  els.pidExplainerCard?.classList.add('hidden');
+  for (const btn of document.querySelectorAll('.knob-icon-btn[data-explain]')) {
+    btn.setAttribute('aria-expanded', 'false');
+    btn.classList.remove('is-open');
+  }
+  tutorialOverlay?.reposition();
+}
+
+function toggleParamExplainer(paramKey) {
+  if (state.activeExplainerParam === paramKey) {
+    closeParamExplainer();
+    return;
+  }
+  const exp = getPidParamExplainer(paramKey);
+  if (!exp || !els.pidExplainerCard) return;
+
+  state.activeExplainerParam = paramKey;
+  els.pidExplainerTitle.textContent = exp.title;
+  els.pidExplainerRole.textContent = exp.shortRole;
+  els.pidExplainerVisual.innerHTML = renderInteractiveVisualAidHtml(exp.visualId);
+  bindVisualAidInteractions(els.pidExplainerVisual);
+  els.pidExplainerBullets.innerHTML = exp.bullets.map((b) => `<li>${b}</li>`).join('');
+  els.pidExplainerFormula.textContent = exp.formulaLearnMore;
+  els.pidExplainerCard.classList.remove('hidden');
+
+  for (const btn of document.querySelectorAll('.knob-icon-btn[data-explain]')) {
+    const active = btn.dataset.explain === paramKey;
+    btn.setAttribute('aria-expanded', String(active));
+    btn.classList.toggle('is-open', active);
+  }
+  tutorialOverlay?.reposition();
+}
+
+function renderMissionQuickChips(scene) {
+  if (!els.preflightQuickChips || !scene) return;
+  const totalMass = (scene.droneMass ?? 1.2) + (scene.payloadMass ?? 0);
+  const maxThrust = scene.maxThrust ?? 28.0;
+  const chips = [];
+
+  if (scene.targetZone) {
+    chips.push({ icon: '⏱', label: `Hold ${scene.targetZone.holdRequired.toFixed(1)} s` });
+    chips.push({ icon: '🎯', label: `Speed <= ${(scene.velocityTolerance ?? scene.targetZone.maxSpeed).toFixed(2)} m/s` });
+  } else if (scene.landingPad) {
+    chips.push({ icon: '🛬', label: `Touchdown <= ${(scene.velocityTolerance ?? scene.landingPad.maxTouchdownSpeed).toFixed(2)} m/s` });
+  }
+  if (scene.rings?.length) {
+    chips.push({ icon: '⭕', label: `${scene.rings.length} Rings` });
+  }
+  chips.push({
+    icon: '⚖',
+    label: scene.payloadMass > 0 ? `${totalMass.toFixed(1)} kg (+Cargo)` : `${totalMass.toFixed(1)} kg`
+  });
+  const windX = scene.windForce?.x ?? 0;
+  const hasGust = Boolean(scene.windGust && (scene.windGust.xAmp || scene.windGust.zAmp));
+  chips.push({
+    icon: '💨',
+    label: hasGust
+      ? `Gusts +${windX.toFixed(1)} N`
+      : Math.abs(windX) > 0.1
+        ? `Wind +${windX.toFixed(1)} N`
+        : 'Calm Air'
+  });
+  chips.push({ icon: '⚡', label: `Max ${maxThrust.toFixed(0)} N` });
+  if (Number.isFinite(scene.energyBudget)) {
+    chips.push({ icon: '🔋', label: `Battery ${Math.round(scene.energyBudget)} J`, highlight: true });
+  }
+
+  els.preflightQuickChips.innerHTML = chips
+    .map(
+      (c) =>
+        `<span class="playground-chip ${c.highlight ? 'is-highlight' : ''}"><span class="chip-ico" aria-hidden="true">${c.icon}</span>${c.label}</span>`
+    )
+    .join('');
+}
+
+function renderBenchPanel(scene = state.activeScene) {
+  if (!scene) return;
+  const challenge = getTuningChallengeForScene(scene);
+  const history = state.benchHistoryByLevel[scene.id] || { previous: null, current: null };
+  const curr = history.current;
+  const prev = history.previous;
+
+  if (els.benchChallengeTitle) els.benchChallengeTitle.textContent = challenge.title;
+  if (els.benchTestLabel) {
+    els.benchTestLabel.textContent = curr
+      ? curr.testLabel
+      : challenge.testType === 'wind'
+        ? 'Wind Disturbance Test'
+        : challenge.testType === 'takeoff_step'
+          ? 'Takeoff Height Test'
+          : 'Position Step Test';
+  }
+
+  const hasComparablePrev = Boolean(prev && curr && prev.experimentKey === curr.experimentKey);
+  els.benchPrevLegend?.classList.toggle('hidden', !hasComparablePrev);
+
+  if (!curr) {
+    if (els.benchChallengeBadge) {
+      els.benchChallengeBadge.textContent = 'Try Test PID';
+      els.benchChallengeBadge.className = 'bench-status-pill is-idle';
+    }
+    if (els.benchMetricOvershoot) els.benchMetricOvershoot.textContent = '--';
+    if (els.benchMetricSettling) els.benchMetricSettling.textContent = '--';
+    if (els.benchMetricError) els.benchMetricError.textContent = '--';
+    els.benchCompareStrip?.classList.add('hidden');
+  } else {
+    const m = curr.metrics;
+    if (els.benchChallengeBadge) {
+      if (curr.challenge.passed) {
+        els.benchChallengeBadge.textContent = '✓ Goal Met!';
+        els.benchChallengeBadge.className = 'bench-status-pill is-passed';
+      } else {
+        els.benchChallengeBadge.textContent = 'Keep Tuning';
+        els.benchChallengeBadge.className = 'bench-status-pill is-working';
+      }
+    }
+
+    if (els.benchMetricOvershoot) {
+      if (curr.testType === 'wind') {
+        els.benchMetricOvershoot.textContent = m.maxDeviation !== null ? `${m.maxDeviation.toFixed(2)} m drift` : 'N/A';
+      } else {
+        els.benchMetricOvershoot.textContent = m.overshootPct !== null ? `${Math.round(m.overshootPct)}%` : 'N/A';
+      }
+    }
+    if (els.benchMetricSettling) {
+      els.benchMetricSettling.textContent = m.settlingTime !== null ? `${m.settlingTime.toFixed(1)} s` : 'Not Settled';
+    }
+    if (els.benchMetricError) {
+      els.benchMetricError.textContent = m.steadyStateError !== null ? `${m.steadyStateError.toFixed(2)} m` : 'N/A';
+    }
+
+    const comp = compareBenchTests(prev, curr);
+    if (comp.comparable && comp.highlights.length > 0 && els.benchCompareStrip && els.benchCompareBadges) {
+      els.benchCompareStrip.classList.remove('hidden');
+      els.benchCompareBadges.innerHTML = comp.highlights
+        .map(
+          (h) =>
+            `<span class="compare-badge is-${h.status}">${h.label} ${h.beforeText} &rarr; ${h.afterText}</span>`
+        )
+        .join('');
+    } else {
+      els.benchCompareStrip?.classList.add('hidden');
+    }
+  }
+
+  renderTestBenchChart(els.testBenchCanvas, curr, prev);
+}
+
+function runCurrentBenchTest() {
+  const scene = state.activeScene;
+  if (!scene) return null;
+
+  if (pipDebounceTimer) {
+    window.clearTimeout(pipDebounceTimer);
+    pipDebounceTimer = null;
+  }
+
+  const currentGains = state.tunedGainsByLevel[scene.id] || { ...sim.gains };
+  const result = runPidBenchTest(currentGains, scene);
+  const existing = state.benchHistoryByLevel[scene.id] || { previous: null, current: null };
+  const previous = existing.current || null;
+  state.benchHistoryByLevel[scene.id] = { previous, current: result };
+
+  const comparison = compareBenchTests(previous, result);
+  renderBenchPanel(scene);
+
+  // Brief pulse feedback on Test Bench when challenge met or improved
+  if (els.benchChallengeBadge && (result.challenge.passed || comparison.overallStatus === 'improved')) {
+    els.benchChallengeBadge.classList.remove('bench-pop');
+    void els.benchChallengeBadge.offsetWidth;
+    els.benchChallengeBadge.classList.add('bench-pop');
+  }
+
+  // Update PIP speech bubble with real Test Bench evidence
+  const pipData = evaluateTestBenchPipCoaching(result, comparison, currentGains, scene);
+  renderPipCard(els.prePipCard, pipData);
+
+  if (scene.mode === 'tutorial' && tutorialGuide.active) {
+    tutorialGuide.recordBenchTest();
+    syncTutorialOverlay(true);
+  }
+  return result;
+}
+
+function renderPreflightArenaPreview() {
+  if (!previewRenderer || state.currentView !== 'preflight' || !state.activeScene) return;
+  previewRenderer.render(sim, 0, {
+    showGhostDrone: false,
+    showTrails: false
+  });
 }
 
 function renderPipCard(cardEls, coachData) {
@@ -548,19 +785,27 @@ function applyPidGains(rawGains, scene = state.activeScene) {
 }
 
 function renderPreflightPipWithTutorialBrief(analysis, scene = state.activeScene) {
-  if (scene?.mode === 'tutorial' && scene.pipMetricBrief && analysis.state !== 'warning') {
-    const metricsBadge = scene.measuredMetrics?.length
-      ? `Metrics focus: ${scene.measuredMetrics.join(' · ')}`
-      : null;
+  if (!scene) {
+    renderPipCard(els.prePipCard, analysis);
+    return;
+  }
+  // Keep PIP speech bubble concise (1 primary suggestion) and grounded
+  const compactMsg = analysis?.messages?.[0] || "Let's tune your drone and try Test PID!";
+  if (scene.mode === 'tutorial' && analysis.state !== 'warning') {
+    const challenge = getTuningChallengeForScene(scene);
     renderPipCard(els.prePipCard, {
       ...analysis,
-      mood: 'explaining',
-      headline: `Lesson Focus: ${scene.stemTopic}`,
-      messages: metricsBadge ? [scene.pipMetricBrief, metricsBadge] : [scene.pipMetricBrief]
+      mood: analysis.state === 'ready' ? 'celebrating' : 'explaining',
+      headline: analysis.state === 'ready' ? 'Ready to Test or Fly!' : challenge.title,
+      messages: [analysis.state === 'ready' ? 'Click Test PID to verify, or press Start Flight!' : compactMsg],
+      learnMore: scene.pipMetricBrief || null
     });
     return;
   }
-  renderPipCard(els.prePipCard, analysis);
+  renderPipCard(els.prePipCard, {
+    ...analysis,
+    messages: [compactMsg]
+  });
 }
 
 function resetScenePid(scene = state.activeScene) {
@@ -1031,8 +1276,11 @@ function openPreflightTuning(scene, options = {}) {
   const maxThrust = scene.maxThrust ?? 28.0;
   const twr = maxThrust / (totalMass * 9.81);
 
-  els.preflightModeBadge.textContent = isTutorial ? 'Tutorial Village — Briefing' : 'Challenge Mission — Briefing';
+  els.preflightModeBadge.textContent = isTutorial ? 'Tutorial Village' : 'Challenge Mission';
   els.preflightTitle.textContent = scene.name;
+  if (els.preflightShortGoal) {
+    els.preflightShortGoal.textContent = scene.objective || scene.missionGoal || '';
+  }
   els.preflightDescription.textContent = scene.description || scene.flightConditions || scene.objective;
   els.preflightLearningFocus.textContent = scene.stemTopic || scene.learningObjective || 'PID Control';
   els.preflightObjective.textContent = scene.objective;
@@ -1041,6 +1289,12 @@ function openPreflightTuning(scene, options = {}) {
   els.preflightPrevKnowledge.textContent = scene.whatYouLearnedBefore || 'Standard WASD closed-loop control.';
   els.preflightNewChallenge.textContent = scene.newChallenge || scene.description || scene.objective;
   els.preflightLearningObj.textContent = scene.learningObjective ? `Objective: ${scene.learningObjective}` : '';
+
+  renderMissionQuickChips(scene);
+  closeParamExplainer();
+  if (els.preflightDetailsMission) els.preflightDetailsMission.open = false;
+  if (els.preflightDetailsSpecs) els.preflightDetailsSpecs.open = false;
+  if (els.preflightDetailsTradeoffs) els.preflightDetailsTradeoffs.open = false;
 
   els.preflightDroneMass.textContent = `${droneMass.toFixed(2)} kg`;
   els.preflightPayload.textContent =
@@ -1095,6 +1349,7 @@ function openPreflightTuning(scene, options = {}) {
   if (options.resetToInitial || options.resetToZero) {
     gainsToUse = { ...initialGains };
     delete state.lastAttempts[scene.id];
+    delete state.benchHistoryByLevel[scene.id];
   } else {
     gainsToUse = state.tunedGainsByLevel[scene.id] || { ...initialGains };
   }
@@ -1508,7 +1763,15 @@ export function navigateTo(viewName, options = {}) {
     input.detach();
   }
 
-  window.requestAnimationFrame(() => syncTutorialOverlay(true));
+  if (viewName === 'preflight') {
+    window.requestAnimationFrame(() => {
+      renderPreflightArenaPreview();
+      renderBenchPanel(state.activeScene);
+      syncTutorialOverlay(true);
+    });
+  } else {
+    window.requestAnimationFrame(() => syncTutorialOverlay(true));
+  }
 }
 
 function bindEvents() {
@@ -1581,6 +1844,44 @@ function bindEvents() {
 
   els.btnPreResetPid.addEventListener('click', () => resetScenePid(state.activeScene));
   els.btnResetPid.addEventListener('click', () => resetScenePid(state.activeScene));
+  els.btnTestPid?.addEventListener('click', () => runCurrentBenchTest());
+  els.btnCloseExplainer?.addEventListener('click', () => closeParamExplainer());
+
+  for (const btn of document.querySelectorAll('.knob-icon-btn[data-explain]')) {
+    btn.addEventListener('click', () => toggleParamExplainer(btn.dataset.explain));
+  }
+
+  // Initialize game-like rotary PID knobs synchronized to real PID bounds
+  const knobColors = { kp: '#0284c7', ki: '#10b981', kd: '#8b5cf6' };
+  for (const param of ['kp', 'ki', 'kd']) {
+    const b = PID_SLIDER_BOUNDS[param];
+    pidKnobs[param] = new PidKnobControl({
+      param,
+      min: b.min,
+      max: b.max,
+      step: b.step,
+      color: knobColors[param],
+      cardEl: document.getElementById(`knob-card-${param}`),
+      dialEl: document.getElementById(`knob-dial-${param}`),
+      arcFillEl: document.getElementById(`knob-arc-${param}`),
+      pointerEl: document.getElementById(`knob-pointer-${param}`),
+      numberInputEl: document.getElementById(`input-${param}`),
+      btnMinusEl: document.getElementById(`btn-${param}-minus`),
+      btnPlusEl: document.getElementById(`btn-${param}-plus`),
+      onChange: (axis, nextVal) => {
+        const nextGains = { ...sim.gains, [axis]: nextVal };
+        applyPidGains(nextGains, state.activeScene);
+        schedulePipUpdate(nextGains, state.activeScene);
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    if (state.currentView === 'preflight') {
+      renderPreflightArenaPreview();
+      renderBenchPanel(state.activeScene);
+    }
+  });
 
   const handlePreflightSliderInput = () => {
     const gains = {

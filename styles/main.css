@@ -4242,3 +4242,811 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* ==================== M5.4: BEGINNER-FRIENDLY PID TUNING GARAGE & TEST BENCH ==================== */
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.preflight-header-compact {
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.preflight-title-wrap {
+  min-width: 0;
+}
+
+.preflight-nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.preflight-short-goal {
+  margin: 4px 0 0;
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: #334155;
+  max-width: 62ch;
+}
+
+.tuning-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.playground-column,
+.garage-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* Area A: Mission Playground */
+.playground-card {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  padding: 12px 14px 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.playground-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.playground-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.playground-chip.is-highlight {
+  background: #ecfeff;
+  border-color: #67e8f9;
+  color: #0e7490;
+}
+
+.playground-chip .chip-ico {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.playground-canvas-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+}
+
+.preflight-arena-canvas {
+  display: block;
+  width: 100%;
+  height: 224px;
+}
+
+.playground-preview-badge {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
+  pointer-events: none;
+}
+
+/* Interactive PID Test Bench */
+.bench-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
+  padding: 13px 15px 14px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bench-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bench-eyebrow {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0284c7;
+}
+
+.bench-goal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.bench-goal-line strong {
+  font-size: 0.94rem;
+  color: #0f172a;
+}
+
+.bench-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.bench-status-pill.is-idle {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.bench-status-pill.is-working {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.bench-status-pill.is-passed {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #4ade80;
+}
+
+.bench-pop {
+  animation: benchBadgePop 420ms cubic-bezier(0.22, 1.35, 0.36, 1);
+}
+
+@keyframes benchBadgePop {
+  0% { transform: scale(0.85); }
+  55% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+.bench-chart-wrap {
+  position: relative;
+  background: #0b1220;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  padding: 8px 8px 4px;
+}
+
+.bench-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 6px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.bench-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bench-legend .legend-prev {
+  display: inline-block;
+  width: 12px;
+  height: 0;
+  border-top: 2px dashed #c084fc;
+}
+
+.test-bench-canvas {
+  display: block;
+  width: 100%;
+  height: 146px;
+}
+
+.bench-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bench-metric-pill {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bench-metric-pill span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.bench-metric-pill strong {
+  font-size: 0.94rem;
+  color: #0f172a;
+}
+
+.bench-compare-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+.compare-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0369a1;
+}
+
+.compare-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compare-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.compare-badge.is-improved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #4ade80;
+}
+
+.compare-badge.is-regressed {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.compare-badge.is-unchanged {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+/* Collapsible Progressive Disclosure Drawers */
+.preflight-drawers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preflight-drawer {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.preflight-drawer > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #1e293b;
+  background: #f8fafc;
+  user-select: none;
+}
+
+.preflight-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.preflight-drawer > summary::after {
+  content: "▸";
+  font-size: 0.88rem;
+  color: #64748b;
+  transition: transform 160ms ease;
+}
+
+.preflight-drawer[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.drawer-hint {
+  margin-left: auto;
+  margin-right: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.drawer-body {
+  padding: 12px 14px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-inner-card {
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+}
+
+/* Area C: Compact PIP Speech Bubble */
+.pip-bubble-card {
+  padding: 11px 14px !important;
+  border-radius: 16px !important;
+}
+
+.pip-bubble-card .pip-robot-svg {
+  width: 56px;
+  height: 54px;
+}
+
+.pip-bubble-card .pip-headline {
+  font-size: 0.94rem;
+}
+
+.pip-bubble-card .pip-messages {
+  margin-top: 3px;
+  font-size: 0.84rem;
+}
+
+/* Area B: PID Tuning Garage & Rotary Knobs */
+.garage-panel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.pid-knobs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pid-knob-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 10px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.pid-knob-card.is-adjusting {
+  border-color: var(--knob-accent, #0284c7);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+}
+
+.knob-accent-kp { --knob-accent: #0284c7; }
+.knob-accent-ki { --knob-accent: #10b981; }
+.knob-accent-kd { --knob-accent: #8b5cf6; }
+
+.knob-card-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.knob-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--knob-accent, #0284c7);
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.knob-icon-btn:hover,
+.knob-icon-btn.is-open {
+  background: var(--knob-accent, #0284c7);
+  border-color: var(--knob-accent, #0284c7);
+  color: #ffffff;
+}
+
+.knob-title-group {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1.15;
+  margin-top: 1px;
+}
+
+.knob-title-group strong {
+  font-size: 0.96rem;
+  color: #0f172a;
+}
+
+.knob-title-group span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.pid-knob-card .zone-pill {
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  white-space: nowrap;
+  max-width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Rotary SVG Dial */
+.knob-dial {
+  width: 104px;
+  height: 104px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: 50%;
+  outline: none;
+  transition: transform 120ms ease;
+}
+
+.knob-dial:hover {
+  transform: scale(1.03);
+}
+
+.knob-dial.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+.knob-dial:focus-visible {
+  box-shadow: 0 0 0 3px #38bdf8;
+}
+
+.knob-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.knob-tick {
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.knob-tick.is-major {
+  stroke: #475569;
+  stroke-width: 2.2;
+}
+
+.knob-arc-track {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.knob-arc-fill {
+  fill: none;
+  stroke: var(--knob-accent, #0284c7);
+  stroke-width: 6.2;
+  stroke-linecap: round;
+}
+
+.knob-cap {
+  fill: #0f172a;
+  stroke: #334155;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.25));
+}
+
+.knob-pointer-line {
+  stroke: #e2e8f0;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.knob-pointer-dot {
+  fill: var(--knob-accent, #38bdf8);
+  stroke: #ffffff;
+  stroke-width: 1.4;
+}
+
+/* +/- Stepper & Exact Numeric Input */
+.knob-stepper {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  gap: 4px;
+  align-items: center;
+}
+
+.knob-step-btn {
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 110ms ease, border-color 110ms ease;
+}
+
+.knob-step-btn:hover {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+}
+
+.knob-step-btn:active {
+  transform: scale(0.95);
+}
+
+.knob-num-input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  -moz-appearance: textfield;
+}
+
+.knob-num-input::-webkit-inner-spin-button,
+.knob-num-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.knob-num-input:focus {
+  outline: none;
+  border-color: var(--knob-accent, #0284c7);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
+/* On-demand Parameter Visual Explainer Card */
+.pid-explainer-card {
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pid-explainer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pid-explainer-head strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #f8fafc;
+}
+
+.pid-explainer-role {
+  font-size: 0.76rem;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.pid-explainer-head .btn-ghost {
+  color: #cbd5e1;
+  padding: 2px 8px;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.pid-explainer-bullets {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pid-explainer-card .learn-more-inline {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.pid-explainer-card .learn-more-inline summary {
+  color: #7dd3fc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pid-explainer-card .learn-more-inline p {
+  margin: 5px 0 0;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+/* Garage Primary Buttons */
+.garage-actions {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr 1.15fr;
+  gap: 9px;
+}
+
+.btn-bench {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #ffffff;
+  border: 1px solid #0284c7;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+}
+
+.btn-bench:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.garage-skip-hint {
+  margin: -4px 0 0;
+  text-align: center;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+/* Responsive Layout (Tablet & Mobile, Chrome & Safari) */
+@media (max-width: 1040px) {
+  .tuning-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .preflight-arena-canvas {
+    height: 184px;
+  }
+
+  .pid-knobs-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .pid-knob-card {
+    padding: 8px 5px;
+  }
+
+  .knob-dial {
+    width: 82px;
+    height: 82px;
+  }
+
+  .knob-card-top {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .knob-stepper {
+    grid-template-columns: 24px minmax(0, 1fr) 24px;
+    gap: 2px;
+  }
+
+  .knob-step-btn,
+  .knob-num-input {
+    height: 28px;
+    font-size: 0.78rem;
+  }
+
+  .garage-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .garage-actions #btn-pre-start-flight-2 {
+    grid-column: 1 / -1;
+  }
+
+  .bench-metrics-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-pop,
+  .knob-dial,
+  .pid-knob-card,
+  .btn-bench {
+    animation: none !important;
+    transition: none !important;
+  }
+}

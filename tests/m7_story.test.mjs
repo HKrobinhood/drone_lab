@@ -155,10 +155,21 @@ describe('M7 — PIP Story Expressions, Cartoon Art & Decoupled Scene Themes', (
       'id="btn-mission-card-tune"',
       'id="btn-mission-card-skip"',
       'id="result-story-milestone"',
-      'id="map-engineer-pill"'
+      'id="map-engineer-pill"',
+      'class="map-mode-split-bar"'
     ]) {
       assert.ok(html.includes(hook), `Missing Story Mode DOM hook: ${hook}`);
     }
+
+    // Intermediate mode-selection screen removed: Start Game goes directly to Mission Map
+    assert.equal(html.includes('id="view-modes"'), false, 'Intermediate #view-modes screen should be removed');
+    assert.ok(mainJs.includes("navigateTo('levels', { mode: 'all' })"), 'Start Game must navigate directly to the Mission Map');
+
+    // Strong Tutorial Village vs Challenge Levels territory distinction on the map SVG
+    const mapSvg = renderMissionMapBackdropSvg(createDefaultProgress());
+    assert.ok(mapSvg.includes('ACT I · TUTORIAL VILLAGE'));
+    assert.ok(mapSvg.includes('ACT II · CHALLENGE LEVELS'));
+    assert.ok(mapSvg.includes('RESCUE BORDER'));
 
     assert.ok(css.includes('.mission-map-stage'));
     assert.ok(css.includes('.map-node.is-newly-unlocked'));

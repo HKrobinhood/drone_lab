@@ -5906,6 +5906,161 @@ body {
   box-shadow: 0 3px 10px rgba(249, 115, 22, 0.42);
 }
 
+.levels-header-card.is-challenge .btn-outline {
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.levels-header-card.is-challenge .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Twin Mode Split Legend Bar Directly Above Mission Map */
+.map-mode-split-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.map-mode-pill-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 15px;
+  border-radius: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.map-mode-pill-card:hover {
+  transform: translateY(-2px);
+}
+
+.map-mode-pill-card.is-tutorial-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #dcfce7 100%);
+  border: 2.5px solid #38bdf8;
+  color: #0f172a;
+  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.14);
+}
+
+.map-mode-pill-card.is-tutorial-card.is-focused {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.45), 0 8px 20px rgba(2, 132, 199, 0.22);
+}
+
+.map-mode-pill-card.is-challenge-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2.5px solid #f97316;
+  color: #f8fafc;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.22);
+}
+
+.map-mode-pill-card.is-challenge-card.is-focused {
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.48), 0 8px 22px rgba(234, 88, 12, 0.28);
+}
+
+.map-mode-pill-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.map-mode-shape-dot {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: #ffffff;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.22);
+}
+
+.map-mode-shape-dot.is-circle {
+  border-radius: 999px;
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.map-mode-shape-dot.is-shield {
+  border-radius: 10px 10px 16px 16px;
+  background: linear-gradient(145deg, #fb923c 0%, #dc2626 100%);
+  border-color: #fef08a;
+}
+
+.map-mode-pill-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-mode-pill-title-row strong {
+  font-size: 0.98rem;
+  font-weight: 900;
+}
+
+.map-mode-act-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.map-mode-act-tag.is-act1 {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.map-mode-act-tag.is-act2 {
+  background: #ea580c;
+  color: #ffffff;
+}
+
+.map-mode-pill-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  opacity: 0.82;
+}
+
+.map-mode-pill-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-mode-pill-stats span {
+  font-size: 0.74rem;
+  font-weight: 700;
+  opacity: 0.78;
+}
+
+.map-mode-pill-stats strong {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #d97706;
+}
+
+.map-mode-pill-card.is-challenge-card .map-mode-pill-stats strong {
+  color: #fde047;
+}
+
 /* Cartoon World Map Stage */
 .mission-map-shell {
   background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
@@ -6017,15 +6172,33 @@ body {
 }
 
 .map-node.is-act-1.is-unlocked .map-node-pin {
+  border-radius: 999px;
   background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+  border-color: #ffffff;
+}
+
+.map-node.is-act-2 .map-node-pin {
+  border-radius: 13px 13px 22px 22px;
 }
 
 .map-node.is-act-2.is-unlocked .map-node-pin {
-  background: linear-gradient(145deg, #fb923c 0%, #ea580c 100%);
+  background: linear-gradient(145deg, #fb923c 0%, #dc2626 100%);
+  border-color: #fef08a;
+  box-shadow: 0 6px 0 rgba(124, 45, 18, 0.55), 0 10px 20px rgba(234, 88, 12, 0.36);
 }
 
 .map-node.is-completed .map-node-pin {
   background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
+}
+
+.map-node.is-act-1 .map-node-label {
+  border-color: #38bdf8;
+  color: #0c4a6e;
+}
+
+.map-node.is-act-2 .map-node-label {
+  border-color: #fb923c;
+  color: #7c2d12;
 }
 
 .map-node.is-locked .map-node-pin {
@@ -6427,6 +6600,10 @@ body {
 
 /* Responsive Breakpoints for Story Map & Mission Card */
 @media (max-width: 900px) {
+  .map-mode-split-bar {
+    grid-template-columns: 1fr;
+  }
+
   .map-mobile-pan-hint {
     display: block;
   }

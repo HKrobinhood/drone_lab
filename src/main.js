@@ -99,7 +99,6 @@ const els = {
 
   views: {
     start: document.getElementById('view-start'),
-    modes: document.getElementById('view-modes'),
     levels: document.getElementById('view-levels'),
     preflight: document.getElementById('view-preflight'),
     flight: document.getElementById('view-flight'),
@@ -1533,10 +1532,12 @@ function renderMapPreview(levelId) {
 }
 
 function renderLevelSelection(mode) {
-  const normalizedMode = mode === 'challenge' ? 'challenge' : mode === 'tutorial' ? 'tutorial' : state.currentMode;
-  state.currentMode = normalizedMode;
-  const activeFilter = mode === 'all' ? 'all' : mode === 'tutorial' || mode === 'challenge' ? mode : state.mapFilter;
+  const activeFilter =
+    mode === 'tutorial' || mode === 'challenge' || mode === 'all' ? mode : state.mapFilter || 'all';
   state.mapFilter = activeFilter;
+  if (activeFilter === 'tutorial' || activeFilter === 'challenge') {
+    state.currentMode = activeFilter;
+  }
 
   const tutSummary = getModeSummary(state.progress, 'tutorial');
   const chalSummary = getModeSummary(state.progress, 'challenge');
@@ -1546,20 +1547,20 @@ function renderLevelSelection(mode) {
   els.levelsBanner.classList.toggle('is-tutorial', isTutorialFocus);
   els.levelsBanner.classList.toggle('is-challenge', isChallengeFocus);
   els.levelsModeBadge.textContent = isTutorialFocus
-    ? 'Act I · Drone Academy'
+    ? 'Act I · Tutorial Village'
     : isChallengeFocus
-      ? 'Act II · Rescue Missions'
+      ? 'Act II · Challenge Levels'
       : 'Project SKYGUARD';
   els.levelsHeading.textContent = isTutorialFocus
-    ? 'Act I — Drone Academy Map'
+    ? 'Act I — Tutorial Village (Drone Academy)'
     : isChallengeFocus
-      ? 'Act II — Rescue Mission Map'
+      ? 'Act II — Challenge Levels (Rescue Missions)'
       : 'SKYGUARD Adventure Map';
   els.levelsDescription.textContent = isTutorialFocus
-    ? 'Train with PIP at Drone Academy, then cross the bridge into Rescue City!'
+    ? 'Blue circles on the green academy island teach thrust, Kp, Ki, and Kd step by step.'
     : isChallengeFocus
-      ? 'Follow the storm rescue route from Rescue Base to the Final Rescue Site.'
-      : 'Drone Academy → Rescue Missions → Final Rescue → Flight Engineer Certificate';
+      ? 'Orange tactical badges across the city & storm test zero-PID tuning under real hazards.'
+      : 'Start at Tutorial Village (left, blue circles) to master PID, then cross into Challenge Levels (right, orange shields)!';
 
   const totalEarned = tutSummary.earnedStars + chalSummary.earnedStars;
   const totalMax = tutSummary.maxStars + chalSummary.maxStars;
@@ -1569,8 +1570,10 @@ function renderLevelSelection(mode) {
       ? `${chalSummary.earnedStars} / ${chalSummary.maxStars} ★`
       : `${totalEarned} / ${totalMax} ★`;
 
-  els.btnMeetPip.classList.toggle('hidden', isChallengeFocus);
+  els.btnMeetPip?.classList.remove('hidden');
   els.mapEngineerPill?.classList.toggle('hidden', !isLevelCompleted(state.progress, 'level-6'));
+  els.btnEnterTutorials?.classList.toggle('is-focused', isTutorialFocus);
+  els.btnEnterChallenges?.classList.toggle('is-focused', isChallengeFocus);
 
   for (const tabBtn of els.mapTabButtons || []) {
     const active = tabBtn.dataset.mapFilter === activeFilter;
@@ -1578,7 +1581,7 @@ function renderLevelSelection(mode) {
     tabBtn.setAttribute('aria-selected', String(active));
   }
 
-  if (isTutorialFocus && !hasSeenPipIntro(state.progress)) {
+  if (!isChallengeFocus && !hasSeenPipIntro(state.progress)) {
     openPipIntro(false);
   } else if (isChallengeFocus) {
     closePipIntro(false);
@@ -2148,7 +2151,7 @@ export function navigateTo(viewName, options = {}) {
   state.currentView = viewName;
 
   for (const [name, el] of Object.entries(els.views)) {
-    el.classList.toggle('active', name === viewName);
+    el?.classList.toggle('active', name === viewName);
   }
 
   els.topbar.classList.toggle('hidden', viewName === 'start' || viewName === 'flight');
@@ -2159,13 +2162,13 @@ export function navigateTo(viewName, options = {}) {
     closePipIntro(false);
   }
 
-  if (viewName === 'start' || viewName === 'modes' || viewName === 'levels') {
+  if (viewName === 'start' || viewName === 'levels') {
     tutorialGuide.resetState();
     tutorialOverlay?.hide();
   }
 
   if (viewName === 'levels') {
-    renderLevelSelection(options.mode || state.currentMode);
+    renderLevelSelection(options.mode ?? 'all');
   }
 
   if (viewName !== 'result') {
@@ -2228,11 +2231,25 @@ function bindEvents() {
     }
   });
 
-  els.btnStartGame.addEventListener('click', () => navigateTo('modes'));
+  els.btnStartGame.addEventListener('click', () => navigateTo('levels', { mode: 'all' }));
   els.btnHome.addEventListener('click', () => navigateTo('start'));
-  els.btnEnterTutorials.addEventListener('click', () => navigateTo('levels', { mode: 'tutorial' }));
-  els.btnEnterChallenges.addEventListener('click', () => navigateTo('levels', { mode: 'challenge' }));
-  els.btnBackModes.addEventListener('click', () => navigateTo('modes'));
+  els.btnEnterTutorials?.addEventListener('click', () => {
+    const nextFilter = state.mapFilter === 'tutorial' ? 'all' : 'tutorial';
+    if (state.currentView !== 'levels') {
+      navigateTo('levels', { mode: 'tutorial' });
+    } else {
+      renderLevelSelection(nextFilter);
+    }
+  });
+  els.btnEnterChallenges?.addEventListener('click', () => {
+    const nextFilter = state.mapFilter === 'challenge' ? 'all' : 'challenge';
+    if (state.currentView !== 'levels') {
+      navigateTo('levels', { mode: 'challenge' });
+    } else {
+      renderLevelSelection(nextFilter);
+    }
+  });
+  els.btnBackModes?.addEventListener('click', () => navigateTo('start'));
 
   // Cartoon Mission Map chapter tabs & preview actions
   for (const tabBtn of els.mapTabButtons || []) {
@@ -2279,8 +2296,7 @@ function bindEvents() {
   });
 
   els.btnPreflightBack.addEventListener('click', () => {
-    const mode = state.activeScene?.mode === 'challenge' ? 'challenge' : 'tutorial';
-    navigateTo('levels', { mode });
+    navigateTo('levels', { mode: 'all' });
   });
 
   const reopenGuideHandler = () => {
@@ -2377,7 +2393,7 @@ function bindEvents() {
       state.tunedGainsByLevel[state.activeScene.id] = { ...sim.gains };
       openPreflightTuning(state.activeScene, { resetToInitial: false, restartGuide: false });
     } else {
-      navigateTo('modes');
+      navigateTo('levels', { mode: 'all' });
     }
   };
 
@@ -2427,8 +2443,7 @@ function bindEvents() {
     openPreflightTuning(state.activeScene, { resetToInitial: false, restartGuide: false });
   });
   els.btnResultLevels.addEventListener('click', () => {
-    const backMode = state.activeScene?.mode === 'challenge' ? 'challenge' : 'tutorial';
-    navigateTo('levels', { mode: backMode });
+    navigateTo('levels', { mode: 'all' });
   });
   els.btnResultChallenges.addEventListener('click', () => {
     navigateTo('levels', { mode: 'challenge' });

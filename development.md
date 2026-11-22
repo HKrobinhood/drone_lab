@@ -255,6 +255,7 @@
   - **Act III — Flight Engineer（通关 Final Rescue）**：在结算页展示 **SKYGUARD Flight Engineer** 矢量翼盾徽章、庆祝表情 PIP 与祝贺语 `"Mission accomplished! You're now a SKYGUARD Flight Engineer!"`，完整保留原有三星动画、评分报告与重玩挑战能力，并在地图顶栏点亮 `🏅 Flight Engineer` 徽标。
 - **Overcooked 风格卡通世界地图（Cartoon Mission Map，`src/story.js`, `index.html`, `styles/main.css`, `src/main.js`）**：
   - 纯轻量内联低多边形矢量地图覆盖全部 7 大区域（`Drone Academy`、`Rescue Base`、`City Rooftops`、`Cargo Station`、`Narrow Passage`、`Storm Zone`、`Final Rescue Site`），通过带方向箭头的彩色路线串联 T1→T4→M1→M6。
+  - **直达地图流与双区域强区分**：移除中间 Mode Selection 过渡页，点击首页 `Start Game` 直接进入完整卡通冒险地图；地图上方设双色对比图例卡（浅蓝绿 `Tutorial Village` vs. 深蓝橙 `Challenge Levels`），地图内通过双色海域（晴朗浅蓝训练海域 + 太阳 vs. 深蓝/暗紫战术救援海域 + 海域分界虚线）、顶部双色领地横幅（`ACT I · TUTORIAL VILLAGE` vs. `ACT II · CHALLENGE LEVELS`）与差异化节点造型（新手村蓝色圆形 `T1–T4` vs. 挑战关橙红盾形 `M1–M6`）形成一目了然的视觉区分。
   - 已解锁节点高亮彩色、当前待挑战前沿节点轻跳与脉冲光圈、已完成节点显示绿底 `✓` 与历史最佳星级、未解锁节点显示锁图标且禁止启动、新解锁节点返回地图时播放金色点亮动画。
   - 支持 `Full Map / Act I · Academy / Act II · Rescue` 章节聚焦切换，底部联动显示所选节点缩略插画、PIP 短句、星级、条件图标与 `Play →` / `Skip Card → Tune` 操作，移动端支持横向滑动地图且页面零横向溢出。
 - **简洁任务开始卡（Mission Card）**：

@@ -52,13 +52,13 @@ export const STORY_ENDINGS = Object.freeze({
 });
 
 export const MAP_ZONES = Object.freeze([
-  { id: 'drone-academy', name: 'Drone Academy', act: 1, x: 215, y: 82, accent: '#0ea5e9' },
-  { id: 'rescue-base', name: 'Rescue Base', act: 2, x: 495, y: 196, accent: '#f97316' },
-  { id: 'city-rooftops', name: 'City Rooftops', act: 2, x: 605, y: 86, accent: '#ec4899' },
-  { id: 'cargo-station', name: 'Cargo Station', act: 2, x: 695, y: 465, accent: '#eab308' },
-  { id: 'narrow-passage', name: 'Narrow Passage', act: 2, x: 805, y: 342, accent: '#8b5cf6' },
-  { id: 'storm-zone', name: 'Storm Zone', act: 2, x: 915, y: 58, accent: '#38bdf8' },
-  { id: 'final-rescue-site', name: 'Final Rescue Site', act: 2, x: 1012, y: 422, accent: '#ef4444' }
+  { id: 'drone-academy', name: 'Drone Academy', act: 1, x: 215, y: 112, accent: '#0ea5e9' },
+  { id: 'rescue-base', name: 'Rescue Base', act: 2, x: 495, y: 204, accent: '#f97316' },
+  { id: 'city-rooftops', name: 'City Rooftops', act: 2, x: 605, y: 98, accent: '#ec4899' },
+  { id: 'cargo-station', name: 'Cargo Station', act: 2, x: 695, y: 468, accent: '#eab308' },
+  { id: 'narrow-passage', name: 'Narrow Passage', act: 2, x: 805, y: 344, accent: '#8b5cf6' },
+  { id: 'storm-zone', name: 'Storm Zone', act: 2, x: 915, y: 74, accent: '#38bdf8' },
+  { id: 'final-rescue-site', name: 'Final Rescue Site', act: 2, x: 1012, y: 424, accent: '#ef4444' }
 ]);
 
 /**
@@ -540,7 +540,17 @@ export function renderMissionMapBackdropSvg(progress = {}) {
     const my = (ay + by) * 0.5 - (i % 2 === 0 ? 22 : -18);
     const doneSeg = isDone(a.id) && isUnlocked(b.id);
     const activeSeg = isUnlocked(a.id) && isUnlocked(b.id);
-    const stroke = doneSeg ? '#22c55e' : activeSeg ? '#facc15' : '#94a3b8';
+    const isBridgeSeg = a.act === 1 && b.act === 2;
+    const isChallengeSeg = a.act === 2;
+    const stroke = doneSeg
+      ? isChallengeSeg
+        ? '#f97316'
+        : '#10b981'
+      : activeSeg
+        ? isChallengeSeg || isBridgeSeg
+          ? '#f59e0b'
+          : '#0284c7'
+        : '#94a3b8';
     const dash = doneSeg ? '' : 'stroke-dasharray="10 8"';
     const angle = (Math.atan2(by - my, bx - mx) * 180) / Math.PI;
     const arrowX = 0.25 * ax + 0.5 * mx + 0.25 * bx;
@@ -548,10 +558,10 @@ export function renderMissionMapBackdropSvg(progress = {}) {
 
     segments.push(`
       <path d="M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}" fill="none" stroke="rgba(15,23,42,0.28)" stroke-width="14" stroke-linecap="round" />
-      <path d="M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}" fill="none" stroke="#fffbeb" stroke-width="9" stroke-linecap="round" opacity="${activeSeg ? '0.92' : '0.45'}" />
-      <path d="M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}" fill="none" stroke="${stroke}" stroke-width="4.5" stroke-linecap="round" ${dash} />
+      <path d="M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}" fill="none" stroke="${isChallengeSeg ? '#fef3c7' : '#e0f2fe'}" stroke-width="9" stroke-linecap="round" opacity="${activeSeg ? '0.94' : '0.45'}" />
+      <path d="M ${ax} ${ay} Q ${mx} ${my} ${bx} ${by}" fill="none" stroke="${stroke}" stroke-width="4.8" stroke-linecap="round" ${dash} />
       <g transform="translate(${arrowX.toFixed(1)}, ${arrowY.toFixed(1)}) rotate(${angle.toFixed(1)})">
-        <polygon points="8,0 -5,-5.5 -2.5,0 -5,5.5" fill="${doneSeg ? '#15803d' : activeSeg ? '#d97706' : '#64748b'}" stroke="#ffffff" stroke-width="1.2" />
+        <polygon points="8,0 -5,-5.5 -2.5,0 -5,5.5" fill="${doneSeg ? (isChallengeSeg ? '#c2410c' : '#047857') : activeSeg ? (isChallengeSeg ? '#d97706' : '#0369a1') : '#64748b'}" stroke="#ffffff" stroke-width="1.2" />
       </g>
     `);
   }
@@ -570,19 +580,25 @@ export function renderMissionMapBackdropSvg(progress = {}) {
   return `
     <svg class="mission-map-svg" viewBox="0 0 1120 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <defs>
-        <linearGradient id="map-water-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#38bdf8" />
-          <stop offset="55%" stop-color="#22a6e0" />
-          <stop offset="100%" stop-color="#1e4e8c" />
+        <linearGradient id="map-water-tut" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#67e8f9" />
+          <stop offset="55%" stop-color="#38bdf8" />
+          <stop offset="100%" stop-color="#0ea5e9" />
+        </linearGradient>
+        <linearGradient id="map-water-chal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#2563eb" />
+          <stop offset="55%" stop-color="#1e3a8a" />
+          <stop offset="100%" stop-color="#0f172a" />
         </linearGradient>
         <linearGradient id="map-academy-land" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#86efac" />
-          <stop offset="100%" stop-color="#4ade80" />
+          <stop offset="0%" stop-color="#a7f3d0" />
+          <stop offset="50%" stop-color="#6ee7b7" />
+          <stop offset="100%" stop-color="#34d399" />
         </linearGradient>
         <linearGradient id="map-city-land" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#fde68a" />
-          <stop offset="52%" stop-color="#fcd34d" />
-          <stop offset="100%" stop-color="#94a3b8" />
+          <stop offset="55%" stop-color="#fbbf24" />
+          <stop offset="100%" stop-color="#f59e0b" />
         </linearGradient>
         <linearGradient id="map-storm-land" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#475569" />
@@ -590,35 +606,56 @@ export function renderMissionMapBackdropSvg(progress = {}) {
         </linearGradient>
       </defs>
 
-      <!-- Stylized Cartoon Ocean & Waves -->
-      <rect width="1120" height="520" rx="22" fill="url(#map-water-grad)" />
-      <g stroke="rgba(255,255,255,0.22)" stroke-width="2.5" fill="none" stroke-linecap="round">
-        <path d="M 38 78 Q 62 70 86 78 T 134 78" />
-        <path d="M 412 462 Q 438 454 464 462 T 516 462" />
+      <!-- Dual-Atmosphere Ocean: Bright Sunny Tutorial Lagoon (Left) vs. Deep Tactical Rescue Sea (Right) -->
+      <rect x="0" y="0" width="434" height="520" fill="url(#map-water-tut)" />
+      <rect x="434" y="0" width="686" height="520" fill="url(#map-water-chal)" />
+
+      <!-- Cheerful Sun Glow on Tutorial Side -->
+      <circle cx="54" cy="48" r="24" fill="#fef08a" opacity="0.9" />
+      <circle cx="54" cy="48" r="38" fill="#fef08a" opacity="0.22" />
+
+      <!-- Clear Sea Channel Divider Separating Tutorial Village & Challenge Levels -->
+      <line x1="434" y1="16" x2="434" y2="504" stroke="rgba(255,255,255,0.48)" stroke-width="3" stroke-dasharray="10 8" />
+      <rect x="378" y="470" width="112" height="24" rx="12" fill="rgba(15,23,42,0.82)" stroke="#facc15" stroke-width="1.8" />
+      <text x="434" y="486" text-anchor="middle" fill="#fde047" font-size="10" font-weight="900" font-family="sans-serif">RESCUE BORDER &rarr;</text>
+
+      <!-- Bold Chapter Zone Ribbons at Top of Each Map Territory -->
+      <g class="map-territory-banner" data-territory="tutorial">
+        <rect x="86" y="18" width="262" height="36" rx="18" fill="#0284c7" stroke="#ffffff" stroke-width="2.5" />
+        <text x="217" y="40.5" text-anchor="middle" fill="#ffffff" font-size="13.5" font-weight="900" font-family="sans-serif" letter-spacing="0.04em">ACT I · TUTORIAL VILLAGE</text>
+      </g>
+      <g class="map-territory-banner" data-territory="challenge">
+        <rect x="614" y="18" width="286" height="36" rx="18" fill="#ea580c" stroke="#fef08a" stroke-width="2.5" />
+        <text x="757" y="40.5" text-anchor="middle" fill="#ffffff" font-size="13.5" font-weight="900" font-family="sans-serif" letter-spacing="0.04em">ACT II · CHALLENGE LEVELS</text>
+      </g>
+
+      <g stroke="rgba(255,255,255,0.24)" stroke-width="2.5" fill="none" stroke-linecap="round">
+        <path d="M 38 96 Q 62 88 86 96 T 134 96" />
+        <path d="M 452 462 Q 478 454 504 462 T 556 462" />
         <path d="M 760 72 Q 785 64 810 72" />
         <path d="M 1030 475 Q 1055 467 1080 475" />
       </g>
 
-      <!-- ISLAND 1 (LEFT): ACT I — DRONE ACADEMY MEADOW -->
-      <polygon points="36,155 152,96 320,104 416,174 405,365 316,454 106,452 30,362" fill="#22c55e" opacity="0.45" transform="translate(0, 10)" />
-      <polygon points="36,155 152,96 320,104 416,174 405,365 316,454 106,452 30,362" fill="url(#map-academy-land)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      <!-- ISLAND 1 (LEFT): ACT I — TUTORIAL VILLAGE / DRONE ACADEMY MEADOW -->
+      <polygon points="36,155 152,96 320,104 414,174 405,365 316,454 106,452 30,362" fill="#059669" opacity="0.4" transform="translate(0, 10)" />
+      <polygon points="36,155 152,96 320,104 414,174 405,365 316,454 106,452 30,362" fill="url(#map-academy-land)" stroke="#ffffff" stroke-width="4.5" stroke-linejoin="round" />
       <!-- Low-poly Grass Facets -->
-      <polygon points="36,155 152,96 205,212 85,260" fill="#a7f3d0" opacity="0.45" />
-      <polygon points="205,212 320,104 416,174 335,280" fill="#34d399" opacity="0.32" />
-      <polygon points="106,452 240,348 316,454" fill="#22c55e" opacity="0.3" />
+      <polygon points="36,155 152,96 205,212 85,260" fill="#d1fae5" opacity="0.48" />
+      <polygon points="205,212 320,104 414,174 335,280" fill="#10b981" opacity="0.28" />
+      <polygon points="106,452 240,348 316,454" fill="#059669" opacity="0.26" />
 
       <!-- Academy Hangar, Trees & Windsock -->
       <g transform="translate(62, 146)">
-        <polygon points="0,34 38,8 76,34" fill="#ef4444" stroke="#ffffff" stroke-width="2" />
+        <polygon points="0,34 38,8 76,34" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
         <rect x="8" y="34" width="60" height="34" rx="4" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" />
-        <rect x="24" y="46" width="28" height="22" rx="3" fill="#0284c7" />
-        <text x="38" y="29" text-anchor="middle" fill="#ffffff" font-size="8.5" font-weight="900" font-family="sans-serif">LAB</text>
+        <rect x="24" y="46" width="28" height="22" rx="3" fill="#0ea5e9" />
+        <text x="38" y="29" text-anchor="middle" fill="#ffffff" font-size="8.5" font-weight="900" font-family="sans-serif">ACADEMY</text>
       </g>
-      <g fill="#16a34a">
+      <g fill="#059669">
         <polygon points="62,424 76,396 90,424" />
         <polygon points="344,148 358,118 372,148" />
         <polygon points="364,405 376,380 388,405" />
-        <polygon points="122,124 134,100 146,124" fill="#15803d" />
+        <polygon points="122,124 134,100 146,124" fill="#047857" />
       </g>
       <!-- Windsock near T3 -->
       <g transform="translate(242, 272)">
@@ -627,21 +664,21 @@ export function renderMissionMapBackdropSvg(progress = {}) {
         <rect x="9" y="4" width="6" height="10" fill="#ffffff" />
       </g>
 
-      <!-- SKYGUARD Suspension Bridge Connecting Academy to Rescue City -->
+      <!-- SKYGUARD Suspension Bridge Connecting Tutorial Village to Challenge City -->
       <g>
-        <rect x="392" y="228" width="96" height="22" rx="6" fill="#f97316" stroke="#ffffff" stroke-width="3" />
-        <line x1="408" y1="228" x2="408" y2="210" stroke="#ffffff" stroke-width="3" />
-        <line x1="468" y1="228" x2="468" y2="210" stroke="#ffffff" stroke-width="3" />
-        <path d="M 392 228 Q 408 212 438 228 Q 468 212 486 228" fill="none" stroke="#fef08a" stroke-width="2.5" />
+        <rect x="392" y="228" width="96" height="24" rx="6" fill="#ea580c" stroke="#fef08a" stroke-width="3" />
+        <line x1="408" y1="228" x2="408" y2="206" stroke="#ffffff" stroke-width="3.5" />
+        <line x1="468" y1="228" x2="468" y2="206" stroke="#ffffff" stroke-width="3.5" />
+        <path d="M 392 228 Q 408 208 438 228 Q 468 208 486 228" fill="none" stroke="#fef08a" stroke-width="2.5" />
       </g>
 
-      <!-- ISLAND 2 (CENTER TO RIGHT): ACT II — RESCUE CITY & STORM PENINSULA -->
-      <polygon points="452,186 588,92 848,88 1068,124 1094,358 996,462 630,468 446,374" fill="#0f172a" opacity="0.28" transform="translate(0, 10)" />
-      <polygon points="452,186 588,92 848,88 866,464 630,468 446,374" fill="url(#map-city-land)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      <!-- ISLAND 2 (CENTER TO RIGHT): ACT II — CHALLENGE LEVELS (RESCUE CITY & STORM PENINSULA) -->
+      <polygon points="452,186 588,92 848,88 1068,124 1094,358 996,462 630,468 446,374" fill="#020617" opacity="0.35" transform="translate(0, 10)" />
+      <polygon points="452,186 588,92 848,88 866,464 630,468 446,374" fill="url(#map-city-land)" stroke="#fef08a" stroke-width="4.5" stroke-linejoin="round" />
       <!-- Storm Peninsula Overlay on Right -->
-      <polygon points="844,88 1068,124 1094,358 996,462 846,464 818,284" fill="url(#map-storm-land)" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" />
+      <polygon points="844,88 1068,124 1094,358 996,462 846,464 818,284" fill="url(#map-storm-land)" stroke="#f97316" stroke-width="4.5" stroke-linejoin="round" />
       <polygon points="452,186 588,92 640,218 485,260" fill="#fef3c7" opacity="0.52" />
-      <polygon points="630,468 740,342 846,464" fill="#f59e0b" opacity="0.25" />
+      <polygon points="630,468 740,342 846,464" fill="#ea580c" opacity="0.22" />
 
       <!-- Rescue Base HQ Landmark (near L1) -->
       <g transform="translate(464, 344)">

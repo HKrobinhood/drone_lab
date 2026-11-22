@@ -452,87 +452,23 @@
         </div>
       </section>
 
-      <!-- ==================== VIEW 2: MODE SELECTION ==================== -->
-      <section id="view-modes" class="view" aria-labelledby="modes-heading">
-        <div class="section-header">
-          <div>
-            <span class="badge badge-neutral">Project SKYGUARD · Rescue Story</span>
-            <h1 id="modes-heading">Choose Your Flight Path</h1>
-            <p class="section-subtitle">
-              Start in Act I (Drone Academy) with PIP, then launch Act II (Rescue Missions) across the city!
-            </p>
-          </div>
-          <div id="first-play-banner" class="recommend-banner hidden">
-            First flight? We recommend starting with <strong>Tutorial Village</strong> first.
-          </div>
-        </div>
-
-        <div class="modes-grid">
-          <!-- Tutorial Village Card -->
-          <article class="mode-card mode-tutorial">
-            <div class="mode-top">
-              <span class="mode-badge">Act I · Drone Academy</span>
-              <span id="tutorial-recommend-tag" class="recommend-pill hidden">Recommended First</span>
-            </div>
-            <h2>Tutorial Village</h2>
-            <p>
-              Join SKYGUARD Drone Academy with PIP and master thrust, Kp, Ki, and Kd through four hands-on lessons.
-            </p>
-            <div class="mode-stats">
-              <div class="stat-box">
-                <span class="stat-label">Unlocked</span>
-                <strong id="tutorial-unlock-stat">1 / 4</strong>
-              </div>
-              <div class="stat-box">
-                <span class="stat-label">Best Stars</span>
-                <strong id="tutorial-star-stat">0 / 12 ★</strong>
-              </div>
-            </div>
-            <button id="btn-enter-tutorials" type="button" class="btn btn-tutorial btn-lg">
-              Enter Tutorial Village
-            </button>
-          </article>
-
-          <!-- Challenge Levels Card -->
-          <article class="mode-card mode-challenge">
-            <div class="mode-top">
-              <span class="mode-badge">Act II · Rescue Missions</span>
-              <span class="difficulty-pill">6 Missions</span>
-            </div>
-            <h2>Challenge Levels</h2>
-            <p>
-              A storm is approaching! Fly six rescue missions across rooftops, cargo depots, city alleys, and storm gusts.
-            </p>
-            <div class="mode-stats">
-              <div class="stat-box">
-                <span class="stat-label">Unlocked</span>
-                <strong id="challenge-unlock-stat">1 / 6</strong>
-              </div>
-              <div class="stat-box">
-                <span class="stat-label">Best Stars</span>
-                <strong id="challenge-star-stat">0 / 18 ★</strong>
-              </div>
-            </div>
-            <button id="btn-enter-challenges" type="button" class="btn btn-challenge btn-lg">
-              Enter Challenge Levels
-            </button>
-          </article>
-        </div>
-      </section>
-
-      <!-- ==================== VIEW 3: CARTOON MISSION MAP ==================== -->
+      <!-- ==================== VIEW 2: CARTOON MISSION MAP (DIRECT FROM START) ==================== -->
       <section id="view-levels" class="view" aria-labelledby="levels-heading">
         <div id="levels-banner" class="levels-header-card mission-map-header">
           <div class="levels-header-left">
             <div class="map-header-nav-row">
-              <button id="btn-back-modes" type="button" class="btn btn-ghost btn-sm">&larr; Back to Modes</button>
               <span id="levels-mode-badge" class="mode-badge">Project SKYGUARD</span>
               <span id="map-engineer-pill" class="engineer-earned-pill hidden" title="Final Rescue Cleared">
                 🏅 Flight Engineer
               </span>
+              <span id="first-play-banner" class="recommend-pill hidden">
+                First flight? Start at Tutorial Village (T1)!
+              </span>
             </div>
-            <h1 id="levels-heading">SKYGUARD Mission Map</h1>
-            <p id="levels-description" class="section-subtitle"></p>
+            <h1 id="levels-heading">SKYGUARD Adventure Map</h1>
+            <p id="levels-description" class="section-subtitle">
+              Drone Academy (Tutorial) &rarr; Rescue Missions (Challenge) &rarr; Flight Engineer Certificate
+            </p>
           </div>
           <div class="levels-summary-group">
             <div class="map-act-tabs" role="tablist" aria-label="Story chapter focus">
@@ -540,13 +476,13 @@
                 Full Map
               </button>
               <button id="btn-map-tab-tutorial" type="button" class="map-tab-btn" data-map-filter="tutorial" role="tab" aria-selected="false">
-                Act I · Academy
+                Tutorial Village
               </button>
               <button id="btn-map-tab-challenge" type="button" class="map-tab-btn" data-map-filter="challenge" role="tab" aria-selected="false">
-                Act II · Rescue
+                Challenge Levels
               </button>
             </div>
-            <button id="btn-meet-pip" type="button" class="btn btn-outline btn-sm hidden">
+            <button id="btn-meet-pip" type="button" class="btn btn-outline btn-sm">
               Meet PIP / Help
             </button>
             <div class="levels-summary">
@@ -556,7 +492,45 @@
           </div>
         </div>
 
-        <!-- PIP Introduction Slide-In Panel (shown on first Tutorial Village entry or via Meet PIP) -->
+        <!-- Twin Mode Legend & Quick-Focus Bar (Strong Visual Separation: Tutorial Village vs Challenge Levels) -->
+        <div class="map-mode-split-bar" aria-label="Tutorial Village and Challenge Levels progress">
+          <button id="btn-enter-tutorials" type="button" class="map-mode-pill-card is-tutorial-card" data-map-filter="tutorial">
+            <div class="map-mode-pill-left">
+              <span class="map-mode-shape-dot is-circle" aria-hidden="true">T</span>
+              <div>
+                <div class="map-mode-pill-title-row">
+                  <strong>Tutorial Village</strong>
+                  <span class="map-mode-act-tag is-act1">Act I · Drone Academy</span>
+                  <span id="tutorial-recommend-tag" class="recommend-pill hidden">Start Here</span>
+                </div>
+                <span class="map-mode-pill-sub">Guided PID lessons · Blue Circle Pins (T1–T4)</span>
+              </div>
+            </div>
+            <div class="map-mode-pill-stats">
+              <span id="tutorial-unlock-stat">1 / 4</span>
+              <strong id="tutorial-star-stat">0 / 12 ★</strong>
+            </div>
+          </button>
+
+          <button id="btn-enter-challenges" type="button" class="map-mode-pill-card is-challenge-card" data-map-filter="challenge">
+            <div class="map-mode-pill-left">
+              <span class="map-mode-shape-dot is-shield" aria-hidden="true">M</span>
+              <div>
+                <div class="map-mode-pill-title-row">
+                  <strong>Challenge Levels</strong>
+                  <span class="map-mode-act-tag is-act2">Act II · Rescue Missions</span>
+                </div>
+                <span class="map-mode-pill-sub">Zero-PID storm rescues · Orange Shield Pins (M1–M6)</span>
+              </div>
+            </div>
+            <div class="map-mode-pill-stats">
+              <span id="challenge-unlock-stat">1 / 6</span>
+              <strong id="challenge-star-stat">0 / 18 ★</strong>
+            </div>
+          </button>
+        </div>
+
+        <!-- PIP Introduction Slide-In Panel (shown on first visit or via Meet PIP) -->
         <aside id="pip-intro-panel" class="pip-intro-panel hidden" role="dialog" aria-labelledby="pip-intro-line" aria-label="Meet PIP Flight Coach">
           <div id="pip-intro-avatar" class="pip-intro-avatar"></div>
           <div class="pip-intro-bubble">

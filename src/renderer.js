@@ -1,7 +1,10 @@
 /**
  * Canvas 2D side-view renderer for Drone Lab — PID Flight Challenge.
  * Converts SI world coordinates (meters) to responsive HiDPI Canvas pixels.
+ * Decorative cartoon story backdrops are rendered strictly behind physics/collision geometry.
  */
+
+import { getSceneThemeConfig } from './story.js';
 
 export class FlightRenderer {
   constructor(canvas) {
@@ -35,6 +38,7 @@ export class FlightRenderer {
     const ctx = this.ctx;
     const worldW = sim.config.worldWidth;
     const worldH = sim.config.worldHeight;
+    const theme = getSceneThemeConfig(sim.activeScene?.id);
 
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -51,15 +55,18 @@ export class FlightRenderer {
     const toPxX = (wx) => originX + wx * scale;
     const toPxY = (wz) => groundY - wz * scale;
 
-    // 1. Sky Background
+    // 1. Themed Cartoon Sky & Decorative Backdrop (strictly separated from collision bodies)
     const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-    skyGrad.addColorStop(0, '#0f172a');
-    skyGrad.addColorStop(1, '#1e293b');
+    skyGrad.addColorStop(0, theme.skyTop);
+    skyGrad.addColorStop(0.55, theme.skyMid);
+    skyGrad.addColorStop(1, theme.skyBottom);
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, width, groundY);
 
+    this.#drawThemedBackdrop(ctx, theme, width, groundY, padTop, sim);
+
     // 2. Metric Grid (every 2m)
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+    ctx.strokeStyle = theme.gridColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 0; x <= worldW; x += 2) {
@@ -75,7 +82,7 @@ export class FlightRenderer {
     ctx.stroke();
 
     // Arena Boundary Outline & Challenge Out-of-Bounds Perimeter
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.38)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(toPxX(0), toPxY(worldH), worldW * scale, worldH * scale);
 
@@ -94,26 +101,44 @@ export class FlightRenderer {
       ctx.restore();
     }
 
-    // 3. Wind Indicator Overlay
+    // 3. Location Tag + Wind Indicator Overlay
+    if (theme.id !== 'default') {
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.52)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.lineWidth = 1;
+      const badgeLabel = theme.label.toUpperCase();
+      ctx.font = '700 10px sans-serif';
+      const tw = ctx.measureText(badgeLabel).width + 18;
+      ctx.beginPath();
+      ctx.roundRect(toPxX(0) + 10, padTop + 10, tw, 22, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#e2e8f0';
+      ctx.textAlign = 'left';
+      ctx.fillText(badgeLabel, toPxX(0) + 19, padTop + 24);
+      ctx.restore();
+    }
+
     if (sim.windMode !== 'calm' || Math.abs(sim.drone.windX) > 0.05 || Math.abs(sim.drone.windZ) > 0.05) {
       this.#drawWindOverlay(ctx, width, padTop + 14, sim.drone.windX, sim.drone.windZ, sim.windMode);
     }
 
-    // 4. Obstacles
+    // 4. Obstacles (rendered strictly from physics collision rects on top of backdrop)
     if (sim.obstacles?.length) {
       this.#drawObstacles(ctx, sim.obstacles, toPxX, toPxY, scale);
     }
 
     // 5. Ground & Launch Pad
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = theme.groundFill;
     ctx.fillRect(0, groundY, width, groundPx);
-    ctx.fillStyle = '#334155';
+    ctx.fillStyle = theme.groundTop;
     ctx.fillRect(0, groundY, width, 4);
 
     const padCenterPx = toPxX(sim.startPos.x);
     ctx.fillStyle = '#0284c7';
     ctx.fillRect(padCenterPx - 1.0 * scale, groundY - 4, 2.0 * scale, 6);
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#e2e8f0';
     ctx.font = '600 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('LAUNCH PAD', padCenterPx, groundY + 22);
@@ -162,6 +187,215 @@ export class FlightRenderer {
       ctx.fillStyle = '#cbd5e1';
       ctx.font = '500 13px sans-serif';
       ctx.fillText('Press P or click Resume to continue flying', width * 0.5, height * 0.54);
+    }
+
+    ctx.restore();
+  }
+
+  #drawThemedBackdrop(ctx, theme, width, groundY, padTop, sim) {
+    if (!theme || theme.backdropType === 'default') return;
+    const t = Number(sim?.elapsedTime || 0);
+    ctx.save();
+
+    // Soft cartoon clouds (drifting smoothly with elapsedTime)
+    if (theme.clouds) {
+      const isStorm = theme.backdropType === 'storm-zone' || theme.backdropType === 'final-rescue';
+      ctx.fillStyle = isStorm ? 'rgba(15, 23, 42, 0.42)' : 'rgba(255, 255, 255, 0.16)';
+      const drift = (t * (isStorm ? 22 : 8)) % (width + 180);
+      for (let i = 0; i < 4; i++) {
+        const cx = ((i * width * 0.28 + drift) % (width + 160)) - 80;
+        const cy = padTop + 28 + (i % 2) * 26;
+        const r = isStorm ? 36 : 24;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, r * 1.9, r * 0.58, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.65, cy - r * 0.25, r * 0.85, r * 0.55, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + r * 0.6, cy - r * 0.2, r * 0.95, r * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Distant low-poly horizon silhouettes (low contrast so foreground obstacles pop unambiguously)
+    if (theme.backdropType === 'academy' || theme.backdropType === 'academy-wind') {
+      // Rolling low-poly green hills
+      ctx.fillStyle = 'rgba(34, 197, 94, 0.22)';
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(width * 0.14, groundY - 62);
+      ctx.lineTo(width * 0.34, groundY - 28);
+      ctx.lineTo(width * 0.58, groundY - 76);
+      ctx.lineTo(width * 0.82, groundY - 34);
+      ctx.lineTo(width, groundY - 58);
+      ctx.lineTo(width, groundY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Tiny far-background Academy Hangar on left edge
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.22)';
+      ctx.fillRect(28, groundY - 34, 52, 34);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.34)';
+      ctx.beginPath();
+      ctx.moveTo(22, groundY - 34);
+      ctx.lineTo(54, groundY - 54);
+      ctx.lineTo(86, groundY - 34);
+      ctx.closePath();
+      ctx.fill();
+
+      // Fluttering windsock on academy-wind
+      if (theme.backdropType === 'academy-wind') {
+        const sx = width * 0.16;
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(sx, groundY);
+        ctx.lineTo(sx, groundY - 46);
+        ctx.stroke();
+        const flutter = Math.sin(t * 7) * 3;
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.55)';
+        ctx.beginPath();
+        ctx.moveTo(sx + 1, groundY - 45);
+        ctx.lineTo(sx + 26, groundY - 41 + flutter);
+        ctx.lineTo(sx + 26, groundY - 34 + flutter);
+        ctx.lineTo(sx + 1, groundY - 32);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (theme.backdropType === 'rescue-base') {
+      // Distant SKYGUARD HQ & radio tower
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+      ctx.fillRect(30, groundY - 54, 78, 54);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
+      ctx.fillRect(42, groundY - 44, 54, 14);
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.32)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(96, groundY - 54);
+      ctx.lineTo(96, groundY - 88);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.65)';
+      ctx.beginPath();
+      ctx.arc(96, groundY - 90, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Distant skyline
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.16)';
+      const skyline = [0.28, 0.35, 0.46, 0.62, 0.74, 0.86];
+      skyline.forEach((f, idx) => {
+        const bh = 36 + (idx % 3) * 22;
+        ctx.fillRect(width * f, groundY - bh, 36, bh);
+      });
+    } else if (theme.backdropType === 'city-rooftops') {
+      // Soft distant city skyline towers
+      const towers = [
+        { f: 0.04, w: 54, h: 72 },
+        { f: 0.14, w: 42, h: 108 },
+        { f: 0.25, w: 60, h: 64 },
+        { f: 0.44, w: 48, h: 92 },
+        { f: 0.62, w: 56, h: 78 },
+        { f: 0.78, w: 44, h: 112 },
+        { f: 0.89, w: 58, h: 68 }
+      ];
+      for (const b of towers) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+        ctx.fillRect(width * b.f, groundY - b.h, b.w, b.h);
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.16)';
+        for (let wy = groundY - b.h + 10; wy < groundY - 12; wy += 16) {
+          ctx.fillRect(width * b.f + 8, wy, 7, 7);
+          ctx.fillRect(width * b.f + b.w - 15, wy, 7, 7);
+        }
+      }
+    } else if (theme.backdropType === 'cargo-station') {
+      // Distant cranes & stacked containers along horizon
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.28)';
+      ctx.lineWidth = 3;
+      for (const f of [0.18, 0.76]) {
+        const cx = width * f;
+        ctx.beginPath();
+        ctx.moveTo(cx, groundY);
+        ctx.lineTo(cx, groundY - 96);
+        ctx.lineTo(cx + 56, groundY - 96);
+        ctx.stroke();
+      }
+      const crates = [
+        { f: 0.05, c: 'rgba(249, 115, 22, 0.24)' },
+        { f: 0.11, c: 'rgba(14, 165, 233, 0.24)' },
+        { f: 0.66, c: 'rgba(234, 179, 8, 0.22)' },
+        { f: 0.84, c: 'rgba(249, 115, 22, 0.22)' }
+      ];
+      for (const cr of crates) {
+        ctx.fillStyle = cr.c;
+        ctx.fillRect(width * cr.f, groundY - 26, 40, 26);
+      }
+    } else if (theme.backdropType === 'narrow-passage') {
+      // Subtle low-contrast twilight city backdrop (clearly recessed behind solid obstacles)
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.26)';
+      for (let i = 0; i < 8; i++) {
+        const bx = width * (0.03 + i * 0.125);
+        const bh = 68 + ((i * 37) % 64);
+        ctx.fillRect(bx, groundY - bh, 46, bh);
+        ctx.fillStyle = 'rgba(253, 224, 71, 0.12)';
+        ctx.fillRect(bx + 10, groundY - bh + 12, 6, 8);
+        ctx.fillRect(bx + 26, groundY - bh + 28, 6, 8);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.26)';
+      }
+    } else if (theme.backdropType === 'storm-zone' || theme.backdropType === 'final-rescue') {
+      // Darkened storm horizon buildings
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.34)';
+      for (let i = 0; i < 7; i++) {
+        const bx = width * (0.04 + i * 0.14);
+        const bh = 42 + ((i * 29) % 52);
+        ctx.fillRect(bx, groundY - bh, 48, bh);
+      }
+      // Sweeping golden rescue searchlight beacon on Final Rescue
+      if (theme.searchlight) {
+        const sweep = Math.sin(t * 0.9) * 0.22;
+        const bx = width * 0.9;
+        const by = groundY - 42;
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.rotate(-2.45 + sweep);
+        const beamGrad = ctx.createLinearGradient(0, 0, width * 0.65, 0);
+        beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.22)');
+        beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0.0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(width * 0.65, -48);
+        ctx.lineTo(width * 0.65, 48);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Lightweight animated wind streaks (pure math, zero allocations)
+    if (theme.windStreaks) {
+      const windMag = Math.max(1.5, Math.abs(sim?.drone?.windX || 3.5));
+      const speedPx = 55 + windMag * 28;
+      ctx.strokeStyle = 'rgba(186, 230, 253, 0.18)';
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const x = ((i * 137 + t * speedPx) % (width + 80)) - 40;
+        const y = padTop + 26 + ((i * 59) % Math.max(60, groundY - padTop - 40));
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 28 + (i % 3) * 10, y);
+      }
+      ctx.stroke();
+    }
+
+    // Lightweight animated slanting rain streaks for storm missions
+    if (theme.rain) {
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.24)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      const spanH = Math.max(80, groundY - padTop);
+      for (let i = 0; i < 28; i++) {
+        const rx = ((i * 67 + t * 145) % (width + 60)) - 30;
+        const ry = padTop + ((i * 43 + t * 290) % spanH);
+        ctx.moveTo(rx, ry);
+        ctx.lineTo(rx + 6, ry + 14);
+      }
+      ctx.stroke();
     }
 
     ctx.restore();

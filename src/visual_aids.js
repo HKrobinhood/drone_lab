@@ -13,6 +13,16 @@ export const PIP_MOODS = Object.freeze([
   'celebrating'
 ]);
 
+export const STORY_PIP_MOODS = Object.freeze([
+  'happy',
+  'curious',
+  'worried',
+  'encouraging',
+  'celebrating'
+]);
+
+const ALL_RENDERABLE_PIP_MOODS = Object.freeze([...PIP_MOODS, 'happy', 'curious', 'worried', 'encouraging']);
+
 export const PIP_COACH_STATES = Object.freeze([
   'greeting',
   'teaching',
@@ -23,13 +33,21 @@ export const PIP_COACH_STATES = Object.freeze([
 ]);
 
 /**
- * Map coaching / tutorial state names cleanly to one of PIP's 5 expression moods.
+ * Map coaching / tutorial / story state names cleanly to a PIP expression mood.
  */
 export function resolvePipMood(state) {
   switch (state) {
     case 'welcome':
     case 'greeting':
       return 'greeting';
+    case 'happy':
+      return 'happy';
+    case 'curious':
+      return 'curious';
+    case 'worried':
+      return 'worried';
+    case 'encouraging':
+      return 'encouraging';
     case 'thinking':
       return 'thinking';
     case 'warning':
@@ -51,7 +69,7 @@ export function resolvePipMood(state) {
  * Render the single unified PIP SVG robot with lightweight CSS/SVG expression support.
  */
 export function renderPipRobotSvg(mood = 'explaining', sizeClass = '') {
-  const safeMood = PIP_MOODS.includes(mood) ? mood : 'explaining';
+  const safeMood = ALL_RENDERABLE_PIP_MOODS.includes(mood) ? mood : 'explaining';
 
   let eyesMarkup = `
     <circle cx="33" cy="40" r="4" class="pip-eye" />
@@ -70,6 +88,52 @@ export function renderPipRobotSvg(mood = 'explaining', sizeClass = '') {
       <g class="pip-wave-arm">
         <line x1="71" y1="45" x2="80" y2="30" class="pip-arm-stroke" />
         <circle cx="80" cy="28" r="4" class="pip-hand-dot" />
+      </g>
+    `;
+  } else if (safeMood === 'happy') {
+    eyesMarkup = `
+      <path d="M28 40 Q33 34 38 40" class="pip-happy-eye" />
+      <path d="M46 40 Q51 34 56 40" class="pip-happy-eye" />
+      <circle cx="27" cy="45" r="2.2" fill="#f472b6" opacity="0.65" />
+      <circle cx="57" cy="45" r="2.2" fill="#f472b6" opacity="0.65" />
+    `;
+    mouthMarkup = `<path d="M32 53 Q42 62 52 53" class="pip-smile" />`;
+    extraMarkup = `
+      <g class="pip-wave-arm">
+        <line x1="71" y1="44" x2="80" y2="31" class="pip-arm-stroke" />
+        <circle cx="80" cy="29" r="3.8" class="pip-hand-dot" />
+      </g>
+    `;
+  } else if (safeMood === 'curious') {
+    eyesMarkup = `
+      <circle cx="33" cy="39" r="4.6" class="pip-eye" />
+      <circle cx="51" cy="41" r="3.2" class="pip-eye" />
+    `;
+    mouthMarkup = `<circle cx="42" cy="56" r="3.2" fill="none" stroke="#7dd3fc" stroke-width="2.4" />`;
+    extraMarkup = `
+      <text x="69" y="23" fill="#fde047" font-size="14" font-weight="900" font-family="sans-serif">?</text>
+    `;
+  } else if (safeMood === 'worried') {
+    eyesMarkup = `
+      <line x1="27" y1="36" x2="37" y2="33" class="pip-brow" />
+      <line x1="57" y1="36" x2="47" y2="33" class="pip-brow" />
+      <circle cx="33" cy="42" r="3.8" class="pip-eye" />
+      <circle cx="51" cy="42" r="3.8" class="pip-eye" />
+    `;
+    mouthMarkup = `<path d="M33 58 Q37.5 54 42 57 Q46.5 60 51 56" class="pip-smile" />`;
+    extraMarkup = `
+      <path d="M64 23 Q67 28 64 31 Q61 28 64 23 Z" fill="#38bdf8" opacity="0.88" />
+    `;
+  } else if (safeMood === 'encouraging') {
+    eyesMarkup = `
+      <circle cx="33" cy="39" r="4.3" class="pip-eye" />
+      <path d="M46 40 Q51 35 56 40" class="pip-happy-eye" />
+    `;
+    mouthMarkup = `<path d="M32 54 Q42 61 52 54" class="pip-smile" />`;
+    extraMarkup = `
+      <g class="pip-wave-arm">
+        <line x1="71" y1="45" x2="80" y2="32" class="pip-arm-stroke" />
+        <polygon points="80,22 82,27 87,27.5 83,31 84,36 80,33.5 76,36 77,31 73,27.5 78,27" fill="#fde047" />
       </g>
     `;
   } else if (safeMood === 'explaining') {
@@ -99,6 +163,10 @@ export function renderPipRobotSvg(mood = 'explaining', sizeClass = '') {
       <path d="M46 41 Q51 35 56 41" class="pip-happy-eye" />
     `;
     mouthMarkup = `<path d="M32 53 Q42 62 52 53" class="pip-smile" />`;
+    extraMarkup = `
+      <polygon points="15,18 17,22 21,22.5 18,25 19,29 15,27 11,29 12,25 9,22.5 13,22" fill="#fde047" />
+      <polygon points="73,16 75,20 79,20.5 76,23 77,27 73,25 69,27 70,23 67,20.5 71,20" fill="#fde047" />
+    `;
   }
 
   return `

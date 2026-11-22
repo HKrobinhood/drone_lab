@@ -5800,3 +5800,699 @@ body {
     transition: none !important;
   }
 }
+
+
+/* ============================================================================
+   M7 — SKYGUARD STORY MODE (OVERCOOKED-INSPIRED CARTOON MAP, MISSION CARD,
+   STORY MILESTONES & FLIGHT ENGINEER CERTIFICATE)
+   ============================================================================ */
+
+.home-story-pill {
+  margin: 4px 0 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.94), rgba(234, 88, 12, 0.94));
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+  border: 1.5px solid rgba(254, 240, 138, 0.75);
+}
+
+/* Cartoon Mission Map Header & Chapter Tabs */
+.mission-map-header {
+  gap: 16px;
+}
+
+.map-header-nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.engineer-earned-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fef08a 0%, #facc15 60%, #f59e0b 100%);
+  color: #78350f;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+.map-act-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.map-tab-btn {
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.14s ease;
+  white-space: nowrap;
+}
+
+.map-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: #0f172a;
+}
+
+.map-tab-btn.is-active {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.32);
+}
+
+.levels-header-card.is-challenge .map-act-tabs {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.levels-header-card.is-challenge .map-tab-btn {
+  color: #e2e8f0;
+}
+
+.levels-header-card.is-challenge .map-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.levels-header-card.is-challenge .map-tab-btn.is-active {
+  background: #f97316;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.42);
+}
+
+/* Cartoon World Map Stage */
+.mission-map-shell {
+  background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+  border: 3px solid #ffffff;
+  border-radius: 24px;
+  padding: 12px;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+  margin-bottom: 16px;
+}
+
+.mission-map-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 18px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mission-map-stage {
+  position: relative;
+  width: 100%;
+  min-width: 820px;
+  aspect-ratio: 1120 / 520;
+  border-radius: 18px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.mission-map-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mission-map-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mission-map-nodes {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* Interactive Overcooked-Style Map Node Pins */
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 4;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, filter 0.2s ease;
+}
+
+.map-node:hover {
+  transform: translate(-50%, -56%) scale(1.08);
+  z-index: 8;
+}
+
+.map-node:focus-visible {
+  outline: none;
+}
+
+.map-node:focus-visible .map-node-pin {
+  box-shadow: 0 0 0 4px #ffffff, 0 0 0 7px #0284c7;
+}
+
+.map-node.is-selected {
+  transform: translate(-50%, -56%) scale(1.1);
+  z-index: 9;
+}
+
+.map-node.is-dimmed {
+  opacity: 0.48;
+  filter: saturate(0.75);
+}
+
+.map-node.is-dimmed:hover,
+.map-node.is-dimmed.is-selected {
+  opacity: 0.96;
+  filter: saturate(1);
+}
+
+.map-node-pin {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3.5px solid #ffffff;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 0 rgba(15, 23, 42, 0.28), 0 10px 18px rgba(15, 23, 42, 0.28);
+  transition: box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.map-node.is-act-1.is-unlocked .map-node-pin {
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.map-node.is-act-2.is-unlocked .map-node-pin {
+  background: linear-gradient(145deg, #fb923c 0%, #ea580c 100%);
+}
+
+.map-node.is-completed .map-node-pin {
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
+}
+
+.map-node.is-locked .map-node-pin {
+  background: linear-gradient(145deg, #64748b 0%, #475569 100%);
+  color: #cbd5e1;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 0 rgba(15, 23, 42, 0.25);
+}
+
+.map-node.is-selected .map-node-pin {
+  box-shadow: 0 0 0 4px #fef08a, 0 6px 0 rgba(15, 23, 42, 0.32), 0 12px 22px rgba(250, 204, 21, 0.48);
+}
+
+.map-node-check {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #22c55e;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.28);
+}
+
+.map-node-stars {
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: #facc15;
+  text-shadow: 0 1px 3px rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.74);
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.map-node-stars.is-locked-lbl {
+  color: #cbd5e1;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.map-node-label {
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.22);
+  border: 1.5px solid rgba(15, 23, 42, 0.08);
+}
+
+.map-node.is-locked .map-node-label {
+  background: rgba(226, 232, 240, 0.86);
+  color: #475569;
+}
+
+/* Active Frontier Gentle Bounce Animation */
+@keyframes mapNodeBounce {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-6px); }
+}
+
+@keyframes mapNodeHalo {
+  0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.78), 0 6px 0 rgba(15, 23, 42, 0.28); }
+  70% { box-shadow: 0 0 0 14px rgba(250, 204, 21, 0), 0 6px 0 rgba(15, 23, 42, 0.28); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0), 0 6px 0 rgba(15, 23, 42, 0.28); }
+}
+
+@keyframes mapNodeUnlockBurst {
+  0% { transform: scale(0.65); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.95); }
+  45% { transform: scale(1.24); box-shadow: 0 0 0 18px rgba(250, 204, 21, 0.35); }
+  100% { transform: scale(1); box-shadow: 0 0 0 26px rgba(250, 204, 21, 0); }
+}
+
+.map-node.is-current:not(:hover):not(.is-selected) {
+  animation: mapNodeBounce 1.85s ease-in-out infinite;
+}
+
+.map-node.is-current .map-node-pin {
+  animation: mapNodeHalo 1.9s ease-out infinite;
+}
+
+.map-node.is-newly-unlocked .map-node-pin {
+  animation: mapNodeUnlockBurst 1.15s cubic-bezier(0.34, 1.56, 0.64, 1) 2;
+}
+
+.map-mobile-pan-hint {
+  display: none;
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+/* Selected Map Node Preview Strip */
+.map-preview-card {
+  display: grid;
+  grid-template-columns: 204px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.map-preview-card.is-act-1 {
+  border-color: #7dd3fc;
+}
+
+.map-preview-card.is-act-2 {
+  border-color: #fdba74;
+}
+
+.map-preview-card.is-locked {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.map-preview-art {
+  width: 204px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.map-preview-art .mission-card-art-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.map-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.map-preview-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-preview-zone {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.map-preview-body h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.map-preview-pip {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.map-preview-conditions,
+.mission-card-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.mission-cond-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.map-preview-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 164px;
+}
+
+/* Concise Mission Start Card Modal */
+.mission-card-dialog {
+  max-width: 490px;
+  width: min(94vw, 490px);
+  padding: 20px 22px;
+  border-radius: 22px;
+  border: 3px solid #38bdf8;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.34);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  animation: missionCardPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes missionCardPop {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.mission-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mission-card-header h2 {
+  margin: 4px 0 0;
+  font-size: 1.24rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.mission-card-art {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+}
+
+.mission-card-art-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.mission-card-pip-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 100%);
+  border: 1.5px solid #bae6fd;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.mission-card-pip-avatar {
+  flex: 0 0 54px;
+  width: 54px;
+  height: 54px;
+}
+
+.mission-card-pip-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.mission-card-pip-bubble p {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.38;
+}
+
+.mission-card-goal-box {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mission-card-goal-label {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #b45309;
+}
+
+.mission-card-goal-box strong {
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.mission-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+/* Result Screen Story Milestone (Act I Complete & Act III Flight Engineer Certificate) */
+.result-story-milestone {
+  width: 100%;
+  max-width: 560px;
+  margin: 4px auto 6px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #e0f2fe 100%);
+  border: 2px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: left;
+  box-shadow: 0 8px 22px rgba(2, 132, 199, 0.14);
+}
+
+.result-story-milestone.is-final-cert {
+  flex-direction: column;
+  text-align: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fefce8 0%, #ffedd5 52%, #e0f2fe 100%);
+  border: 2.5px solid #f59e0b;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.24);
+}
+
+.story-final-duo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pip-cert-avatar {
+  width: 72px;
+  height: 72px;
+}
+
+.skyguard-cert-badge-svg {
+  width: 144px;
+  height: 96px;
+  filter: drop-shadow(0 6px 12px rgba(217, 119, 6, 0.28));
+}
+
+.story-milestone-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.result-story-milestone.is-final-cert .story-milestone-pill {
+  background: linear-gradient(90deg, #f59e0b, #ea580c);
+}
+
+.result-story-heading {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.result-story-line {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* Responsive Breakpoints for Story Map & Mission Card */
+@media (max-width: 900px) {
+  .map-mobile-pan-hint {
+    display: block;
+  }
+
+  .map-preview-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .map-preview-art {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .map-preview-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .map-preview-actions .btn {
+    flex: 1 1 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mission-map-shell {
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .map-act-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .map-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 0.74rem;
+  }
+
+  .mission-card-dialog {
+    padding: 16px;
+  }
+
+  .mission-card-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .result-story-milestone {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-node,
+  .map-node.is-current,
+  .map-node.is-current .map-node-pin,
+  .map-node.is-newly-unlocked .map-node-pin,
+  .mission-card-dialog {
+    animation: none !important;
+    transition: none !important;
+  }
+}

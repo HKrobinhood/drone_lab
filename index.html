@@ -186,6 +186,7 @@
                 <span class="title-wings title-wings-right" aria-hidden="true"></span>
               </div>
               <p class="home-title-banner">PID Flight Challenge</p>
+              <p class="home-story-pill">Project SKYGUARD · Drone Rescue Adventure</p>
               <p class="home-subtitle">
                 <span aria-hidden="true">★</span>
                 Tune PID · Fly with WASD · Earn Stars
@@ -455,10 +456,10 @@
       <section id="view-modes" class="view" aria-labelledby="modes-heading">
         <div class="section-header">
           <div>
-            <span class="badge badge-neutral">Select Training Mode</span>
+            <span class="badge badge-neutral">Project SKYGUARD · Rescue Story</span>
             <h1 id="modes-heading">Choose Your Flight Path</h1>
             <p class="section-subtitle">
-              Start in Tutorial Village to build intuition for Kp, Ki, and Kd, or jump into Challenge Levels.
+              Start in Act I (Drone Academy) with PIP, then launch Act II (Rescue Missions) across the city!
             </p>
           </div>
           <div id="first-play-banner" class="recommend-banner hidden">
@@ -470,13 +471,12 @@
           <!-- Tutorial Village Card -->
           <article class="mode-card mode-tutorial">
             <div class="mode-top">
-              <span class="mode-badge">Guided STEM Academy</span>
+              <span class="mode-badge">Act I · Drone Academy</span>
               <span id="tutorial-recommend-tag" class="recommend-pill hidden">Recommended First</span>
             </div>
             <h2>Tutorial Village</h2>
             <p>
-              Learn PID fundamentals step by step through four hands-on flight experiments covering
-              thrust, proportional gain, integral windup, and derivative damping.
+              Join SKYGUARD Drone Academy with PIP and master thrust, Kp, Ki, and Kd through four hands-on lessons.
             </p>
             <div class="mode-stats">
               <div class="stat-box">
@@ -496,13 +496,12 @@
           <!-- Challenge Levels Card -->
           <article class="mode-card mode-challenge">
             <div class="mode-top">
-              <span class="mode-badge">Mission Control</span>
+              <span class="mode-badge">Act II · Rescue Missions</span>
               <span class="difficulty-pill">6 Missions</span>
             </div>
             <h2>Challenge Levels</h2>
             <p>
-              Put your PID tuning to the test across hover zones, precision landing pads, ring courses,
-              narrow corridors, crosswinds, and the final rescue mission.
+              A storm is approaching! Fly six rescue missions across rooftops, cargo depots, city alleys, and storm gusts.
             </p>
             <div class="mode-stats">
               <div class="stat-box">
@@ -521,22 +520,38 @@
         </div>
       </section>
 
-      <!-- ==================== VIEW 3: LEVEL SELECTION ==================== -->
+      <!-- ==================== VIEW 3: CARTOON MISSION MAP ==================== -->
       <section id="view-levels" class="view" aria-labelledby="levels-heading">
-        <div id="levels-banner" class="levels-header-card">
+        <div id="levels-banner" class="levels-header-card mission-map-header">
           <div class="levels-header-left">
-            <button id="btn-back-modes" type="button" class="btn btn-ghost btn-sm">&larr; Back to Modes</button>
-            <span id="levels-mode-badge" class="mode-badge">Mode</span>
-            <h1 id="levels-heading">Level Selection</h1>
+            <div class="map-header-nav-row">
+              <button id="btn-back-modes" type="button" class="btn btn-ghost btn-sm">&larr; Back to Modes</button>
+              <span id="levels-mode-badge" class="mode-badge">Project SKYGUARD</span>
+              <span id="map-engineer-pill" class="engineer-earned-pill hidden" title="Final Rescue Cleared">
+                🏅 Flight Engineer
+              </span>
+            </div>
+            <h1 id="levels-heading">SKYGUARD Mission Map</h1>
             <p id="levels-description" class="section-subtitle"></p>
           </div>
           <div class="levels-summary-group">
+            <div class="map-act-tabs" role="tablist" aria-label="Story chapter focus">
+              <button id="btn-map-tab-all" type="button" class="map-tab-btn is-active" data-map-filter="all" role="tab" aria-selected="true">
+                Full Map
+              </button>
+              <button id="btn-map-tab-tutorial" type="button" class="map-tab-btn" data-map-filter="tutorial" role="tab" aria-selected="false">
+                Act I · Academy
+              </button>
+              <button id="btn-map-tab-challenge" type="button" class="map-tab-btn" data-map-filter="challenge" role="tab" aria-selected="false">
+                Act II · Rescue
+              </button>
+            </div>
             <button id="btn-meet-pip" type="button" class="btn btn-outline btn-sm hidden">
               Meet PIP / Help
             </button>
             <div class="levels-summary">
-              <span class="stat-label">Mode Progress</span>
-              <strong id="levels-star-summary">0 / 12 ★</strong>
+              <span class="stat-label">Story Stars</span>
+              <strong id="levels-star-summary">0 / 30 ★</strong>
             </div>
           </div>
         </div>
@@ -558,9 +573,43 @@
           </div>
         </aside>
 
-        <div id="levels-grid" class="levels-grid" aria-live="polite">
-          <!-- Rendered dynamically from src/levels.js -->
+        <!-- Overcooked-Inspired Cartoon World Map -->
+        <div class="mission-map-shell">
+          <div class="mission-map-scroll" aria-label="SKYGUARD rescue adventure map">
+            <div id="mission-map-stage" class="mission-map-stage">
+              <div id="mission-map-backdrop" class="mission-map-backdrop"></div>
+              <div id="levels-grid" class="mission-map-nodes" aria-live="polite">
+                <!-- Interactive map nodes rendered dynamically from src/story.js + storage.js -->
+              </div>
+            </div>
+          </div>
+          <p class="map-mobile-pan-hint" aria-hidden="true">Swipe map horizontally &rarr; tap any node to preview</p>
         </div>
+
+        <!-- Selected Node Compact Preview Strip -->
+        <article id="map-preview-card" class="map-preview-card" aria-live="polite">
+          <div id="map-preview-art" class="map-preview-art"></div>
+          <div class="map-preview-body">
+            <div class="map-preview-top">
+              <span id="map-preview-badge" class="badge badge-stem">ACT I · LESSON 01</span>
+              <span id="map-preview-zone" class="map-preview-zone">Drone Academy</span>
+              <span id="map-preview-stars" class="stars-display" aria-label="0 of 3 stars">☆☆☆</span>
+            </div>
+            <h2 id="map-preview-title">T1 — First Takeoff</h2>
+            <p id="map-preview-pip" class="map-preview-pip">
+              "Welcome to Drone Academy! Let's lift off and practice WASD controls."
+            </p>
+            <div id="map-preview-conditions" class="map-preview-conditions"></div>
+          </div>
+          <div class="map-preview-actions">
+            <button id="btn-map-play" type="button" class="btn btn-primary btn-lg">
+              Play Mission &rarr;
+            </button>
+            <button id="btn-map-quick-tune" type="button" class="btn btn-ghost btn-sm hidden">
+              Skip Card &rarr; Tune
+            </button>
+          </div>
+        </article>
       </section>
 
       <!-- ==================== VIEW 3.5: PRE-FLIGHT TUNING GARAGE ==================== -->
@@ -1268,6 +1317,16 @@
               <p id="result-level-subtitle" class="section-subtitle"></p>
             </div>
 
+            <!-- Story Act I Completion / Act III Flight Engineer Certificate Showcase -->
+            <div id="result-story-milestone" class="result-story-milestone hidden" aria-live="polite">
+              <div id="result-story-visual" class="result-story-visual"></div>
+              <div class="result-story-copy">
+                <span id="result-story-badge" class="story-milestone-pill">ACT I COMPLETE</span>
+                <strong id="result-story-heading" class="result-story-heading">Drone Academy Graduate!</strong>
+                <p id="result-story-line" class="result-story-line">Training Complete! You're ready for rescue missions!</p>
+              </div>
+            </div>
+
             <!-- Centered 3-Star Animated Stage (Visual Design & Animation Preserved) -->
             <div id="result-stars-box" class="result-stars-showcase">
               <div id="result-star-particles" class="result-star-particles" aria-hidden="true"></div>
@@ -1573,6 +1632,41 @@
 
         <div class="modal-actions">
           <button id="btn-close-about" type="button" class="btn btn-primary">Back to Home</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Concise SKYGUARD Mission Start Card Modal -->
+    <div id="mission-card-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="mission-card-title">
+      <div class="modal-card mission-card-dialog">
+        <div class="mission-card-header">
+          <div>
+            <span id="mission-card-badge" class="badge badge-stem">MISSION 03 · CARGO STATION</span>
+            <h2 id="mission-card-title">MISSION 03 — Heavy Supplies</h2>
+          </div>
+          <button id="btn-mission-card-close" type="button" class="btn btn-ghost btn-sm" aria-label="Close Mission Card">&times;</button>
+        </div>
+
+        <div id="mission-card-art" class="mission-card-art"></div>
+
+        <div class="mission-card-pip-row">
+          <div id="mission-card-pip-avatar" class="mission-card-pip-avatar" aria-hidden="true"></div>
+          <div class="mission-card-pip-bubble">
+            <span class="pip-mini-badge">PIP</span>
+            <p id="mission-card-pip-line">"These supplies are heavy! Let's tune lift and save battery."</p>
+          </div>
+        </div>
+
+        <div class="mission-card-goal-box">
+          <span class="mission-card-goal-label">Objective</span>
+          <strong id="mission-card-objective">Deliver heavy cargo over the ridge before battery runs out.</strong>
+        </div>
+
+        <div id="mission-card-conditions" class="mission-card-conditions" aria-label="Key flight conditions"></div>
+
+        <div class="mission-card-actions">
+          <button id="btn-mission-card-skip" type="button" class="btn btn-ghost">Skip</button>
+          <button id="btn-mission-card-tune" type="button" class="btn btn-primary btn-lg">Tune Drone &rarr;</button>
         </div>
       </div>
     </div>

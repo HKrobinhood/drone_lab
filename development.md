@@ -41,6 +41,7 @@
 | **M5.4** | Beginner-Friendly PID Tuning Redesign | 降噪三区布局（Mission Playground 场景预览 + PID Tuning Garage 圆形旋钮 + 紧凑 PIP 气泡）、可展开 Kp/Ki/Kd 图解卡、基于真实 120 Hz 仿真的 PID Test Bench（Step/Wind 实验、Tuning Challenge、Before/After 曲线与指标对比）及新手实验引导升级 | **已完成** |
 | **M5.5** | Minimal Results Screen Redesign | 统一精简全部结算页（新手村与挑战关、成功与失败、1–3 星）：保留原三星造型与动画、主操作按钮紧贴星星下方、PIP 精简为头像 + 单句真实诊断反馈（<=20 词）、完整评分/指标/图表/深度分析收纳至默认折叠的 `Detailed Flight Report` | **已完成** |
 | **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | **已完成部署** |
+| **M7** | SKYGUARD Story Mode | 轻量化三幕救援故事线（Drone Academy → Rescue Missions → Flight Engineer）、卡通世界地图选关、简洁 Mission Card、PIP 5 种故事表情、10 关差异化卡通背景与终局认证徽章 | **已完成** |
 
 ---
 
@@ -247,13 +248,31 @@
 - [x] 完善 `README.md`（完整 STEM 教学目标、架构图、操作指南、测试与部署说明）并执行全量回归测试
 - [x] 关联远程仓库 `https://github.com/HKrobinhood/drone_lab.git` 并成功推送到 `main` 分支
 
+### M7 — SKYGUARD Story Mode
+- **故事结构（Project SKYGUARD — Drone Rescue Adventure）**：
+  - **Act I — Drone Academy（对应 Tutorial Village 4 关）**：`T1 — First Takeoff`、`T2 — The Slow Drone`（Kp）、`T3 — The Drifting Drone`（Ki）、`T4 — The Unstable Drone`（Kd）；通关 T4 显示 `"Training Complete! You're ready for rescue missions!"`。
+  - **Act II — Rescue Missions（对应 Challenge Levels 6 关）**：`MISSION 01 — Launch the Mission`（Rescue Base）、`MISSION 02 — Rooftop Delivery`（City Rooftops）、`MISSION 03 — Heavy Supplies`（Cargo Station）、`MISSION 04 — Through the City`（Narrow Passage）、`MISSION 05 — Storm Front`（Storm Zone）、`MISSION 06 — Final Rescue`（Final Rescue Site）。所有关卡 100% 复用既有物理、PID 控制器、碰撞与 M4 三星评分逻辑。
+  - **Act III — Flight Engineer（通关 Final Rescue）**：在结算页展示 **SKYGUARD Flight Engineer** 矢量翼盾徽章、庆祝表情 PIP 与祝贺语 `"Mission accomplished! You're now a SKYGUARD Flight Engineer!"`，完整保留原有三星动画、评分报告与重玩挑战能力，并在地图顶栏点亮 `🏅 Flight Engineer` 徽标。
+- **Overcooked 风格卡通世界地图（Cartoon Mission Map，`src/story.js`, `index.html`, `styles/main.css`, `src/main.js`）**：
+  - 纯轻量内联低多边形矢量地图覆盖全部 7 大区域（`Drone Academy`、`Rescue Base`、`City Rooftops`、`Cargo Station`、`Narrow Passage`、`Storm Zone`、`Final Rescue Site`），通过带方向箭头的彩色路线串联 T1→T4→M1→M6。
+  - 已解锁节点高亮彩色、当前待挑战前沿节点轻跳与脉冲光圈、已完成节点显示绿底 `✓` 与历史最佳星级、未解锁节点显示锁图标且禁止启动、新解锁节点返回地图时播放金色点亮动画。
+  - 支持 `Full Map / Act I · Academy / Act II · Rescue` 章节聚焦切换，底部联动显示所选节点缩略插画、PIP 短句、星级、条件图标与 `Play →` / `Skip Card → Tune` 操作，移动端支持横向滑动地图且页面零横向溢出。
+- **简洁任务开始卡（Mission Card）**：
+  - 每关进入 Pre-flight Tuning 前弹出轻量卡片，含卡通场景插画、PIP 表情与单句台词（<=15 词）、单句目标、<=3 项图标条件（整卡默认英文 <40 词），提供 `Tune Drone →` 与 `Skip`（已通关关卡可直接跳过）。
+- **PIP 角色与新增卡通视觉资源（`src/visual_aids.js`, `src/story.js`, `src/renderer.js`）**：
+  - 在保留原有 `PIP_MOODS` 5 态兼容的基础上，新增 5 种故事表情（`happy`、`curious`、`worried`、`encouraging`、`celebrating`）。
+  - 为全部 10 关打造独立内联 SVG 任务卡插画与差异化 Canvas 2D 卡通场景背景（晴朗训练学院、城市救援基地、屋顶天际线、货运吊车枢纽、暮色窄巷、暴雨横风与探照灯终局救援现场），背景严格位于碰撞体/目标区/网格后方且低对比度退远，确保物理碰撞与视觉完全一致。
+- **测试结果**：
+  - 全量语法检查与自动化测试 `node --check src/*.js && node --test tests/*.test.mjs`：**39 套件、98 项测试全部通过（0 失败）**，包含新增 `tests/m7_story.test.mjs`。
+  - Headless Chrome 桌面（`1366×860`）与手机（`390×844`）端到端实机验证与视觉截图审查：全图 10 节点交互、锁定保护、Mission Card 展示与跳转、风暴与晴朗学院飞行背景、移动端零横向溢出、零控制台/运行时报错全部通过。
+
 ---
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M6 — Polish and Deployment`（已完成部署上线）
-- **已完成**：完成 M0 至 M6 全部功能研发、37 套件 93 项自动化测试、UI 打磨、英文文档及 GitHub Actions / GitHub Pages 部署发布。
-- **发布状态**：远程代码库已推送至 `https://github.com/HKrobinhood/drone_lab.git`，在线地址为 `https://hkrobinhood.github.io/drone_lab/`。
+- **当前里程碑**：`M7 — SKYGUARD Story Mode`（已完成，等待用户人工验收）
+- **已完成**：完成 M0 至 M7 全部功能研发（含轻量化 SKYGUARD 救援故事线、卡通世界地图选关、简洁 Mission Card、PIP 故事表情、差异化卡通飞行背景、终局飞控工程师徽章与 39 套件 98 项自动化测试）。
+- **待办**：等待用户人工试玩验收 M7（未获授权不自动推送远程）。
 
 ---
 
@@ -310,6 +329,7 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(tuning): redesign beginner PID tuning experience` — 完成 M5.4 初学者友好型 PID 调参重设计（Mission Playground 实时预览、圆形旋钮、参数图解卡、真实仿真 PID Test Bench 与 Before/After 对比、新手实验引导）。
 - `feat(ui): simplify results screen and collapse flight reports` — 完成 M5.5 极简统一结算页重设计（保留三星动画、按钮紧贴星星下方、PIP 单句真实诊断反馈与默认折叠 `Detailed Flight Report`）。
 - `ci(deploy): configure GitHub Actions for Pages and complete M6 deployment` — 完成 M6 部署配置（GitHub Actions 自动化测试与 Pages 部署工作流、精炼 README.md、推送到远程仓库）。
+- `feat(story): add SKYGUARD rescue adventure` — 完成 M7 SKYGUARD 轻量化救援故事线、Overcooked 风格卡通世界地图选关、简洁 Mission Card、PIP 故事表情、10 关卡通飞行背景与 Flight Engineer 认证徽章。
 
 ---
 

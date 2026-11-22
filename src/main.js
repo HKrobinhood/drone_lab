@@ -56,10 +56,23 @@ import {
   evaluateTestBenchPipCoaching,
   getTuningChallengeForScene
 } from './test_bench.js';
+import {
+  STORY_MISSIONS,
+  STORY_ENDINGS,
+  getStoryMission,
+  getRecommendedCurrentNodeId,
+  renderMissionMapBackdropSvg,
+  renderMissionCardIllustrationSvg,
+  renderFlightEngineerBadgeSvg
+} from './story.js';
 
 const state = {
   currentView: 'start',
   currentMode: 'tutorial',
+  mapFilter: 'all',
+  selectedMapLevelId: 'tutorial-1',
+  newlyUnlockedLevelId: null,
+  pendingMissionCardLevelId: null,
   activeScene: null,
   runFinished: false,
   showGhostDrone: true,
@@ -106,6 +119,20 @@ const els = {
   levelsDescription: document.getElementById('levels-description'),
   levelsStarSummary: document.getElementById('levels-star-summary'),
   levelsGrid: document.getElementById('levels-grid'),
+  missionMapStage: document.getElementById('mission-map-stage'),
+  missionMapBackdrop: document.getElementById('mission-map-backdrop'),
+  mapEngineerPill: document.getElementById('map-engineer-pill'),
+  mapTabButtons: Array.from(document.querySelectorAll('.map-tab-btn[data-map-filter]')),
+  mapPreviewCard: document.getElementById('map-preview-card'),
+  mapPreviewArt: document.getElementById('map-preview-art'),
+  mapPreviewBadge: document.getElementById('map-preview-badge'),
+  mapPreviewZone: document.getElementById('map-preview-zone'),
+  mapPreviewStars: document.getElementById('map-preview-stars'),
+  mapPreviewTitle: document.getElementById('map-preview-title'),
+  mapPreviewPip: document.getElementById('map-preview-pip'),
+  mapPreviewConditions: document.getElementById('map-preview-conditions'),
+  btnMapPlay: document.getElementById('btn-map-play'),
+  btnMapQuickTune: document.getElementById('btn-map-quick-tune'),
   btnMeetPip: document.getElementById('btn-meet-pip'),
   pipIntroPanel: document.getElementById('pip-intro-panel'),
   pipIntroAvatar: document.getElementById('pip-intro-avatar'),
@@ -286,6 +313,11 @@ const els = {
   resultBadge: document.getElementById('result-badge'),
   resultTitle: document.getElementById('result-title'),
   resultLevelSubtitle: document.getElementById('result-level-subtitle'),
+  resultStoryMilestone: document.getElementById('result-story-milestone'),
+  resultStoryVisual: document.getElementById('result-story-visual'),
+  resultStoryBadge: document.getElementById('result-story-badge'),
+  resultStoryHeading: document.getElementById('result-story-heading'),
+  resultStoryLine: document.getElementById('result-story-line'),
   resultStarsBox: document.getElementById('result-stars-box'),
   resultStarRow: document.getElementById('result-star-row'),
   resultStarSlots: [
@@ -359,6 +391,18 @@ const els = {
   btnCloseAbout: document.getElementById('btn-close-about'),
   btnCloseAboutX: document.getElementById('btn-close-about-x'),
 
+  missionCardModal: document.getElementById('mission-card-modal'),
+  missionCardBadge: document.getElementById('mission-card-badge'),
+  missionCardTitle: document.getElementById('mission-card-title'),
+  missionCardArt: document.getElementById('mission-card-art'),
+  missionCardPipAvatar: document.getElementById('mission-card-pip-avatar'),
+  missionCardPipLine: document.getElementById('mission-card-pip-line'),
+  missionCardObjective: document.getElementById('mission-card-objective'),
+  missionCardConditions: document.getElementById('mission-card-conditions'),
+  btnMissionCardClose: document.getElementById('btn-mission-card-close'),
+  btnMissionCardSkip: document.getElementById('btn-mission-card-skip'),
+  btnMissionCardTune: document.getElementById('btn-mission-card-tune'),
+
   modal: document.getElementById('notice-modal'),
   modalEyebrow: document.getElementById('modal-eyebrow'),
   modalTitle: document.getElementById('modal-title'),
@@ -389,7 +433,8 @@ let resultChartPayload = null;
 function isAnyModalOpen() {
   const noticeOpen = !els.modal.classList.contains('hidden');
   const aboutOpen = Boolean(els.aboutModal && !els.aboutModal.classList.contains('hidden'));
-  return noticeOpen || aboutOpen;
+  const missionCardOpen = Boolean(els.missionCardModal && !els.missionCardModal.classList.contains('hidden'));
+  return noticeOpen || aboutOpen || missionCardOpen;
 }
 
 function openAboutModal() {
@@ -1169,7 +1214,34 @@ function showResultScreen(outcome, metrics, scoreResult, previousAttempt = null)
 
   els.resultBadge.textContent = isSuccess ? 'Mission Complete' : 'Mission Failed';
   els.resultTitle.textContent = isSuccess ? 'Mission Complete!' : 'Mission Failed';
-  els.resultLevelSubtitle.textContent = state.activeScene?.name || '';
+  const storyMission = getStoryMission(state.activeScene?.id);
+  els.resultLevelSubtitle.textContent = storyMission?.storyTitle || state.activeScene?.name || '';
+
+  // Act I Completion Banner (T4) & Act III SKYGUARD Flight Engineer Certificate (L6)
+  if (els.resultStoryMilestone) {
+    const isAct1Done = isSuccess && state.activeScene?.id === 'tutorial-4';
+    const isAct3Done = isSuccess && state.activeScene?.id === 'level-6';
+    els.resultStoryMilestone.classList.toggle('hidden', !isAct1Done && !isAct3Done);
+    els.resultStoryMilestone.classList.toggle('is-final-cert', isAct3Done);
+    if (isAct3Done) {
+      const end = STORY_ENDINGS.act3Complete;
+      els.resultStoryVisual.innerHTML = `
+        <div class="story-final-duo">
+          ${renderPipRobotSvg('celebrating', 'pip-cert-avatar')}
+          ${renderFlightEngineerBadgeSvg()}
+        </div>
+      `;
+      els.resultStoryBadge.textContent = end.badge;
+      els.resultStoryHeading.textContent = end.title;
+      els.resultStoryLine.textContent = end.line;
+    } else if (isAct1Done) {
+      const end = STORY_ENDINGS.act1Complete;
+      els.resultStoryVisual.innerHTML = renderPipRobotSvg('celebrating', 'pip-avatar-mini');
+      els.resultStoryBadge.textContent = end.badge;
+      els.resultStoryHeading.textContent = end.title;
+      els.resultStoryLine.textContent = end.line;
+    }
+  }
 
   // M5: Unified conversational PIP Flight Coach Telemetry Report (both Tutorial & Challenge)
   const telemetry = sim.getTelemetrySeries();
@@ -1353,84 +1425,242 @@ function updateProgressSummaries() {
   els.tutorialRecommendTag.classList.toggle('hidden', !firstRun);
 }
 
+// ==================== SKYGUARD MISSION CARD & CARTOON MAP ====================
+function openMissionCard(levelId) {
+  const mission = getStoryMission(levelId);
+  const scene = getSceneById(levelId);
+  if (!scene) return;
+  if (!mission || !els.missionCardModal) {
+    openPreflightTuning(scene, { resetToInitial: true, restartGuide: true });
+    return;
+  }
+
+  state.pendingMissionCardLevelId = levelId;
+  els.missionCardBadge.textContent = mission.badgeLabel;
+  els.missionCardTitle.textContent = mission.storyTitle;
+  els.missionCardArt.innerHTML = renderMissionCardIllustrationSvg(levelId);
+  els.missionCardPipAvatar.innerHTML = renderPipRobotSvg(mission.pipMood, 'pip-avatar-mini');
+  els.missionCardPipLine.textContent = `"${mission.pipLine}"`;
+  els.missionCardObjective.textContent = mission.objective;
+  els.missionCardConditions.innerHTML = (mission.conditions || [])
+    .slice(0, 3)
+    .map(
+      (c) => `<span class="mission-cond-chip"><span aria-hidden="true">${c.icon}</span>${c.label}</span>`
+    )
+    .join('');
+
+  const completed = isLevelCompleted(state.progress, levelId);
+  if (els.btnMissionCardSkip) {
+    els.btnMissionCardSkip.textContent = completed ? 'Skip (Cleared)' : 'Skip';
+  }
+  els.missionCardModal.classList.remove('hidden');
+  els.btnMissionCardTune?.focus();
+}
+
+function closeMissionCard() {
+  state.pendingMissionCardLevelId = null;
+  els.missionCardModal?.classList.add('hidden');
+}
+
+function proceedFromMissionCard() {
+  const levelId = state.pendingMissionCardLevelId;
+  closeMissionCard();
+  const scene = getSceneById(levelId);
+  if (scene) {
+    if (state.pipIntroOpen) closePipIntro(true);
+    openPreflightTuning(scene, { resetToInitial: true, restartGuide: true });
+  }
+}
+
+function renderMapPreview(levelId) {
+  const mission = getStoryMission(levelId) || STORY_MISSIONS[0];
+  if (!mission || !els.mapPreviewCard) return;
+
+  state.selectedMapLevelId = mission.id;
+  const unlocked = isLevelUnlocked(state.progress, mission.id);
+  const completed = isLevelCompleted(state.progress, mission.id);
+  const stars = getBestStars(state.progress, mission.id);
+
+  els.mapPreviewCard.classList.toggle('is-locked', !unlocked);
+  els.mapPreviewCard.classList.toggle('is-act-1', mission.act === 1);
+  els.mapPreviewCard.classList.toggle('is-act-2', mission.act === 2);
+
+  if (els.mapPreviewArt) {
+    els.mapPreviewArt.innerHTML = renderMissionCardIllustrationSvg(mission.id);
+  }
+  if (els.mapPreviewBadge) {
+    els.mapPreviewBadge.textContent = mission.badgeLabel;
+  }
+  if (els.mapPreviewZone) {
+    els.mapPreviewZone.textContent = mission.zoneName;
+  }
+  if (els.mapPreviewStars) {
+    els.mapPreviewStars.textContent = renderStarsText(stars);
+    els.mapPreviewStars.setAttribute('aria-label', `${stars} of 3 stars`);
+  }
+  if (els.mapPreviewTitle) {
+    els.mapPreviewTitle.textContent = mission.storyTitle;
+  }
+  if (els.mapPreviewPip) {
+    els.mapPreviewPip.textContent = unlocked
+      ? `PIP: "${mission.pipLine}"`
+      : 'Complete the previous mission to unlock this SKYGUARD site.';
+  }
+  if (els.mapPreviewConditions) {
+    els.mapPreviewConditions.innerHTML = (mission.conditions || [])
+      .slice(0, 3)
+      .map((c) => `<span class="mission-cond-chip"><span aria-hidden="true">${c.icon}</span>${c.label}</span>`)
+      .join('');
+  }
+  if (els.btnMapPlay) {
+    els.btnMapPlay.disabled = !unlocked;
+    els.btnMapPlay.className = !unlocked
+      ? 'btn btn-ghost btn-lg'
+      : mission.act === 1
+        ? 'btn btn-tutorial btn-lg'
+        : 'btn btn-challenge btn-lg';
+    els.btnMapPlay.textContent = !unlocked ? '🔒 Locked' : completed ? 'Replay Mission →' : 'Play →';
+  }
+  if (els.btnMapQuickTune) {
+    els.btnMapQuickTune.classList.toggle('hidden', !(unlocked && completed));
+  }
+
+  for (const nodeEl of els.levelsGrid?.querySelectorAll('.map-node') || []) {
+    const isSel = nodeEl.dataset.levelId === mission.id;
+    nodeEl.classList.toggle('is-selected', isSel);
+    nodeEl.setAttribute('aria-pressed', String(isSel));
+  }
+}
+
 function renderLevelSelection(mode) {
-  state.currentMode = mode;
-  const levels = getLevelsByMode(mode);
-  const summary = getModeSummary(state.progress, mode);
-  const isTutorial = mode === 'tutorial';
+  const normalizedMode = mode === 'challenge' ? 'challenge' : mode === 'tutorial' ? 'tutorial' : state.currentMode;
+  state.currentMode = normalizedMode;
+  const activeFilter = mode === 'all' ? 'all' : mode === 'tutorial' || mode === 'challenge' ? mode : state.mapFilter;
+  state.mapFilter = activeFilter;
 
-  els.levelsBanner.classList.toggle('is-tutorial', isTutorial);
-  els.levelsBanner.classList.toggle('is-challenge', !isTutorial);
-  els.levelsModeBadge.textContent = isTutorial ? 'Tutorial Village' : 'Challenge Levels';
-  els.levelsHeading.textContent = isTutorial ? 'Tutorial Village — PID Basics' : 'Challenge Levels — Progressive Missions';
-  els.levelsDescription.textContent = isTutorial
-    ? 'Visual-first PID academy with PIP coaching, live demonstrations, and hands-on WASD flight.'
-    : 'Each mission starts at zero PID—analyze conditions, tune with PIP, and fly manually with WASD.';
-  els.levelsStarSummary.textContent = `${summary.earnedStars} / ${summary.maxStars} ★`;
-  els.btnMeetPip.classList.toggle('hidden', !isTutorial);
+  const tutSummary = getModeSummary(state.progress, 'tutorial');
+  const chalSummary = getModeSummary(state.progress, 'challenge');
+  const isTutorialFocus = activeFilter === 'tutorial';
+  const isChallengeFocus = activeFilter === 'challenge';
 
-  if (isTutorial && !hasSeenPipIntro(state.progress)) {
+  els.levelsBanner.classList.toggle('is-tutorial', isTutorialFocus);
+  els.levelsBanner.classList.toggle('is-challenge', isChallengeFocus);
+  els.levelsModeBadge.textContent = isTutorialFocus
+    ? 'Act I · Drone Academy'
+    : isChallengeFocus
+      ? 'Act II · Rescue Missions'
+      : 'Project SKYGUARD';
+  els.levelsHeading.textContent = isTutorialFocus
+    ? 'Act I — Drone Academy Map'
+    : isChallengeFocus
+      ? 'Act II — Rescue Mission Map'
+      : 'SKYGUARD Adventure Map';
+  els.levelsDescription.textContent = isTutorialFocus
+    ? 'Train with PIP at Drone Academy, then cross the bridge into Rescue City!'
+    : isChallengeFocus
+      ? 'Follow the storm rescue route from Rescue Base to the Final Rescue Site.'
+      : 'Drone Academy → Rescue Missions → Final Rescue → Flight Engineer Certificate';
+
+  const totalEarned = tutSummary.earnedStars + chalSummary.earnedStars;
+  const totalMax = tutSummary.maxStars + chalSummary.maxStars;
+  els.levelsStarSummary.textContent = isTutorialFocus
+    ? `${tutSummary.earnedStars} / ${tutSummary.maxStars} ★`
+    : isChallengeFocus
+      ? `${chalSummary.earnedStars} / ${chalSummary.maxStars} ★`
+      : `${totalEarned} / ${totalMax} ★`;
+
+  els.btnMeetPip.classList.toggle('hidden', isChallengeFocus);
+  els.mapEngineerPill?.classList.toggle('hidden', !isLevelCompleted(state.progress, 'level-6'));
+
+  for (const tabBtn of els.mapTabButtons || []) {
+    const active = tabBtn.dataset.mapFilter === activeFilter;
+    tabBtn.classList.toggle('is-active', active);
+    tabBtn.setAttribute('aria-selected', String(active));
+  }
+
+  if (isTutorialFocus && !hasSeenPipIntro(state.progress)) {
     openPipIntro(false);
-  } else if (!isTutorial) {
+  } else if (isChallengeFocus) {
     closePipIntro(false);
   }
 
+  // Render colorful low-poly cartoon island & city map backdrop
+  if (els.missionMapBackdrop) {
+    els.missionMapBackdrop.innerHTML = renderMissionMapBackdropSvg(state.progress);
+  }
+
+  const currentRecommendedId = getRecommendedCurrentNodeId(state.progress, activeFilter);
+  const newlyUnlockedId = state.newlyUnlockedLevelId;
   els.levelsGrid.innerHTML = '';
 
-  for (const level of levels) {
-    const unlocked = isLevelUnlocked(state.progress, level.id);
-    const completed = isLevelCompleted(state.progress, level.id);
-    const stars = getBestStars(state.progress, level.id);
+  for (const mission of STORY_MISSIONS) {
+    const unlocked = isLevelUnlocked(state.progress, mission.id);
+    const completed = isLevelCompleted(state.progress, mission.id);
+    const stars = getBestStars(state.progress, mission.id);
+    const isCurrent = unlocked && mission.id === currentRecommendedId;
+    const isDimmed = activeFilter !== 'all' && mission.mode !== activeFilter;
+    const isNewlyUnlocked = unlocked && newlyUnlockedId === mission.id;
 
-    const statusClass = !unlocked ? 'locked' : completed ? 'completed' : 'unlocked';
-    const statusText = !unlocked ? 'Locked' : completed ? 'Completed' : 'Unlocked';
-    const actionHint = !unlocked
-      ? 'Complete Previous'
-      : isTutorial
-        ? 'Start Lesson'
-        : 'Tune & Fly';
+    const node = document.createElement('button');
+    node.type = 'button';
+    node.className = [
+      'map-node',
+      mission.act === 1 ? 'is-act-1' : 'is-act-2',
+      unlocked ? 'is-unlocked' : 'is-locked',
+      completed ? 'is-completed' : '',
+      isCurrent ? 'is-current' : '',
+      isDimmed ? 'is-dimmed' : '',
+      isNewlyUnlocked ? 'is-newly-unlocked' : ''
+    ]
+      .filter(Boolean)
+      .join(' ');
+    node.dataset.levelId = mission.id;
+    node.style.left = `${((mission.mapCoords.x / 1120) * 100).toFixed(2)}%`;
+    node.style.top = `${((mission.mapCoords.y / 520) * 100).toFixed(2)}%`;
+    node.setAttribute(
+      'aria-label',
+      `${mission.storyTitle} (${mission.zoneName}) — ${!unlocked ? 'Locked' : completed ? `${stars} of 3 stars` : 'Unlocked'}`
+    );
 
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = `level-card ${unlocked ? '' : 'is-locked'}`;
-    card.dataset.levelId = level.id;
+    const badgeInner = !unlocked
+      ? `<svg class="map-lock-svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor" /><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>`
+      : `<span class="map-node-code">${mission.code}</span>`;
 
-    card.innerHTML = `
-      <div>
-        <div class="level-card-top">
-          <span class="level-difficulty">${level.difficulty}</span>
-          <span class="lock-status ${statusClass}">${statusText}</span>
-        </div>
-        <h3>${level.name}</h3>
-        <p class="level-focus"><strong>Focus:</strong> ${level.learningFocus}</p>
-      </div>
-      <div class="level-card-footer">
-        <span class="stars-display" aria-label="${stars} of 3 stars">${renderStarsText(stars)}</span>
-        <span class="level-action-hint">${actionHint}</span>
-      </div>
+    const checkMarkup = completed ? '<span class="map-node-check" aria-hidden="true">✓</span>' : '';
+    const starsMarkup = unlocked
+      ? `<span class="map-node-stars" aria-hidden="true">${renderStarsText(stars)}</span>`
+      : '<span class="map-node-stars is-locked-lbl" aria-hidden="true">Locked</span>';
+
+    node.innerHTML = `
+      <span class="map-node-pin">
+        ${badgeInner}
+        ${checkMarkup}
+      </span>
+      ${starsMarkup}
+      <span class="map-node-label">${mission.shortLabel}</span>
     `;
 
-    card.addEventListener('click', () => {
-      if (!unlocked) {
-        showModal(
-          'Level Locked',
-          level.name,
-          'Complete the previous mission in this mode to unlock this flight challenge.'
-        );
-        return;
+    node.addEventListener('click', () => {
+      const wasSelected = state.selectedMapLevelId === mission.id;
+      renderMapPreview(mission.id);
+      if (!unlocked) return;
+      if (wasSelected) {
+        openMissionCard(mission.id);
       }
-
-      const scene = getSceneById(level.id);
-      if (scene) {
-        if (state.pipIntroOpen) closePipIntro(true);
-        openPreflightTuning(scene, { resetToInitial: true, restartGuide: true });
-        return;
-      }
-
-      showModal(`Scheduled for ${level.milestone}`, level.name, level.summary);
     });
 
-    els.levelsGrid.appendChild(card);
+    els.levelsGrid.appendChild(node);
+  }
+
+  // Pick initial selected node: newly unlocked > active frontier in current filter > current selected
+  const initialSelected =
+    (newlyUnlockedId && isLevelUnlocked(state.progress, newlyUnlockedId) ? newlyUnlockedId : null) ||
+    currentRecommendedId ||
+    STORY_MISSIONS[0].id;
+  renderMapPreview(initialSelected);
+
+  if (newlyUnlockedId) {
+    state.newlyUnlockedLevelId = null;
   }
 }
 
@@ -1445,8 +1675,9 @@ function openPreflightTuning(scene, options = {}) {
   const maxThrust = scene.maxThrust ?? 28.0;
   const twr = maxThrust / (totalMass * 9.81);
 
-  els.preflightModeBadge.textContent = isTutorial ? 'Tutorial Village' : 'Challenge Mission';
-  els.preflightTitle.textContent = scene.name;
+  const storyMission = getStoryMission(scene.id);
+  els.preflightModeBadge.textContent = isTutorial ? 'Act I · Drone Academy' : 'Act II · Rescue Mission';
+  els.preflightTitle.textContent = storyMission?.storyTitle || scene.name;
   if (els.preflightShortGoal) {
     els.preflightShortGoal.textContent = scene.objective || scene.missionGoal || '';
   }
@@ -1757,6 +1988,8 @@ function handleSceneOutcomeIfNeeded() {
     }
 
     if (outcome.status === 'completed') {
+      const nextId = state.activeScene.nextLevelId;
+      const wasNextLocked = Boolean(nextId && !isLevelUnlocked(state.progress, nextId));
       state.progress = recordLevelResult(
         state.progress,
         state.activeScene.id,
@@ -1766,8 +1999,11 @@ function handleSceneOutcomeIfNeeded() {
           pidParameters: metrics.pidParameters,
           metrics
         },
-        state.activeScene.nextLevelId
+        nextId
       );
+      if (wasNextLocked && isLevelUnlocked(state.progress, nextId)) {
+        state.newlyUnlockedLevelId = nextId;
+      }
       updateProgressSummaries();
     }
 
@@ -1878,7 +2114,8 @@ function launchScene(scene, options = {}) {
 
   state.tunedGainsByLevel[scene.id] = { ...sim.gains };
   sim.setPreviousTrail(state.lastAttempts[scene.id]?.trail || []);
-  els.flightLevelName.textContent = scene.name;
+  const storyMission = getStoryMission(scene.id);
+  els.flightLevelName.textContent = storyMission?.storyTitle || scene.name;
   els.flightObjective.textContent = scene.objective;
   els.btnFlightBack.innerHTML = '&larr; Briefing';
 
@@ -1996,6 +2233,35 @@ function bindEvents() {
   els.btnEnterTutorials.addEventListener('click', () => navigateTo('levels', { mode: 'tutorial' }));
   els.btnEnterChallenges.addEventListener('click', () => navigateTo('levels', { mode: 'challenge' }));
   els.btnBackModes.addEventListener('click', () => navigateTo('modes'));
+
+  // Cartoon Mission Map chapter tabs & preview actions
+  for (const tabBtn of els.mapTabButtons || []) {
+    tabBtn.addEventListener('click', () => {
+      renderLevelSelection(tabBtn.dataset.mapFilter || 'all');
+    });
+  }
+  els.btnMapPlay?.addEventListener('click', () => {
+    const id = state.selectedMapLevelId;
+    if (!id || !isLevelUnlocked(state.progress, id)) return;
+    openMissionCard(id);
+  });
+  els.btnMapQuickTune?.addEventListener('click', () => {
+    const id = state.selectedMapLevelId;
+    if (!id || !isLevelUnlocked(state.progress, id)) return;
+    const scene = getSceneById(id);
+    if (scene) {
+      if (state.pipIntroOpen) closePipIntro(true);
+      openPreflightTuning(scene, { resetToInitial: true, restartGuide: true });
+    }
+  });
+
+  // Concise Mission Start Card modal actions
+  els.btnMissionCardTune?.addEventListener('click', proceedFromMissionCard);
+  els.btnMissionCardSkip?.addEventListener('click', proceedFromMissionCard);
+  els.btnMissionCardClose?.addEventListener('click', closeMissionCard);
+  els.missionCardModal?.addEventListener('click', (event) => {
+    if (event.target === els.missionCardModal) closeMissionCard();
+  });
 
   els.btnMeetPip.addEventListener('click', () => openPipIntro(true));
   els.btnPreflightMeetPip.addEventListener('click', () => {
@@ -2171,7 +2437,7 @@ function bindEvents() {
     const nextId = els.btnResultNext.dataset.nextId;
     const nextScene = getSceneById(nextId);
     if (nextScene) {
-      openPreflightTuning(nextScene, { resetToInitial: true, restartGuide: true });
+      openMissionCard(nextScene.id);
     }
   });
 
@@ -2188,7 +2454,9 @@ function bindEvents() {
   });
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
-      if (els.aboutModal && !els.aboutModal.classList.contains('hidden')) {
+      if (els.missionCardModal && !els.missionCardModal.classList.contains('hidden')) {
+        closeMissionCard();
+      } else if (els.aboutModal && !els.aboutModal.classList.contains('hidden')) {
         closeAboutModal();
       } else if (!els.modal.classList.contains('hidden')) {
         hideModal();

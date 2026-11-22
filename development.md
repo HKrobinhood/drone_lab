@@ -40,7 +40,7 @@
 | **M5.3** | Strategic Control Trade-offs & Energy Model | 真实非线性旋翼功耗与电池耗尽失败模型、L1–L6 差异化策略格局（极速/精密/重载节能/狭缝权衡/强风抗扰/四维终考）、L3–L6 淡出绿区改用实时四维权衡预测器与结算四维策略雷达对比 | **已完成** |
 | **M5.4** | Beginner-Friendly PID Tuning Redesign | 降噪三区布局（Mission Playground 场景预览 + PID Tuning Garage 圆形旋钮 + 紧凑 PIP 气泡）、可展开 Kp/Ki/Kd 图解卡、基于真实 120 Hz 仿真的 PID Test Bench（Step/Wind 实验、Tuning Challenge、Before/After 曲线与指标对比）及新手实验引导升级 | **已完成** |
 | **M5.5** | Minimal Results Screen Redesign | 统一精简全部结算页（新手村与挑战关、成功与失败、1–3 星）：保留原三星造型与动画、主操作按钮紧贴星星下方、PIP 精简为头像 + 单句真实诊断反馈（<=20 词）、完整评分/指标/图表/深度分析收纳至默认折叠的 `Detailed Flight Report` | **已完成** |
-| **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | 待开始 |
+| **M6** | Polish and Deployment | UI 打磨、移动端自适应、难度微调、GitHub Actions & GitHub Pages 部署 | **已完成部署** |
 
 ---
 
@@ -241,18 +241,19 @@
   - Headless Chrome 实机端到端与多端截图验收（桌面 `1280×820` 与手机 `390×844`）：验证 Tutorial 成功（3★）、展开 Detailed Flight Report（3 张 Canvas 全部真实绘制且无裁切）、点击 `Next Level →` 跳转、硬着陆失败页（自动重置折叠、`Retry` 为主按钮）、按钮导航与零控制台报错、零横向溢出。
 
 ### M6 — Polish and Deployment
-- [ ] 优化 UI 动画、视觉细节与移动端触控/窄屏布局
-- [ ] 校准各关卡难度与评分阈值
-- [ ] 配置 GitHub Actions 与 GitHub Pages 自动部署流程
-- [ ] 完善 `README.md` 并执行全量回归测试
+- [x] 优化 UI 动画、视觉细节与移动端触控/窄屏自适应布局（桌面/平板/移动端适配）
+- [x] 校准各关卡难度与评分阈值，并保持 100% 纯英文玩家界面
+- [x] 配置 GitHub Actions 与 GitHub Pages 自动部署流程（`.github/workflows/deploy.yml` 自动化测试与静态部署）
+- [x] 完善 `README.md`（完整 STEM 教学目标、架构图、操作指南、测试与部署说明）并执行全量回归测试
+- [x] 关联远程仓库 `https://github.com/HKrobinhood/drone_lab.git` 并成功推送到 `main` 分支
 
 ---
 
 ## 五、当前开发状态
 
-- **当前里程碑**：`M5.5 — Minimal Results Screen Redesign`（已完成，待人工验收后进入 M6）
-- **已完成**：统一精简全部结算页（保留原三星动画与造型、操作按钮紧贴星星正下方、PIP 精简为单句真实诊断短评、完整评分/指标/图表/PIP 深度分析收纳至默认折叠的 `Detailed Flight Report`）。
-- **尚未完成的功能**：M6（移动端触控/窄屏打磨、关卡微调与 GitHub Pages 部署）。
+- **当前里程碑**：`M6 — Polish and Deployment`（已完成部署上线）
+- **已完成**：完成 M0 至 M6 全部功能研发、37 套件 93 项自动化测试、UI 打磨、英文文档及 GitHub Actions / GitHub Pages 部署发布。
+- **发布状态**：远程代码库已推送至 `https://github.com/HKrobinhood/drone_lab.git`，在线地址为 `https://hkrobinhood.github.io/drone_lab/`。
 
 ---
 
@@ -308,11 +309,11 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(m5.3): add strategic PID trade-offs, rotor energy model, and 4-axis radar` — 完成 M5.3 非线性旋翼功耗与电池模型、L1–L6 差异化策略格局、L3–L6 绿区淡出、实时四维权衡预测与结算策略雷达对比。
 - `feat(tuning): redesign beginner PID tuning experience` — 完成 M5.4 初学者友好型 PID 调参重设计（Mission Playground 实时预览、圆形旋钮、参数图解卡、真实仿真 PID Test Bench 与 Before/After 对比、新手实验引导）。
 - `feat(ui): simplify results screen and collapse flight reports` — 完成 M5.5 极简统一结算页重设计（保留三星动画、按钮紧贴星星下方、PIP 单句真实诊断反馈与默认折叠 `Detailed Flight Report`）。
+- `ci(deploy): configure GitHub Actions for Pages and complete M6 deployment` — 完成 M6 部署配置（GitHub Actions 自动化测试与 Pages 部署工作流、精炼 README.md、推送到远程仓库）。
 
 ---
 
-## 九、下一步开发任务
+## 九、后续维护与展望
 
-等待用户确认 **M5** 后，启动 **M6 — Polish and Deployment**：
-1. 移动端触控与窄屏适配、UI 细节打磨与难度校准。
-2. 配置 GitHub Actions 与 GitHub Pages 自动化发布并完善 `README.md`。
+1. 依据 GitHub Pages 在线试玩反馈进行微调与难度持续标定。
+2. 可选支持移动端虚拟双摇杆触控体验扩展。

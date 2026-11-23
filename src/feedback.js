@@ -431,6 +431,12 @@ export function buildConcisePipResultFeedback(report, scoreResult = null, outcom
         text: 'Three stars! A touch more Kd will trim that overshoot.'
       };
     }
+    if (diag.lagDetected) {
+      return {
+        mood: 'celebrating',
+        text: 'Three stars! A higher Kp would make response even faster.'
+      };
+    }
     return {
       mood: 'celebrating',
       text: 'Excellent flight! Your drone was fast, accurate, and stable.'
@@ -441,7 +447,7 @@ export function buildConcisePipResultFeedback(report, scoreResult = null, outcom
   const nextChecks = stars >= 2 ? scoreResult?.checks3Star || [] : scoreResult?.checks2Star || [];
   const failedKeys = new Set(nextChecks.filter((c) => !c.passed).map((c) => c.criterionKey));
 
-  if (diag.oscillationDetected) {
+  if (diag.oscillationDetected || failedKeys.has('oscillation')) {
     return {
       mood: 'thinking',
       text: 'Your drone oscillates. Try balancing Kp and Kd for calmer control.'
@@ -481,6 +487,12 @@ export function buildConcisePipResultFeedback(report, scoreResult = null, outcom
     return {
       mood: 'explaining',
       text: 'Nice control! Fly a bit faster to earn the next star.'
+    };
+  }
+  if (failedKeys.has('collisions')) {
+    return {
+      mood: 'explaining',
+      text: 'Avoid obstacle bumps with smoother Kd braking for the final star.'
     };
   }
   if (failedKeys.has('settling') || failedKeys.has('smoothness') || failedKeys.has('pathFit')) {

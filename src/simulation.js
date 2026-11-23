@@ -635,6 +635,23 @@ export class FlightSimulation {
     const { pathDeviation, pathFitScore } = computePathFit(this.refTrail, this.trail);
     const energyRemainingPct = this.getEnergyRemainingPct();
 
+    // Count real tracking-error sign reversals (oscillations) across X and Z beyond 0.25 m deadband
+    const countReversals = (key, deadband = 0.25) => {
+      let lastSign = 0;
+      let count = 0;
+      for (const sample of this.telemetry) {
+        const val = Number(sample?.[key] ?? 0);
+        if (Math.abs(val) < deadband) continue;
+        const sign = val > 0 ? 1 : -1;
+        if (lastSign !== 0 && sign !== lastSign) {
+          count += 1;
+        }
+        lastSign = sign;
+      }
+      return count;
+    };
+    const oscillationReversals = countReversals('errX', 0.25) + countReversals('errZ', 0.25);
+
     return {
       completionTime: this.elapsedTime,
       maxOvershoot: this.metrics.maxOvershoot,
@@ -643,6 +660,7 @@ export class FlightSimulation {
       finalPositionError,
       finalVelocity,
       flightSmoothness,
+      oscillationReversals,
       pathDeviation,
       pathFitScore,
       energyUsed: this.energyUsed,

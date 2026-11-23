@@ -95,50 +95,50 @@ export const LEVEL_STAR_THRESHOLDS = Object.freeze({
   'tutorial-1': {
     completionGrantsThreeStars: true,
     twoStar: { maxTime: 120, maxOvershoot: 99, minPathFit: 0 },
-    threeStar: { maxTime: 120, maxOvershoot: 99, maxSettling: 120, minPathFit: 0, minSmoothness: 0 }
+    threeStar: { maxTime: 120, maxOvershoot: 99, maxSettling: 120, minPathFit: 0, minSmoothness: 0, maxOscillations: 99 }
   },
   'tutorial-2': {
-    twoStar: { maxTime: 45, maxOvershoot: 2.5, minPathFit: 50 },
-    threeStar: { maxTime: 25, maxOvershoot: 1.3, maxSettling: 4.5, minPathFit: 68, minSmoothness: 65 }
+    twoStar: { maxTime: 65, maxOvershoot: 3.6, minPathFit: 25 },
+    threeStar: { maxTime: 50, maxOvershoot: 2.6, maxSettling: 8.5, minPathFit: 35, minSmoothness: 52, maxOscillations: 6 }
   },
   'tutorial-3': {
-    twoStar: { maxTime: 55, maxOvershoot: 2.6, minPathFit: 36 },
-    threeStar: { maxTime: 30, maxOvershoot: 2.25, maxSettling: 4.5, minPathFit: 42, minSmoothness: 65 }
+    twoStar: { maxTime: 75, maxOvershoot: 3.8, minPathFit: 20 },
+    threeStar: { maxTime: 60, maxOvershoot: 2.8, maxSettling: 9.0, minPathFit: 28, minSmoothness: 50, maxOscillations: 8 }
   },
   'tutorial-4': {
-    twoStar: { maxTime: 55, maxOvershoot: 2.2, minPathFit: 52 },
-    threeStar: { maxTime: 28, maxOvershoot: 1.2, maxSettling: 4.5, minPathFit: 68, minSmoothness: 68 }
+    twoStar: { maxTime: 75, maxOvershoot: 3.6, minPathFit: 25 },
+    threeStar: { maxTime: 58, maxOvershoot: 2.4, maxSettling: 8.5, minPathFit: 35, minSmoothness: 54, maxOscillations: 6 }
   },
 
   'level-1': {
-    twoStar: { maxTime: 42, maxOvershoot: 2.4, minPathFit: 50 },
-    threeStar: { maxTime: 18, maxOvershoot: 1.3, maxSettling: 2.0, minPathFit: 72, minSmoothness: 68 }
+    twoStar: { maxTime: 60, maxOvershoot: 3.6, minPathFit: 25 },
+    threeStar: { maxTime: 45, maxOvershoot: 2.6, maxSettling: 8.0, minPathFit: 35, minSmoothness: 52, maxOscillations: 6 }
   },
   'level-2': {
-    twoStar: { maxTime: 44, maxOvershoot: 1.8, minPathFit: 54 },
-    threeStar: { maxTime: 24, maxOvershoot: 0.55, maxSettling: 3.0, minPathFit: 76, minSmoothness: 74 }
+    twoStar: { maxTime: 62, maxOvershoot: 3.4, minPathFit: 25 },
+    threeStar: { maxTime: 48, maxOvershoot: 2.2, maxSettling: 8.0, minPathFit: 38, minSmoothness: 54, maxOscillations: 6 }
   },
   'level-3': {
-    twoStar: { maxTime: 52, maxOvershoot: 2.8, minPathFit: 40, minEnergyPct: 12 },
-    threeStar: { maxTime: 28, maxOvershoot: 1.85, maxSettling: 5.5, minPathFit: 54, minSmoothness: 65, minEnergyPct: 35 }
+    twoStar: { maxTime: 70, maxOvershoot: 3.8, minPathFit: 20, minEnergyPct: 0 },
+    threeStar: { maxTime: 55, maxOvershoot: 2.8, maxSettling: 9.0, minPathFit: 30, minSmoothness: 50, maxOscillations: 7, minEnergyPct: 12 }
   },
   'level-4': {
-    twoStar: { maxTime: 52, maxOvershoot: 1.9, minPathFit: 55 },
-    threeStar: { maxTime: 26, maxOvershoot: 0.9, maxSettling: 3.8, minPathFit: 78, minSmoothness: 72 }
+    twoStar: { maxTime: 70, maxOvershoot: 3.4, minPathFit: 25 },
+    threeStar: { maxTime: 55, maxOvershoot: 2.2, maxSettling: 8.5, minPathFit: 38, minSmoothness: 54, maxOscillations: 6 }
   },
   'level-5': {
-    twoStar: { maxTime: 55, maxOvershoot: 2.6, minPathFit: 40, minEnergyPct: 10 },
-    threeStar: { maxTime: 30, maxOvershoot: 1.7, maxSettling: 5.0, minPathFit: 50, minSmoothness: 68, minEnergyPct: 30 }
+    twoStar: { maxTime: 75, maxOvershoot: 3.8, minPathFit: 20, minEnergyPct: 0 },
+    threeStar: { maxTime: 60, maxOvershoot: 2.8, maxSettling: 9.0, minPathFit: 28, minSmoothness: 50, maxOscillations: 8, minEnergyPct: 10 }
   },
   'level-6': {
-    twoStar: { maxTime: 65, maxOvershoot: 2.6, minPathFit: 44, minEnergyPct: 10 },
-    threeStar: { maxTime: 34, maxOvershoot: 1.6, maxSettling: 4.5, minPathFit: 58, minSmoothness: 68, minEnergyPct: 28 }
+    twoStar: { maxTime: 82, maxOvershoot: 3.8, minPathFit: 20, minEnergyPct: 0 },
+    threeStar: { maxTime: 68, maxOvershoot: 2.8, maxSettling: 9.5, minPathFit: 30, minSmoothness: 50, maxOscillations: 8, minEnergyPct: 10 }
   }
 });
 
 const DEFAULT_THRESHOLDS = {
-  twoStar: { maxTime: 50, maxOvershoot: 2.5, minPathFit: 55 },
-  threeStar: { maxTime: 28, maxOvershoot: 1.5, maxSettling: 4.0, minPathFit: 72, minSmoothness: 65 }
+  twoStar: { maxTime: 65, maxOvershoot: 3.6, minPathFit: 25 },
+  threeStar: { maxTime: 52, maxOvershoot: 2.6, maxSettling: 8.5, minPathFit: 35, minSmoothness: 52, maxOscillations: 6 }
 };
 
 export function getThresholdsForLevel(levelId) {
@@ -161,6 +161,12 @@ export function scoreFlightRun(outcome, metrics, levelId) {
   const settling = Number(metrics?.settlingTime ?? time);
   const pathFit = Number(metrics?.pathFitScore ?? 0);
   const smoothness = Number(metrics?.flightSmoothness ?? 0);
+  const oscillationReversals = Number.isFinite(metrics?.oscillationReversals)
+    ? Number(metrics.oscillationReversals)
+    : 0;
+  const maxOsc = Number.isFinite(thresholds.threeStar.maxOscillations)
+    ? thresholds.threeStar.maxOscillations
+    : 6;
   const collisions = Number(metrics?.collisionCount ?? 0);
   const hasEnergyMetric = Number.isFinite(metrics?.energyRemainingPct);
   const energyPct = hasEnergyMetric ? Number(metrics.energyRemainingPct) : null;
@@ -243,6 +249,24 @@ export function scoreFlightRun(outcome, metrics, levelId) {
 
   const checks3Star = [
     {
+      criterionKey: 'oscillation',
+      tier: 3,
+      shortLabel: 'No Obvious Oscillation',
+      actualText: `${oscillationReversals} reversals`,
+      targetText: `<= ${maxOsc}`,
+      label: `No Obvious Oscillation (<= ${maxOsc} reversals)`,
+      passed: completed && oscillationReversals <= maxOsc
+    },
+    {
+      criterionKey: 'smoothness',
+      tier: 3,
+      shortLabel: 'Flight Stability',
+      actualText: `${smoothness.toFixed(0)}%`,
+      targetText: `>= ${thresholds.threeStar.minSmoothness}%`,
+      label: `Flight Stability >= ${thresholds.threeStar.minSmoothness}%`,
+      passed: completed && smoothness >= thresholds.threeStar.minSmoothness
+    },
+    {
       criterionKey: 'time',
       tier: 3,
       shortLabel: 'Completion Time',
@@ -277,15 +301,6 @@ export function scoreFlightRun(outcome, metrics, levelId) {
       targetText: `>= ${thresholds.threeStar.minPathFit}%`,
       label: `Route Fit >= ${thresholds.threeStar.minPathFit}%`,
       passed: completed && pathFit >= thresholds.threeStar.minPathFit
-    },
-    {
-      criterionKey: 'smoothness',
-      tier: 3,
-      shortLabel: 'Smoothness',
-      actualText: `${smoothness.toFixed(0)}%`,
-      targetText: `>= ${thresholds.threeStar.minSmoothness}%`,
-      label: `Smoothness >= ${thresholds.threeStar.minSmoothness}%`,
-      passed: completed && smoothness >= thresholds.threeStar.minSmoothness
     },
     {
       criterionKey: 'collisions',
@@ -507,6 +522,11 @@ export function buildNextStarAdvice(scoreResult, metrics, diagnostics = null, sc
   const smoothness = Number(metrics?.flightSmoothness ?? 0);
 
   switch (failing.criterionKey) {
+    case 'oscillation': {
+      const osc = Number(metrics?.oscillationReversals ?? 0);
+      const maxOsc = th.maxOscillations ?? 6;
+      return `Reduce oscillation (${osc} reversals vs <= ${maxOsc}) by raising Kd damping for ${targetTierLabel}!`;
+    }
     case 'time': {
       const delta = Math.max(0.5, time - th.maxTime);
       const kpHint = (metrics?.pidParameters?.kp ?? 0) < (scene?.recommendedPID?.kpMin ?? 5) ? ' (try higher Kp)' : '';

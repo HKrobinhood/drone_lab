@@ -65,6 +65,7 @@ import {
   renderMissionCardIllustrationSvg,
   renderFlightEngineerBadgeSvg
 } from './story.js';
+import { DroneAudioEngine } from './audio.js';
 
 const state = {
   currentView: 'start',
@@ -410,6 +411,7 @@ const els = {
 };
 
 const sim = new FlightSimulation();
+const audio = new DroneAudioEngine();
 const renderer = new FlightRenderer(els.flightCanvas);
 const previewRenderer = els.preflightArenaCanvas ? new FlightRenderer(els.preflightArenaCanvas) : null;
 const tutorialGuide = new TutorialGuideEngine();
@@ -418,6 +420,7 @@ const pidKnobs = {};
 
 let rafId = null;
 let lastFrameTime = null;
+let lastObservedRingIndex = 0;
 let pipDebounceTimer = null;
 let lastGuideRenderSig = '';
 let lastFlightPipSig = '';
@@ -453,12 +456,37 @@ const input = new InputController({
   onMovementPress: () => {
     if (!sim.started && !state.runFinished) {
       sim.startFlight();
+      audio.playTakeoff();
       syncFlightControlsUi();
     }
   },
   onRestart: () => restartFlight(),
   onPauseToggle: () => togglePauseFlight()
 });
+
+function syncAudioToggleButtons() {
+  for (const btn of document.querySelectorAll('[data-audio-toggle="sfx"]')) {
+    const compact = btn.id === 'btn-flight-sfx';
+    btn.classList.toggle('is-on', audio.soundEnabled);
+    btn.classList.toggle('is-off', !audio.soundEnabled);
+    btn.setAttribute('aria-pressed', String(audio.soundEnabled));
+    btn.textContent = compact
+      ? audio.soundEnabled
+        ? '🔊'
+        : '🔇'
+      : audio.soundEnabled
+        ? '🔊 Sound'
+        : '🔇 Muted';
+  }
+  for (const btn of document.querySelectorAll('[data-audio-toggle="bgm"]')) {
+    const compact = btn.id === 'btn-flight-bgm';
+    const bgmActive = audio.soundEnabled && audio.bgmEnabled;
+    btn.classList.toggle('is-on', bgmActive);
+    btn.classList.toggle('is-off', !bgmActive);
+    btn.setAttribute('aria-pressed', String(bgmActive));
+    btn.textContent = compact ? (bgmActive ? '🎵' : '🎵✕') : bgmActive ? '🎵 BGM' : '🎵 Off';
+  }
+}
 
 function renderStarsText(stars) {
   return '★'.repeat(stars) + '☆'.repeat(3 - stars);
@@ -1089,6 +1117,7 @@ function playStarRevealAnimation(stars) {
       if (!slot) return;
       slot.classList.remove('is-locked');
       slot.classList.add('is-earned', 'is-revealing', 'is-earned-burst');
+      audio.playStarReveal(i + 1);
       if (i === 2 && stars === 3) {
         els.resultHeroCard?.classList.add('is-three-star-celebration');
         spawnStarCelebrationParticles();
@@ -1969,11 +1998,17 @@ function handleSceneOutcomeIfNeeded() {
   if (outcome.status === 'completed' || outcome.status === 'failed') {
     state.runFinished = true;
     sim.setPaused(true);
+    audio.silenceFlightLoops();
     input.clearMovementKeys();
     syncFlightControlsUi();
 
     const metrics = sim.getFlightMetrics();
     const scoreResult = scoreFlightRun(outcome, metrics, state.activeScene.id);
+    if (outcome.status === 'completed') {
+      audio.playMissionComplete(scoreResult.stars);
+    } else {
+      audio.playFailure(outcome.reason);
+    }
     const previousAttempt = state.lastAttempts[state.activeScene.id] || null;
 
     const strategyProfile = computeStrategyDimensions(metrics, state.activeScene);
@@ -2031,6 +2066,10 @@ function flightLoop(timestamp) {
   if (!state.runFinished) {
     const axes = input.getAxes();
     sim.stepFrame(rawDt, axes);
+    if (sim.nextRingIndex > lastObservedRingIndex) {
+      audio.playRingPass(lastObservedRingIndex);
+      lastObservedRingIndex = sim.nextRingIndex;
+    }
     const outcome = handleSceneOutcomeIfNeeded();
     if (!state.runFinished && state.activeScene?.mode === 'tutorial' && tutorialGuide.active) {
       tutorialGuide.evaluateTelemetry(sim, axes, outcome, state.currentView);
@@ -2038,6 +2077,16 @@ function flightLoop(timestamp) {
     }
   }
   if (state.currentView === 'flight') {
+    audio.updateFlightAudio({
+      thrust: sim.drone.thrust,
+      maxThrust: sim.config.maxThrust,
+      windX: sim.drone.windX,
+      windZ: sim.drone.windZ,
+      started: sim.started,
+      paused: sim.paused,
+      onGround: sim.drone.onGround,
+      inFlightView: !state.runFinished
+    });
     renderer.render(sim, rawDt, {
       showGhostDrone: state.showGhostDrone,
       showTrails: state.showFlightTrails
@@ -2065,6 +2114,7 @@ function startOrResumeFlight() {
   if (state.runFinished) return;
   if (!sim.started) {
     sim.startFlight();
+    audio.playTakeoff();
   } else if (sim.paused) {
     sim.setPaused(false);
   }
@@ -2074,10 +2124,12 @@ function startOrResumeFlight() {
 
 function restartFlight() {
   state.runFinished = false;
+  lastObservedRingIndex = 0;
   input.clearMovementKeys();
   const prevTrail = state.lastAttempts[state.activeScene?.id]?.trail || sim.trail.slice();
   // Preserve player's current tuned PID gains on Retry within the same level
   sim.reset(true);
+  audio.playTakeoff();
   if (prevTrail.length > 1) {
     sim.setPreviousTrail(prevTrail);
   }
@@ -2107,12 +2159,16 @@ function togglePauseFlight() {
 function launchScene(scene, options = {}) {
   state.activeScene = scene;
   state.runFinished = false;
+  lastObservedRingIndex = 0;
 
   if (options.gains) {
     sim.setGains(options.gains);
     sim.loadScene(scene, Boolean(options.autoStart), { preserveGains: true });
   } else {
     sim.loadScene(scene, Boolean(options.autoStart), { preserveGains: Boolean(options.preserveGains) });
+  }
+  if (options.autoStart) {
+    audio.playTakeoff();
   }
 
   state.tunedGainsByLevel[scene.id] = { ...sim.gains };
@@ -2177,6 +2233,7 @@ export function navigateTo(viewName, options = {}) {
 
   if (viewName === 'flight') {
     input.attach();
+    audio.setFlightDuck(true);
     renderer.render(sim, 0, {
       showGhostDrone: state.showGhostDrone,
       showTrails: state.showFlightTrails
@@ -2190,6 +2247,8 @@ export function navigateTo(viewName, options = {}) {
     startFlightLoop();
   } else {
     stopFlightLoop();
+    audio.setFlightDuck(false);
+    audio.silenceFlightLoops();
     input.detach();
   }
 
@@ -2231,8 +2290,41 @@ function bindEvents() {
     }
   });
 
-  els.btnStartGame.addEventListener('click', () => navigateTo('levels', { mode: 'all' }));
-  els.btnHome.addEventListener('click', () => navigateTo('start'));
+  els.btnStartGame.addEventListener('click', () => {
+    audio.ensureUnlocked();
+    audio.playUiClick();
+    navigateTo('levels', { mode: 'all' });
+  });
+  els.btnHome.addEventListener('click', () => {
+    audio.playUiClick();
+    navigateTo('start');
+  });
+
+  // Unlock Web Audio on first user interaction & wire Sound / BGM toggles
+  const unlockOnce = () => {
+    audio.ensureUnlocked();
+    syncAudioToggleButtons();
+  };
+  document.addEventListener('pointerdown', unlockOnce, { once: true });
+  document.addEventListener('keydown', unlockOnce, { once: true });
+  document.addEventListener('visibilitychange', () => {
+    audio.setTabHidden(document.hidden);
+  });
+  for (const btn of document.querySelectorAll('[data-audio-toggle="sfx"]')) {
+    btn.addEventListener('click', () => {
+      audio.toggleSound();
+      syncAudioToggleButtons();
+      if (audio.soundEnabled) audio.playUiClick();
+    });
+  }
+  for (const btn of document.querySelectorAll('[data-audio-toggle="bgm"]')) {
+    btn.addEventListener('click', () => {
+      audio.toggleBgm();
+      syncAudioToggleButtons();
+      if (audio.soundEnabled) audio.playUiClick();
+    });
+  }
+  syncAudioToggleButtons();
   els.btnEnterTutorials?.addEventListener('click', () => {
     const nextFilter = state.mapFilter === 'tutorial' ? 'all' : 'tutorial';
     if (state.currentView !== 'levels') {

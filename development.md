@@ -264,7 +264,8 @@
   - 在保留原有 `PIP_MOODS` 5 态兼容的基础上，新增 5 种故事表情（`happy`、`curious`、`worried`、`encouraging`、`celebrating`）。
   - 为全部 10 关打造独立内联 SVG 任务卡插画与差异化 Canvas 2D 卡通场景背景（晴朗训练学院、城市救援基地、屋顶天际线、货运吊车枢纽、暮色窄巷、暴雨横风与探照灯终局救援现场），背景严格位于碰撞体/目标区/网格后方且低对比度退远，确保物理碰撞与视觉完全一致。
 - **测试结果**：
-  - 全量语法检查与自动化测试 `node --check src/*.js && node --test tests/*.test.mjs`：**39 套件、98 项测试全部通过（0 失败）**，包含新增 `tests/m7_story.test.mjs`。
+  - 全量语法检查与自动化测试 `node --check src/*.js && node --test tests/*.test.mjs`：**41 套件、102 项测试全部通过（0 失败）**，包含新增 `tests/m7_story.test.mjs` 与 `tests/m7_audio_scoring.test.mjs`。
+  - **三星评分与音频反馈升级**：在 `src/simulation.js` 与 `src/scoring.js` 中新增真实 `oscillationReversals` 震荡计数指标，并以“无明显震荡”为核心放宽全关卡 3★ 时间、过冲、拟合度与电量阈值（平稳通关即可轻松拿 3★，明显震荡仍会降星并提示加大 `Kd`）；新增零外部依赖 Web Audio 程序化音频引擎 `src/audio.js`，实现起飞武装提示音、推力实时调制的连续电机/旋翼声、碰撞/硬着陆冲击声、风力/阵风动态风声、圆环与逐星揭晓音效及自动闪避轻快 BGM（顶栏与飞行 HUD 均配备 `Sound` / `BGM` 独立开关并持久化）。
   - Headless Chrome 桌面（`1366×860`）与手机（`390×844`）端到端实机验证与视觉截图审查：全图 10 节点交互、锁定保护、Mission Card 展示与跳转、风暴与晴朗学院飞行背景、移动端零横向溢出、零控制台/运行时报错全部通过。
 
 ---

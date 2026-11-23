@@ -49,11 +49,12 @@ describe('M5.2 — Homepage UI Redesign & About Course Modal', () => {
       'Fly with WASD.',
       'Handle overshoot and oscillation.',
       'Complete missions and earn stars.',
-      'Learning Objectives',
-      'Understand PID control.',
-      'Apply PID tuning.',
-      'Analyse flight behaviour.',
-      'Develop problem-solving skills.'
+      'Learning Outcomes',
+      'By the end of this game, players will be able to:',
+      'how Kp, Ki, and Kd influence drone flight behaviour.',
+      'stable flight across different challenges.',
+      'overshoot, oscillation, and slow response using flight feedback.',
+      'at least two stars in three challenge levels.'
     ]) {
       assert.ok(indexHtml.includes(snippet), `Missing homepage course card content: ${snippet}`);
     }
@@ -67,10 +68,12 @@ describe('M5.2 — Homepage UI Redesign & About Course Modal', () => {
       'Tuning a PID controller to control a drone.',
       'Engineering (Primary Focus):',
       'Drone Lab — PID Flight Challenge is an interactive STEM game',
-      'Explain how Kp, Ki and Kd affect drone stability and responsiveness.',
-      'Adjust PID parameters to improve flight control.',
-      'Identify overshoot, oscillation and slow response.',
-      'Apply experimentation and feedback to solve flight-control problems.'
+      'Learning Outcomes',
+      'By the end of this game, players will be able to:',
+      'how Kp, Ki, and Kd influence drone flight behaviour.',
+      'stable flight across different challenges.',
+      'overshoot, oscillation, and slow response using flight feedback.',
+      'at least two stars in three challenge levels.'
     ]) {
       assert.ok(indexHtml.includes(snippet), `Missing About modal content: ${snippet}`);
     }

@@ -3938,6 +3938,62 @@ body {
   justify-content: center;
 }
 
+.course-outcomes-preamble {
+  margin: 0;
+  font-size: 0.77rem;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.objectives-check-list.outcomes-numbered-list {
+  counter-reset: outcome-step;
+  gap: 6px;
+  font-size: 0.77rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.objectives-check-list.outcomes-numbered-list li {
+  counter-increment: outcome-step;
+  padding-left: 22px;
+  line-height: 1.28;
+}
+
+.objectives-check-list.outcomes-numbered-list li::before {
+  content: counter(outcome-step);
+  width: 16px;
+  height: 16px;
+  top: 1px;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.objectives-check-list.outcomes-numbered-list li strong {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.about-preamble {
+  margin: 0 0 6px 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.about-outcomes-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.about-outcomes-list li strong {
+  color: var(--text-primary);
+}
+
 /* Detailed About Course Modal */
 .about-modal-card {
   max-width: 680px;

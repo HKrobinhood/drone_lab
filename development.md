@@ -332,6 +332,8 @@ M1 实施时将按以下 8 项测试进行定量与定性验证，并在完成�
 - `feat(ui): simplify results screen and collapse flight reports` — 完成 M5.5 极简统一结算页重设计（保留三星动画、按钮紧贴星星下方、PIP 单句真实诊断反馈与默认折叠 `Detailed Flight Report`）。
 - `ci(deploy): configure GitHub Actions for Pages and complete M6 deployment` — 完成 M6 部署配置（GitHub Actions 自动化测试与 Pages 部署工作流、精炼 README.md、推送到远程仓库）。
 - `feat(story): add SKYGUARD rescue adventure` — 完成 M7 SKYGUARD 轻量化救援故事线、Overcooked 风格卡通世界地图选关、简洁 Mission Card、PIP 故事表情、10 关卡通飞行背景与 Flight Engineer 认证徽章。
+- `feat(audio,scoring): make 3-star scoring oscillation-focused and add procedural Web Audio SFX and BGM` — 调优三星评分判定（无明显振荡即可获 3 星，降低门槛）、新增基于 Web Audio API 的电动机油门音效、风切声、碰撞音效与轻快环境 BGM。
+- `feat(home): update learning objectives to learning outcomes` — 将首页与 About 课程弹窗的 Learning Objectives 更新为 4 项具体的 Learning Outcomes（Identify, Apply, Analyse, Optimise）并优化编号圆点徽章视觉。
 
 ---
 

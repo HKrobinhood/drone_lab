@@ -14,11 +14,12 @@ An interactive STEM educational HTML5 game for learning **PID Control in Drone F
 - **Branches of STEM**:
   - **Engineering (Primary)**: Closed-loop feedback control, damping, saturation, anti-windup, and trade-offs between speed, stability, precision, and energy consumption.
   - **Technology**: Interactive flight simulations, real-time sensor feedback telemetry, and dynamic algorithm visualization.
-- **Learning Objectives**:
-  1. Understand PID control and closed-loop feedback principles.
-  2. Apply PID tuning to stabilize multi-rotor drone dynamics.
-  3. Analyse flight behaviour through real-time telemetry waveforms and state diagnostics.
-  4. Develop problem-solving skills under physical constraints (payload, wind gusts, battery limits).
+- **Learning Outcomes**:
+  By the end of this game, players will be able to:
+  1. **Identify** how Kp, Ki, and Kd influence drone flight behaviour.
+  2. **Apply** PID tuning to achieve stable flight across different challenges.
+  3. **Analyse** overshoot, oscillation, and slow response using flight feedback.
+  4. **Optimise** PID parameters to achieve at least two stars in three challenge levels.
 
 ---
 
